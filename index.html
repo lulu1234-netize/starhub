@@ -24,12 +24,12 @@
   .phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;display:flex;flex-direction:column}
 
   /* ---------- views ---------- */
-  .view{position:absolute;inset:0;overflow-y:auto;background:var(--bg);
+  .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
     transform:translateX(100%);transition:transform .32s cubic-bezier(.3,.8,.3,1);opacity:0;pointer-events:none;
     display:flex;flex-direction:column}
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
-  .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
+  .view-root{transform:translateX(0);opacity:1;pointer-events:auto;overflow:hidden}
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
@@ -207,6 +207,11 @@
     color:#fff;font-size:12.5px;padding:9px 16px;border-radius:22px;opacity:0;pointer-events:none;
     transition:all .25s ease;z-index:99;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* 首页：固定一屏，禁止垂直滚动，内容垂直居中完整展示 */
+  #view-home .star-list{flex:1 1 auto;overflow:hidden;justify-content:center;padding-bottom:84px}
+  /* 我的页：底部 Tab 让位，避免末行被遮挡 */
+  #view-mine{padding-bottom:80px}
 </style>
 </head>
 <body>
@@ -284,9 +289,15 @@
 <script>
 /* ================= 官方账号配置（核对后统一引用，须在数据层之前声明） ================= */
 const ACCOUNTS = {
-  weibo: { id:'1831550987', label:'微博', url:'https://weibo.com/u/1831550987' },
-  xhs:   { id:'155624915',  label:'小红书', url:'https://www.xiaohongshu.com/search_result?keyword=155624915' },
-  douyin:{ id:'390049435',  label:'抖音', url:'https://www.douyin.com/search/390049435' }
+  weibo: { id:'1831550987', label:'微博',
+           scheme:'sinaweibo://userinfo?uid=1831550987',
+           url:'https://weibo.com/u/1831550987' },
+  xhs:   { id:'155624915',  label:'小红书',
+           scheme:'xhsdiscover://search/result?keyword=155624915',
+           url:'https://www.xiaohongshu.com/search_result?keyword=155624915' },
+  douyin:{ id:'390049435',  label:'抖音',
+           scheme:'snssdk1128://user/profile?id=390049435',
+           url:'https://www.douyin.com/search/390049435' }
 };
 
 /* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖；
@@ -502,10 +513,33 @@ function mediaBlock(p){
   }).join('')}</div>`;
 }
 
-/* 跳转一律使用真实 <a> 标签：电脑端浏览器原生支持新标签打开，不受脚本弹窗限制 */
+/* 跳转：优先用 URL Scheme 唤起对应原生 App（微博/抖音/小红书）；
+   若 App 未安装（或桌面端浏览器无法识别 Scheme），1.8s 后自动回退到网页版 */
+function deepLink(p){
+  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
+  if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
+  if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
+  return 'xhsdiscover://search/result?keyword=' + q;
+}
+function openNative(scheme, web, e){
+  if (e && e.preventDefault) e.preventDefault();
+  let done = false;
+  const timer = setTimeout(function(){
+    if (!document.hidden){ cleanup(); window.open(web, '_blank', 'noopener'); }
+  }, 1800);
+  function cleanup(){
+    if (done) return; done = true;
+    document.removeEventListener('visibilitychange', onVis); clearTimeout(timer);
+  }
+  function onVis(){ if (document.hidden) cleanup(); }
+  document.addEventListener('visibilitychange', onVis);
+  try { window.location.href = scheme; } catch(_) {}
+  return false;
+}
 function jumpA(p, label){
-  return `<a class="jump" href="${p.link}" target="_blank" rel="noopener noreferrer"
-    onclick="event.stopPropagation()" title="${p.link}">${label || '前往原平台查看'} ${EXT}</a>`;
+  const scheme = deepLink(p), web = p.link || scheme;
+  return `<a class="jump" href="${web}" onclick="return openNative('${scheme}','${web}',event)"
+    title="点击唤起${SRC[p.platform].label}App，未安装则打开网页版">${label || '前往原平台查看'} ${EXT}</a>`;
 }
 
 /* 统一动态卡片：内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
@@ -563,7 +597,8 @@ function renderDetail(){
   const acctCls = { weibo:'p-weibo', xhs:'p-xhs', douyin:'p-dy' };
   const acctStrip = ['weibo','xhs','douyin'].map(k=>{
     const a = ACCOUNTS[k];
-    return `<a class="acct-item" href="${a.url}" target="_blank" rel="noopener noreferrer" title="${a.url}">
+    return `<a class="acct-item" href="${a.url}" onclick="return openNative('${a.scheme}','${a.url}',event)"
+      title="点击唤起${a.label}App，未安装则打开网页版">
       <div class="a-p ${acctCls[k]}">${a.label}</div>
       <div class="a-id">${a.label === '微博' ? 'UID ' : a.label + '号 '}${a.id}</div>
       <div class="a-open">前往主页 ›</div>
