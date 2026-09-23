@@ -719,6 +719,12 @@ renderMineImg();
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
+/* 注册 Service Worker：让 Chrome / Edge 提供「安装应用」（离线也能打开页面） */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
