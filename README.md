@@ -4,7 +4,7 @@
 
 不用手动刷主页、不用手动复制链接——**每 10 分钟自动更新一次，电脑关机也不影响。**
 
-在线地址：`https://<你的用户名>.github.io/starhub/`
+在线地址：<https://lulu1234-netize.github.io/starhub/>
 
 ---
 
