@@ -15,7 +15,18 @@ echo    选 none 再点 Select 即可）
 echo.
 
 "%GIT%" add -A
-"%GIT%" -c user.name="starhub" -c user.email="starhub@users.noreply.github.com" commit -m "更新星汇"
+"%GIT%" -c user.name="starhub" -c user.email="starhub@users.noreply.github.com" commit -m "更新星汇" 2>nul
+if errorlevel 1 echo   （本地没有新改动，直接同步云端数据）
+
+"%GIT%" pull --rebase origin main
+if errorlevel 1 (
+  echo.
+  echo   合并云端数据时出错，把窗口截图发给我就行。
+  echo.
+  pause
+  exit /b
+)
+
 "%GIT%" push origin main
 
 echo.
