@@ -241,14 +241,6 @@
     <input type="file" id="imgInput" accept="image/*" hidden>
     <div class="sec-title" style="margin-top:10px">通用设置</div>
     <div class="mine-list">
-      <div class="m-row" id="installRow" onclick="doInstall()">
-        <div class="m-ic" style="background:#2f6fed"><svg viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 20h16"/></svg></div>
-        安装到桌面 <span class="sub" id="installSub">检测中…</span>
-      </div>
-      <div class="mine-note" id="installHint" style="display:none;margin:2px 14px 6px">
-        国行手机一般没有 Google 服务框架，「安装应用」会静默失败。<br>
-        请用<b>荣耀自带浏览器</b>打开本页 → 底部公文包图标 → <b>添加到桌面</b>，这条路一定能出图标。
-      </div>
       <div class="m-row" onclick="toast('已订阅 2 位明星，当前测试期仅开放 侯明昊')">
         <div class="m-ic" style="background:#5a6fd6"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1.2-3.4 3.6-5 6.5-5s5.3 1.6 6.5 5"/><path d="M17 8h5M17 12h5M17 16h5"/></svg></div>
         订阅管理 <span class="sub">2 位明星</span>
@@ -727,51 +719,6 @@ renderMineImg();
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
-/* 注册 Service Worker：让 Chrome / Edge 提供「安装应用」（离线也能打开页面） */
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-
-/* ===== 安装到桌面：给出明确的状态反馈 ===== */
-let deferredPrompt = null;
-const installRow = document.getElementById('installRow');
-const installSub = document.getElementById('installSub');
-function isInstalled(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-function syncInstallUI(){
-  if (!installSub) return;
-  const hint = document.getElementById('installHint');
-  const showHint = (on) => { if (hint) hint.style.display = on ? 'block' : 'none'; };
-  if (isInstalled()) { installSub.textContent = '已安装 ✓'; installSub.style.color = '#1a7f4b'; showHint(false); }
-  else if (deferredPrompt) { installSub.textContent = '点此安装'; installSub.style.color = '#2f6fed'; showHint(false); }
-  else { installSub.textContent = '用浏览器菜单添加'; installSub.style.color = '#6b7280'; showHint(true); }
-}
-function doInstall(){
-  if (isInstalled()) { toast('已经安装好了，去桌面找「星汇」图标'); return; }
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(r){
-      if (r.outcome === 'accepted') toast('正在安装，几秒后回到桌面看图标');
-      else toast('已取消安装');
-      deferredPrompt = null; syncInstallUI();
-    });
-  } else {
-    toast('请点浏览器右上角 ⋮ →「添加到手机/主屏幕」或「安装应用」');
-  }
-}
-window.addEventListener('beforeinstallprompt', function(e){
-  e.preventDefault(); deferredPrompt = e; syncInstallUI();
-});
-window.addEventListener('appinstalled', function(){
-  deferredPrompt = null;
-  if (installSub){ installSub.textContent = '已安装 ✓'; installSub.style.color = '#1a7f4b'; }
-  toast('安装完成！回到桌面打开「星汇」');
-});
-window.matchMedia('(display-mode: standalone)').addEventListener('change', syncInstallUI);
-syncInstallUI();
 </script>
 </body>
 </html>
