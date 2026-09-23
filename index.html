@@ -245,6 +245,10 @@
         <div class="m-ic" style="background:#2f6fed"><svg viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 20h16"/></svg></div>
         安装到桌面 <span class="sub" id="installSub">检测中…</span>
       </div>
+      <div class="mine-note" id="installHint" style="display:none;margin:2px 14px 6px">
+        国行手机一般没有 Google 服务框架，「安装应用」会静默失败。<br>
+        请用<b>荣耀自带浏览器</b>打开本页 → 底部公文包图标 → <b>添加到桌面</b>，这条路一定能出图标。
+      </div>
       <div class="m-row" onclick="toast('已订阅 2 位明星，当前测试期仅开放 侯明昊')">
         <div class="m-ic" style="background:#5a6fd6"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1.2-3.4 3.6-5 6.5-5s5.3 1.6 6.5 5"/><path d="M17 8h5M17 12h5M17 16h5"/></svg></div>
         订阅管理 <span class="sub">2 位明星</span>
@@ -739,9 +743,11 @@ function isInstalled(){
 }
 function syncInstallUI(){
   if (!installSub) return;
-  if (isInstalled()) { installSub.textContent = '已安装 ✓'; installSub.style.color = '#1a7f4b'; }
-  else if (deferredPrompt) { installSub.textContent = '点此安装'; installSub.style.color = '#2f6fed'; }
-  else { installSub.textContent = '用浏览器菜单添加'; installSub.style.color = '#6b7280'; }
+  const hint = document.getElementById('installHint');
+  const showHint = (on) => { if (hint) hint.style.display = on ? 'block' : 'none'; };
+  if (isInstalled()) { installSub.textContent = '已安装 ✓'; installSub.style.color = '#1a7f4b'; showHint(false); }
+  else if (deferredPrompt) { installSub.textContent = '点此安装'; installSub.style.color = '#2f6fed'; showHint(false); }
+  else { installSub.textContent = '用浏览器菜单添加'; installSub.style.color = '#6b7280'; showHint(true); }
 }
 function doInstall(){
   if (isInstalled()) { toast('已经安装好了，去桌面找「星汇」图标'); return; }
