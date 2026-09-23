@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星汇 · GitHub 云端部署完整操作手册（中文界面版）</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#ffffff; --ink:#1c2033; --sub:#6b7280; --line:#e6e8f0;
+  --brand:#4f46e5; --brand2:#7c3aed; --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;
+  line-height:1.78;font-size:15px}
+.wrap{max-width:880px;margin:0 auto;padding:32px 20px 80px}
+header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:18px;
+  padding:28px 26px;margin-bottom:20px;box-shadow:0 10px 30px rgba(79,70,229,.25)}
+header h1{margin:0 0 8px;font-size:26px}
+header p{margin:0;opacity:.92;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 22px 18px;margin-bottom:18px}
+h2{font-size:20px;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+h2 .n{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+h3{font-size:16px;margin:20px 0 8px;color:#312e81}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:5px 0}
+.step{border-left:3px solid var(--brand);padding:2px 0 2px 14px;margin:14px 0}
+.step b{color:var(--brand)}
+.code{background:#f3f4f9;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  font-family:ui-monospace,Consolas,Menlo,monospace;font-size:13.5px;position:relative;word-break:break-all}
+.code button{position:absolute;top:6px;right:6px;border:0;background:var(--brand);color:#fff;
+  border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
+.note{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px 14px;margin:14px 0;font-size:14px}
+.good{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:12px 14px;margin:14px 0;font-size:14px}
+.bad{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:12px 14px;margin:14px 0;font-size:14px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:#f3f4f9}
+.tag{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:6px;padding:1px 8px;font-size:12.5px;margin-right:6px}
+.qa{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;background:#fcfcff}
+.qa .q{font-weight:700;font-size:16px;margin-bottom:6px;color:#312e81}
+footer{text-align:center;color:var(--sub);font-size:13px;margin-top:30px}
+.chk{list-style:none;padding-left:0}
+.chk li{padding-left:28px;position:relative}
+.chk li:before{content:"☐";position:absolute;left:4px;top:0;font-size:16px;color:var(--brand)}
+.en{color:#6b7280;font-size:13.5px}
+.gobtn{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca;
+  border-radius:8px;padding:3px 10px;font-size:13px;text-decoration:none;margin:2px 6px 2px 0}
+.gobtn:hover{background:#e0e7ff}
+.setuser{background:#fff;border:1px dashed #a5b4fc;border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.setuser input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:14px;width:200px}
+.setuser button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+.hint{font-size:13px;color:var(--sub);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>星汇 · GitHub 云端部署操作手册</h1>
+  <p>中文界面版　|　所有菜单都标了「中文（English）」，并配了直达链接</p>
+</header>
+
+<div class="setuser">
+  <b>先填一下你的 GitHub 用户名</b>（不是邮箱，是个人主页地址里 github.com/ 后面那串）：
+  <input id="ghuser" value="lulu1234-netize" placeholder="例如 zhangsan" oninput="buildLinks()">
+  <button onclick="buildLinks()">生成直达链接</button>
+  <div class="hint">填完以后，下面每一步旁边会出现「🔗 打开页面」按钮，点了就直接跳到对应设置页，不用自己找菜单。</div>
+</div>
+
+<!-- ============ Part 0 ============ -->
+<div class="card">
+<h2><span class="n">0</span>先回答你问过的两个问题</h2>
+
+<div class="qa">
+  <div class="q">Q1：为什么必须公开？</div>
+  <p><b>GitHub 免费账号只有「公开（Public）」仓库才能用 Pages 网页托管</b>，私有仓库的 Pages 是付费功能。
+  页面要挂到网上让手机访问，免费路线只能是公开仓库。</p>
+  <p>公开的是仓库文件，不是你的账号：</p>
+  <table>
+    <tr><th style="width:32%">内容</th><th style="width:16%">是否公开</th><th>说明</th></tr>
+    <tr><td>网页代码、抓到的动态、照片</td><td><span class="tag">公开</span></td><td>本来就是公开内容</td></tr>
+    <tr><td><b>微博登录 Cookie</b></td><td><span class="tag" style="background:#fee2e2;color:#991b1b">不公开</span></td><td>存在「机密（Secrets）」里，加密保存，谁都看不到原文</td></tr>
+    <tr><td>微信推送 Key（以后再加）</td><td><span class="tag" style="background:#fee2e2;color:#991b1b">不公开</span></td><td>同样存在机密里</td></tr>
+    <tr><td>你的微博密码</td><td><span class="tag" style="background:#fee2e2;color:#991b1b">不涉及</span></td><td>只用了浏览器里的登录状态，从没碰过密码</td></tr>
+  </table>
+  <div class="bad"><b>唯一一条硬性规则：Cookie 绝不能明文进仓库。</b>它只能放在「机密」里。
+  已用 .gitignore 兜底，实测待提交清单里没有 cookies.json。</div>
+</div>
+
+<div class="qa">
+  <div class="q">Q2：微信推送现在不要，以后能加吗？</div>
+  <p><b>能，3 分钟，不用改代码。</b>推送已写进采集脚本，现在只是没给它钥匙，所以静默不动。</p>
+  <ol>
+    <li>打开 <b>sct.ftqq.com</b>，微信扫码登录，复制 SendKey（<code>SCT</code> 开头）</li>
+    <li>仓库 → <b>设置（Settings）</b> → <b>机密和变量（Secrets and variables）</b> → <b>操作（Actions）</b>
+        → 新建一条：名称填 <code>SENDKEY</code>，值粘贴那串 Key</li>
+  </ol>
+  <p>保存即生效。<b>现在你只需要填一条机密：WEIBO_COOKIE。</b></p>
+</div>
+</div>
+
+<!-- ============ Part 1 ============ -->
+<div class="card">
+<h2><span class="n">1</span>注册 / 登录 GitHub（已有账号跳过）</h2>
+<div class="step"><b>①</b> 打开 <b>github.com</b> → 右上角 <b>注册（Sign up）</b> → 邮箱注册 → 去邮箱点验证链接
+  <br><span class="en">如果界面是英文，认准右上角的 Sign up / Sign in</span></div>
+<div class="step"><b>②</b> 登录后：右上角头像 → <b>设置（Settings）</b> → 左侧 <b>电子邮件（Emails）</b>，
+  确认邮箱已验证（没验证后面会推送失败）
+  <a class="gobtn" data-link="https://github.com/settings/emails" target="_blank">🔗 打开页面</a></div>
+</div>
+
+<!-- ============ Part 2 ============ -->
+<div class="card">
+<h2><span class="n">2</span>新建仓库（存储库）</h2>
+<a class="gobtn" data-link="https://github.com/new" target="_blank">🔗 直接打开新建仓库页</a>
+<div class="step"><b>①</b> 也可以点右上角 <b>+</b> → <b>新建仓库（New repository）</b></div>
+<div class="step"><b>②</b> <b>仓库名称（Repository name）</b> 填 <code>starhub</code></div>
+<div class="step"><b>③</b> <b>描述（Description）</b> 随便写一句；下面选 <b>公开（Public）</b>
+  <br><span class="en">公开 = Public　私有 = Private，别选错</span></div>
+<div class="step"><b>④</b> 页面下方三个选项 <b>全部不要勾</b>（不要 README、不要 .gitignore、不要 license）——
+  我们本地已经有了，勾了会和本地文件冲突导致推送失败</div>
+<div class="step"><b>⑤</b> 点 <b>创建仓库（Create repository）</b></div>
+<div class="step"><b>⑥</b> 建好后页面中间会显示仓库地址，形如
+  <div class="code" id="u1"><button onclick="cp('u1')">复制</button>https://github.com/你的用户名/starhub.git</div>
+  <b>复制保存好</b>，第 4 步要用。</div>
+</div>
+
+<!-- ============ Part 3 ============ -->
+<div class="card">
+<h2><span class="n">3</span>生成 Token（个人访问令牌）</h2>
+<div class="bad">⚠️ 注意有两个「Settings」，别走错：<b>你现在在的是「仓库的设置」</b>（网址是 github.com/用户名/starhub/settings）。
+Developer settings 藏在<b>「账号的设置」</b>里——点页面最右上角你的<b>头像</b>，菜单里那个 Settings。
+搞不清就直接点下面的链接。</p>
+<a class="gobtn" data-link="https://github.com/settings/tokens" target="_blank">🔗 直接打开令牌页（推荐）</a>
+<p>推送代码到 GitHub 现在不能用密码，必须用这个令牌。</p>
+<div class="step"><b>①</b> 注意走的是<b>账号设置</b>：右上角头像 → <b>设置（Settings）</b>
+  （不是仓库里的 Settings！）→ 左侧最下方 <b>开发者设置（Developer settings）</b>
+  → <b>个人访问令牌（Personal access tokens）</b> → <b>令牌（经典）（Tokens (classic)）</b></div>
+<div class="step"><b>②</b> 点 <b>生成新令牌（经典）（Generate new token (classic)）</b></div>
+<div class="step"><b>③</b> <b>备注（Note）</b> 随便填，比如 <code>starhub</code></div>
+<div class="step"><b>④</b> <b>有效期（Expiration）</b> 选 <b>90 days（90 天）</b> 或 <b>No expiration（无期限）</b></div>
+<div class="step"><b>⑤</b> 权限勾选（关键，认准这两个英文单词）：
+  <ul>
+    <li>✅ <b>repo</b>（中文界面显示的就是 repo，勾上会自动带上下面子项）</li>
+    <li>✅ <b>workflow</b>（不勾这个，定时任务的那个文件推不上去）</li>
+  </ul>
+</div>
+<div class="step"><b>⑥</b> 拉到最下面点 <b>生成令牌（Generate token）</b></div>
+<div class="bad"><b>⑦ 立刻复制那串绿色令牌（<code>ghp_</code> 开头）并保存。</b>离开这页就再也看不到，只能重新生成。</div>
+</div>
+
+<!-- ============ Part 4 ============ -->
+<div class="card">
+<h2><span class="n">4</span>电脑上跑三个脚本</h2>
+<p>打开文件夹 <b>starhub → 云部署工具</b>，<b>按顺序双击</b>：</p>
+
+<div class="step"><b>① 1_初始化本地仓库.bat</b>
+  <ul>
+    <li>第一次运行会让你输一次邮箱，填 GitHub 的邮箱即可</li>
+    <li>会列出要提交的文件，<b>确认里面没有 <code>data/cookies.json</code> 和 <code>browser-profile</code></b> 再按任意键继续</li>
+    <li>看到「本地仓库准备好了」就成功</li>
+  </ul>
+</div>
+<div class="step"><b>② 2_导出Cookie到剪贴板.bat</b>
+  <ul>
+    <li>会后台开一次浏览器（约 10 秒）读微博登录状态</li>
+    <li>提示「Cookie 已复制到剪贴板」——先别急，第 5 步才粘贴</li>
+  </ul>
+</div>
+<div class="step"><b>③ 3_推送到GitHub.bat</b>
+  <ul>
+    <li>依次问三件事，粘贴后回车：仓库地址 / GitHub 用户名 / 令牌</li>
+    <li>看到「推送成功！」就完成上传</li>
+  </ul>
+</div>
+<div class="note">cmd 窗口里用 <b>鼠标右键粘贴</b>（Ctrl+V 有时不灵）。输入令牌时屏幕不显示字符是正常的，直接回车。</div>
+</div>
+
+<!-- ============ Part 5 ============ -->
+<div class="card">
+<h2><span class="n">5</span>回 GitHub 完成三处设置</h2>
+
+<div class="step"><b>① 填入微博 Cookie（最重要）</b>
+  <a class="gobtn" data-repo="settings/secrets/actions" target="_blank">🔗 打开机密页面</a>
+  <ul>
+    <li>仓库页面 → <b>设置（Settings）</b> → 左侧 <b>机密和变量（Secrets and variables）</b> → <b>操作（Actions）</b></li>
+    <li>点 <b>新建仓库机密（New repository secret）</b></li>
+    <li><b>名称（Name）</b> 填：<code>WEIBO_COOKIE</code>（全大写，一字不差）</li>
+    <li>下面大框里 <b>Ctrl+V</b> 粘贴第 4 步复制的 Cookie → 点 <b>添加机密（Add secret）</b></li>
+  </ul>
+</div>
+
+<div class="step"><b>② 打开工作流的写权限</b>
+  <a class="gobtn" data-repo="settings/actions" target="_blank">🔗 打开 Actions 设置</a>
+  <ul>
+    <li>仓库页面 → <b>设置（Settings）</b> → <b>操作（Actions）</b> → <b>常规（General）</b></li>
+    <li>拉到最下方 <b>工作流权限（Workflow permissions）</b></li>
+    <li>选 <b>读取和写入权限（Read and write permissions）</b> → <b>保存（Save）</b></li>
+    <li>不改的话，定时任务抓到新帖也写不回仓库</li>
+  </ul>
+</div>
+
+<div class="step"><b>③ 开启 Pages 网页托管</b>
+  <a class="gobtn" data-repo="settings/pages" target="_blank">🔗 打开 Pages 设置</a>
+  <ul>
+    <li>仓库页面 → <b>设置（Settings）</b> → 左侧 <b>页面（Pages）</b></li>
+    <li><b>源（Source）</b> 选 <b>从分支部署（Deploy from a branch）</b></li>
+    <li><b>分支（Branch）</b> 选 <b>main</b>，目录选 <b>/ (root)（根目录）</b> → <b>保存（Save）</b></li>
+    <li>等 1～2 分钟，页面顶部会出现你的网址</li>
+  </ul>
+</div>
+
+<div class="good"><b>到这一步云端就活了。</b>打开网址能看到星汇页面，显示真实微博动态。</div>
+</div>
+
+<!-- ============ Part 6 ============ -->
+<div class="card">
+<h2><span class="n">6</span>手机上使用</h2>
+<div class="step"><b>①</b> 手机浏览器打开 <code>https://你的用户名.github.io/starhub/</code></div>
+<div class="step"><b>②</b> iPhone：Safari 底部「分享」→「添加到主屏幕」<br>
+安卓：Chrome 右上角菜单 →「添加到主屏幕 / 安装应用」</div>
+<div class="good"><b>数据怎么更新：</b>GitHub 每 10 分钟自动抓微博 → 有新帖写回仓库 → 网页 1～2 分钟同步 →
+你打开 App 时它每 60 秒检查一次。<b>全程不需要电脑开机。</b></div>
+</div>
+
+<!-- ============ Part 7 ============ -->
+<div class="card">
+<h2><span class="n">7</span>维护与常见问题</h2>
+
+<h3>Cookie 过期（最常见）</h3>
+<p>表现：内容一直是旧的 → 去 <b>操作（Actions）</b> 页看到红色失败圆圈，日志写「非 JSON 响应（Cookie 可能已过期）」</p>
+<a class="gobtn" data-repo="actions" target="_blank">🔗 打开 Actions 运行记录</a>
+<p>处理：重跑 <b>2_导出Cookie到剪贴板.bat</b> → 设置 → 机密和变量 → 操作 → 点 <code>WEIBO_COOKIE</code>
+→ <b>更新（Update secret）</b> → 粘贴新的 → 保存。立刻生效。</p>
+
+<h3>想立刻抓一次</h3>
+<p>仓库 → <b>操作（Actions）</b> → 左侧点「星汇定时采集」→ 右侧 <b>运行工作流（Run workflow）</b> → 再点一次。约 30 秒跑完。</p>
+
+<h3>页面显示「未连接采集服务 / 内置数据」</h3>
+<ul>
+  <li>确认页面（Pages）已开启并显示网址（首次要等 1～2 分钟）</li>
+  <li>确认仓库里 <code>data/posts.json</code> 存在</li>
+  <li>手机下拉强制刷新一次</li>
+</ul>
+
+<h3>定时任务自己停了</h3>
+<p>GitHub 规定仓库连续 <b>60 天</b>无提交会停用定时任务。我们每次采集都留一条记录，基本不会触发。
+万一停了，去操作（Actions）页手动运行一次就恢复。</p>
+
+<h3>中英文对不上怎么办</h3>
+<p>GitHub 中文版翻译并不完整，很多地方仍是英文，属于正常现象。<b>认准括号里的英文单词最保险</b>，
+或者直接点本手册里的「🔗 打开页面」直达链接。</p>
+</div>
+
+<div class="card">
+<h2><span class="n">✓</span>一页速查清单</h2>
+<ul class="chk">
+  <li>注册 / 登录 GitHub，邮箱已验证</li>
+  <li>新建公开仓库 <code>starhub</code>，三个复选框都不勾</li>
+  <li>生成令牌：勾选 repo + workflow，复制保存</li>
+  <li>运行 1_初始化本地仓库.bat</li>
+  <li>运行 2_导出Cookie到剪贴板.bat</li>
+  <li>运行 3_推送到GitHub.bat（地址 / 用户名 / 令牌）</li>
+  <li>设置 → 机密和变量 → 操作 → 新增 WEIBO_COOKIE</li>
+  <li>设置 → 操作 → 常规 → 改「读取和写入权限」</li>
+  <li>设置 → 页面 → 从分支部署 → main / 根目录 → 保存</li>
+  <li>手机打开网址 → 添加到主屏幕</li>
+</ul>
+</div>
+
+<footer>星汇 · 部署手册（中文界面版）　|　卡在哪一步就把截图发我</footer>
+</div>
+
+<script>
+function cp(id){
+  var el = document.getElementById(id);
+  var btn = el.querySelector('button');
+  var txt = el.textContent.replace('复制','').trim();
+  navigator.clipboard.writeText(txt).then(function(){
+    btn.textContent='已复制'; setTimeout(function(){btn.textContent='复制';},1500);
+  });
+}
+function buildLinks(){
+  var u = (document.getElementById('ghuser').value || '').trim();
+  var repo = 'starhub';
+  document.querySelectorAll('[data-repo]').forEach(function(a){
+    if(u){ a.href = 'https://github.com/' + u + '/' + repo + '/' + a.getAttribute('data-repo'); a.style.display=''; }
+    else { a.removeAttribute('href'); }
+  });
+  var u1 = document.getElementById('u1');
+  if(u1 && u){ u1.childNodes[1].nodeValue = 'https://github.com/' + u + '/' + repo + '.git'; }
+}
+buildLinks();
+</script>
+</body>
+</html>

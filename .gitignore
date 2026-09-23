@@ -1,0 +1,16 @@
+# 登录凭据：绝对不能提交到公开仓库
+data/cookies.json
+data/raw_last.json
+*.cookie
+*cookie*.txt
+
+# 本机浏览器登录态（体积大且含隐私）
+browser-profile/
+collector/browser-profile/
+
+# 日志与缓存
+*.log
+node_modules/
+.vscode/
+.DS_Store
+Thumbs.db
