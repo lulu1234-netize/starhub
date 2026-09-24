@@ -162,6 +162,25 @@
   .ph-3{background:linear-gradient(135deg,#d4f2cf,#93c98c)}
   .ph-4{background:linear-gradient(135deg,#e8d1f0,#b78ac9)}
   .ph-real{background:linear-gradient(135deg,#eef0f5,#dfe3ec)}
+  /* 封面占位：按平台品牌色区分，保证三平台卡片的信息密度与观感一致 */
+  .ph-weibo{background:linear-gradient(135deg,#f4d6d8,#cf9097)}
+  .ph-xhs{background:linear-gradient(135deg,#ffd9de,#ef9fae)}
+  .ph-dy{background:linear-gradient(135deg,#4a5068,#20242f)}
+  .ph-tip{position:absolute;left:7px;top:7px;font-size:9.5px;color:#fff;background:rgba(0,0,0,.3);
+    padding:1.5px 6px;border-radius:10px;letter-spacing:.3px}
+  /* 作者头像（三平台统一） */
+  .p-av{width:26px;height:26px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:12.5px;font-weight:700}
+  .av-weibo{background:linear-gradient(135deg,#f4595b,#c2141f)}
+  .av-xhs{background:linear-gradient(135deg,#ff5c72,#e3163c)}
+  .av-dy{background:linear-gradient(135deg,#4a5062,#161823)}
+  .p-title{font-size:14.5px;font-weight:600;line-height:1.5;margin-bottom:3px;
+    overflow-wrap:anywhere;word-break:break-word}
+  /* 互动数据行（点赞 / 评论 / 转发·收藏）：缺省显示 —，三平台排版一致 */
+  .p-stats{display:flex;align-items:center;gap:14px;margin-top:9px;font-size:11.5px;color:var(--ink3)}
+  .p-stats .st{display:inline-flex;align-items:center;gap:4px}
+  .p-stats .st svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
   .p-foot{display:flex;align-items:center;margin-top:9px;font-size:11.5px;color:var(--ink3)}
   .p-foot .open{margin-left:auto;display:flex;align-items:center;gap:3px;color:var(--accent);font-weight:500}
   .p-foot .open svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -321,13 +340,29 @@ const ACCOUNTS = {
            url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
 };
 
-/* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖；
-   接入真实采集后此字段将被替换为原帖直达 URL，跳转逻辑不变） */
+/* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖）。
+   一律使用各平台**移动端**搜索页（桌面版网页在手机上观感/可用性都更差）。 */
 function contentLink(platform, text){
-  const q = encodeURIComponent(text.replace(/\s+/g, ' ').trim().slice(0, 16));
-  if (platform === 'weibo')  return 'https://s.weibo.com/weibo?q=' + q;
+  let raw = String(text || '').replace(/\s+/g, ' ').trim();
+  /* 去掉「【示例占位】…」这类提示语，避免拿着占位文案去做无意义的搜索 */
+  raw = raw.replace(/[【\[(（][^\]】)）]{0,20}(示例|占位|演示|待补充)[^\]】)）]{0,20}[】\])）]/g, '').trim();
+  const key = (/示例|占位|演示|加载中/.test(raw) || raw.length < 2) ? '侯明昊' : raw.slice(0, 16);
+  const q = encodeURIComponent(key);
+  if (platform === 'weibo')  return 'https://m.weibo.cn/search?containerid=100103type%3D1%26q%3D' + q;
   if (platform === 'douyin') return 'https://www.douyin.com/search/' + q;
   return 'https://www.xiaohongshu.com/search_result?keyword=' + q;
+}
+/* 兜底规范：任何 PC 链接都要先转成对应的手机版页，保证手机上打开的是移动页面 */
+function toMobile(u){
+  u = String(u || '');
+  let m;
+  m = u.match(/^https?:\/\/(?:www\.)?weibo\.com\/(\d+)\/([A-Za-z0-9]+)/);
+  if (m) return 'https://m.weibo.cn/detail/' + m[2];
+  m = u.match(/^https?:\/\/(?:www\.)?weibo\.com\/u\/(\d+)/);
+  if (m) return 'https://m.weibo.cn/u/' + m[1];
+  m = u.match(/^https?:\/\/(?:www\.)?weibo\.com\/(?:p|status)\/(\d+)/);
+  if (m) return 'https://m.weibo.cn/status/' + m[1];
+  return u;
 }
 
 /* ================= 数据层（M1 为内置示例数据，结构即未来 API 契约） ================= */
@@ -521,21 +556,59 @@ const FILTERS = [['all','全部'],['weibo','仅微博'],['xhs','仅小红书'],[
 
 function setFilter(k){ curFilter = k; renderDetail(); }
 
+/* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
+   ① 采到的真实多图 → 真图；② 单张封面（cover）→ 真图 + 角标；
+   ③ 都没有 → 按平台配色的统一占位块（带「封面待采集」提示，不再出现随机色块） */
+const PH_CLS = { weibo:'ph-weibo', xhs:'ph-xhs', douyin:'ph-dy' };
 function mediaBlock(p){
   const badge = p.video ? `<span class="vbadge">${p.vlabel || '▶ 视频'}</span>` : '';
-  /* 采集到的真实图片：优先展示真图，加载失败时隐藏露出底层占位色 */
+  const pcls = PH_CLS[p.platform] || 'ph-weibo';
   if (p.imgs && p.imgs.length){
-    return `<div class="p-pics">${p.imgs.map((u,i)=>
+    return `<div class="p-pics">${p.imgs.slice(0,3).map((u,i)=>
       `<div class="ph ph-real"><img src="${u}" alt="" loading="lazy" onerror="this.style.display='none'">${(p.video && i===0) ? badge : ''}</div>`
     ).join('')}</div>`;
   }
-  const pics = (p.pics && p.pics.length) ? p.pics : (p.video ? ['ph-2'] : []);
-  if (!pics.length) return '';
-  return `<div class="p-pics">${pics.map((c,i)=>{
-    const real = (p.cover && i === 0);
+  const legacy = (p.pics && p.pics.length) ? p.pics : [];
+  const hasCover = !!p.cover;
+  if (!legacy.length){
+    if (!hasCover && !p.video) return '';            /* 纯文本动态：与微博保持一致，不加媒体块 */
+    return `<div class="p-pics"><div class="ph ${pcls}">
+      ${hasCover ? `<img src="${p.cover}" alt="" loading="lazy" onerror="this.style.display='none'">` : CAM}
+      <span class="ph-tip">${p.video ? '视频封面待采集' : '封面待采集'}</span>${badge}</div></div>`;
+  }
+  return `<div class="p-pics">${legacy.map((c,i)=>{
+    const real = (hasCover && i === 0);
     const cover = real ? `<img src="${p.cover}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
-    return `<div class="ph ${c}">${cover}${real ? '' : CAM}${(p.video && i===0) ? badge : ''}</div>`;
+    const cls = /^ph-/.test(String(c)) || real ? (real ? 'ph-real' : pcls) : c;
+    return `<div class="ph ${cls}">${cover}${(!real && i === 0) ? '<span class="ph-tip">封面待采集</span>' : ''}${real ? '' : CAM}${(p.video && i===0) ? badge : ''}</div>`;
   }).join('')}</div>`;
+}
+
+/* 互动数据：三平台都渲染「点赞 / 评论 / 转发或收藏」，缺省统一显示 — */
+const STATS_SPEC = {
+  weibo:  [['repost','转发'],['comment','评论'],['like','点赞']],
+  douyin: [['like','点赞'],['comment','评论'],['collect','收藏']],
+  xhs:    [['like','点赞'],['collect','收藏'],['comment','评论']]
+};
+const I_HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20z"/></svg>';
+const I_COMMENT = '<svg viewBox="0 0 24 24"><path d="M20 14a2 2 0 0 1-2 2H8l-4 4v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>';
+const I_REPOST = '<svg viewBox="0 0 24 24"><path d="M4 9V5h12"/><path d="M7 5 4 9l3 4"/><path d="M20 15v4H8"/><path d="M17 19l3-4-3-4"/></svg>';
+const I_STAR = '<svg viewBox="0 0 24 24"><path d="M12 4l2.4 5 5.6.8-4 3.9.9 5.5-5-2.7-5 2.7.9-5.5-4-3.9 5.6-.8z"/></svg>';
+const STAT_ICON = { 点赞:I_HEART, 评论:I_COMMENT, 转发:I_REPOST, 收藏:I_STAR };
+function fmtStat(v){
+  const s = (v === undefined || v === null) ? '' : String(v).trim();
+  if (!s) return '—';
+  if (/^\d+$/.test(s)){
+    const n = +s;
+    return n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '万' : s;
+  }
+  return s;
+}
+function statsRow(p){
+  const st = p.stats || {};
+  const spec = STATS_SPEC[p.platform] || STATS_SPEC.weibo;
+  return `<div class="p-stats">${spec.map(([k,l])=>
+    `<span class="st">${STAT_ICON[l] || I_HEART}${l} ${fmtStat(st[k])}</span>`).join('')}</div>`;
 }
 
 /* 从原帖链接解析该条内容在对应平台的资源 ID（用于直达 App 内的「这一条」） */
@@ -565,14 +638,14 @@ function deepLink(p){
   return id ? 'xhsdiscover://item/' + id : searchScheme(p);
 }
 
-/* 回退用的手机网页版地址（比 PC 网页更适合手机；装了 App 时同样会唤起） */
+/* 回退用的手机网页版地址（一律移动端，与 PC 页面无关） */
 function webFallback(p){
   const id = postId(p);
-  if (p.platform === 'weibo' && id) return 'https://m.weibo.cn/detail/' + id;
+  if (p.platform === 'weibo' && id)  return 'https://m.weibo.cn/detail/' + id;
   if (p.platform === 'douyin' && id) return 'https://www.douyin.com/video/' + id;
   if (p.platform === 'xhs' && id)    return 'https://www.xiaohongshu.com/explore/' + id;
-  return p.link || (p.platform === 'weibo' ? 'https://m.weibo.cn/' :
-                    p.platform === 'douyin' ? 'https://www.douyin.com/' : 'https://www.xiaohongshu.com/');
+  const link = toMobile(p.link);
+  return link || contentLink(p.platform, p.text || '');
 }
 
 /* 原生桥：星汇 APK 内由 Android 提供 StarHubNative.open(url)，
@@ -588,29 +661,26 @@ function nativeOpen(u){
   return false;
 }
 
-/* 依次尝试多个 Scheme（用 | 分隔传入）；全部没唤起成功才回退网页版。
-   判定依据：唤起成功时页面会切到后台（document.hidden = true）。 */
-function openNative(schemeStr, web, e, label){
-  if (e && e.preventDefault) e.preventDefault();
-  const list = String(schemeStr || '').split('|').filter(Boolean);
-  if (!list.length){ gotoWeb(web); return false; }
-  if (label) toast('正在唤起' + label + '…');
-  let settled = false;
-  function onVis(){ if (document.hidden) settled = true; }
-  document.addEventListener('visibilitychange', onVis);
-  (function attempt(i){
-    if (settled) return;                       /* 已成功唤起，停止后续尝试 */
-    if (i >= list.length){                     /* 都失败 → 打开网页版 */
-      document.removeEventListener('visibilitychange', onVis);
-      gotoWeb(web); return;
-    }
-    setTimeout(function(){ attempt(i + 1); }, 1100);
-    try {
-      if (!nativeOpen(list[i])) window.location.href = list[i];
-    } catch(_) { attempt(i + 1); }
-  })(0);
-  return false;
+/* ============ 运行环境判定：一切跳转以手机端为准 ============
+   App 内（有原生桥）＝手机；手机浏览器按 UA / 粗指针判定；桌面不算手机。 */
+function isPhone(){
+  if (window.StarHubNative && typeof StarHubNative.open === 'function') return true;
+  if (navigator.maxTouchPoints > 0 && window.matchMedia
+      && window.matchMedia('(pointer:coarse)').matches) return true;
+  return /Android|iPhone|iPad|iPod|Windows Phone|HarmonyOS|Mobile/i.test(navigator.userAgent || '');
 }
+
+/* 统一埋点：微博 / 抖音 / 小红书 共用同一份记录，便于核对跳转成功率 */
+function trackJump(platform, kind, target, result){
+  try {
+    const log = JSON.parse(store.getItem('starhub_jump_log') || '[]');
+    log.push({ t: Date.now(), platform: platform, kind: kind,
+               target: String(target || '').slice(0, 160), result: result });
+    store.setItem('starhub_jump_log', JSON.stringify(log.slice(-200)));
+  } catch(_) {}
+  try { console.log('[jump]', platform, kind, result, target); } catch(_) {}
+}
+
 /* 网页版回退：App 内经原生桥交给系统浏览器打开（WebView 自带的渲染器
    加载抖音/小红书网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
 function gotoWeb(web){
@@ -618,7 +688,56 @@ function gotoWeb(web){
   const w = window.open(web, '_blank', 'noopener');
   if (!w) window.location.href = web;
 }
-/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台主页网页版。
+
+/* ============ 统一跳转引擎 ============
+   微博 / 抖音 / 小红书、主页 / 帖子 全部走这一个函数，行为与提示完全一致：
+     ① 桌面端不跳转、不展示外链内容，只提示用手机；
+     ② 手机端先依次尝试 App 的 scheme/deeplink（1.1s 一个，页面切后台即判定成功）；
+     ③ 全部没唤起成功 → 打开该平台手机网页版，并给出与微博相同的兜底提示；
+     ④ 每一步都写同一份埋点。 */
+function openExternal(o, e){
+  if (e && e.preventDefault) e.preventDefault();
+  o = o || {};
+  const platform = o.platform || '';
+  const kind = o.kind || 'content';
+  const label = (SRC[platform] && SRC[platform].label) || o.label || '外部平台';
+  const list = (o.schemes || []).filter(Boolean);
+  const web  = o.web || '';
+
+  if (!isPhone()){
+    toast('请用手机打开星汇 App 查看「' + label + '」内容');
+    trackJump(platform, kind, list[0] || web, 'desktop_blocked');
+    return false;
+  }
+  if (!web){
+    toast('「' + label + '」这条内容暂无有效链接，稍后由采集更新');
+    trackJump(platform, kind, '', 'no_link');
+    return false;
+  }
+
+  toast('正在唤起' + label + '…');
+  let settled = false;
+  function onVis(){ if (document.hidden){ settled = true; document.removeEventListener('visibilitychange', onVis); } }
+  document.addEventListener('visibilitychange', onVis);
+
+  (function attempt(i){
+    if (settled){ trackJump(platform, kind, list[i-1] || web, 'app_opened'); return; }
+    if (i >= list.length){
+      document.removeEventListener('visibilitychange', onVis);
+      toast('未检测到' + label + 'App，正在打开手机网页版');   /* 与微博完全一致的兜底提示 */
+      trackJump(platform, kind, web, 'web_fallback');
+      gotoWeb(web);
+      return;
+    }
+    setTimeout(function(){ attempt(i + 1); }, 1100);
+    try {
+      if (!nativeOpen(list[i])) window.location.href = list[i];
+    } catch(_) { trackJump(platform, kind, list[i], 'scheme_error'); }
+  })(0);
+  return false;
+}
+
+/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。
    小红书拿到 user_id 后填入 ACCOUNTS.xhs.profileId，即自动升级为「主页直达」 */
 function openHome(key, e){
   const a = ACCOUNTS[key];
@@ -629,31 +748,50 @@ function openHome(key, e){
                'xiaohongshu://user/profile/' + a.profileId].concat(schemes);
     url = 'https://www.xiaohongshu.com/user/profile/' + a.profileId;
   }
-  return openNative(schemes.join('|'), url, e, a.label);
+  return openExternal({ platform:key, kind:'home', label:a.label, schemes:schemes, web:url }, e);
 }
 
-function jumpA(p, label){
+/* 帖子跳转参数统一由这条函数产出（不再是每个平台各写一套），
+   结果按 _uid 暂存，避免把带引号/问号的 scheme 拼进 inline onclick */
+const JUMP_MAP = {};
+function contentJump(p){
   const primary = deepLink(p), alt = searchScheme(p), web = webFallback(p);
   const schemes = primary === alt ? [primary] : [primary, alt];
-  return `<a class="jump" href="${web}" onclick="return openNative('${schemes.join('|')}','${web}',event,'${SRC[p.platform].label}')"
-    title="点击唤起${SRC[p.platform].label}App 打开本条内容，未安装则打开网页版">${label || '前往原平台查看'} ${EXT}</a>`;
+  return { platform:p.platform, kind:'post', schemes:schemes, web:web };
+}
+function openPost(uid, e){
+  const o = JUMP_MAP[uid];
+  if (!o){ toast('内容未就绪，请稍后重试'); return false; }
+  return openExternal(o, e);
+}
+function jumpA(p, label){
+  JUMP_MAP[p._uid] = contentJump(p);
+  const web = JUMP_MAP[p._uid].web;
+  return `<a class="jump" href="${web}" onclick="return openPost('${p._uid}',event)"
+    title="在手机上唤起${SRC[p.platform].label}App 打开本条内容；未安装则打开手机网页版">${label || '前往原平台查看'} ${EXT}</a>`;
 }
 
-/* 统一动态卡片：内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
+/* 统一动态卡片：三个平台共用同一结构（头像/作者/平台 → 标题 → 正文 → 封面 → 互动数据 → 时间+跳转），
+   内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
+const AV_CLS = { weibo:'av-weibo', xhs:'av-xhs', douyin:'av-dy' };
 function postCard(p){
   const s = SRC[p.platform], today = isNew(p.time), read = readSet.has(p._uid);
+  const av = String(p.account || '？').trim().charAt(0) || '？';
   return `
   <div class="post" data-uid="${p._uid}">
     <div class="p-top">
-      ${today ? '<div class="rdot" title="今日新发布"></div>' : ''}
+      <span class="p-av ${AV_CLS[p.platform] || 'av-weibo'}">${av}</span>
       <span class="p-account">${p.account}</span>
       <span class="p-tag">${p.tag}</span>
+      ${today ? '<div class="rdot" title="今日新发布"></div>' : ''}
       <span class="p-src ${s.cls}">${s.label}${EXT}</span>
     </div>
     <div class="p-main">
       <div class="p-body">
+        ${p.title ? `<div class="p-title">${p.title}</div>` : ''}
         ${(p.text && String(p.text).trim()) ? `<div class="p-text">${p.text}</div>` : (mediaBlock(p) ? '' : '<div class="p-text" style="color:var(--ink3)">（正文加载中…）</div>')}
         ${mediaBlock(p)}
+        ${statsRow(p)}
         <div class="p-foot">
           <span>${timeStr(p.time)}</span>
           <button class="read-btn ${read ? 'done' : ''}" onclick="toggleRead('${p._uid}')"
@@ -792,6 +930,8 @@ function toLivePost(p, i){
     platform:pf, account:p.account || '侯明昊', tag:p.tag || '本人',
     text:p.text || '', time:p.time || 0, link:p.link || '',
     pics:[], imgs:(p.imgs || p.pics || []).slice(0,4),
+    title:p.title || '',
+    stats:p.stats || {},                       /* 互动数据缺省为 null → 卡片统一显示 — */
     video:!!p.video, cover:p.cover || '', vlabel:p.video ? '▶ 视频' : ''
   };
 }
