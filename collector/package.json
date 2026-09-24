@@ -1,0 +1,16 @@
+{
+  "name": "starhub-collector-headless",
+  "version": "1.0.0",
+  "private": true,
+  "description": "星汇 · 抖音/小红书采集器（浏览器渲染版，无需第三方 API Key）",
+  "scripts": {
+    "collect": "node collect_headless.js",
+    "collect:local": "node collect_headless.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  },
+  "optionalDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}
