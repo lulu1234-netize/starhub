@@ -32,6 +32,8 @@
     display:flex;flex-direction:column;
     -webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
     padding-bottom:env(safe-area-inset-bottom)}
+  /* 关键：禁止 flex 子项被压缩，否则内容超出一屏时会被压扁、导致页面滚不动 */
+  .view > *{flex:0 0 auto}
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
   .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
@@ -69,7 +71,7 @@
   .dot-badge{position:absolute;top:12px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--wb)}
 
   /* ---------- bottom nav ---------- */
-  .tabbar{position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  .tabbar{position:sticky;bottom:0;width:100%;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
     border-top:1px solid var(--line);display:flex;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
   .tabbar .tab{flex:1;text-align:center;padding:9px 0 10px;cursor:pointer;color:var(--ink3);font-size:10.5px;user-select:none}
   .tabbar .tab svg{display:block;margin:0 auto 3px;width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -295,16 +297,25 @@
 
 <script>
 /* ================= 官方账号配置（核对后统一引用，须在数据层之前声明） ================= */
+/* schemes 为「依次尝试」的候选列表：不同机型/App 版本支持的 Scheme 不同，多试几个成功率更高；
+   全部失败后回退到 url（网页版）。抖音主页需要 sec_uid（已从抖音主页链接取得），微博用 uid 容器页。 */
 const ACCOUNTS = {
   weibo: { id:'1831550987', label:'微博',
-           scheme:'sinaweibo://cardlist?containerid=1005051831550987',
-           url:'https://weibo.com/u/1831550987' },
+           schemes:['sinaweibo://cardlist?containerid=1005051831550987',
+                    'sinaweibo://userinfo?uid=1831550987'],
+           url:'https://m.weibo.cn/u/1831550987' },
   xhs:   { id:'155624915',  label:'小红书',
-           scheme:'xhsdiscover://search/result?keyword=155624915',
+           /* profileId 留空：小红书主页需 user_id（网页端登录后才可见）。
+              拿到后填入下方两处的 ${...} 即可自动升级为「主页直达」 */
+           profileId:'',
+           schemes:['xhsdiscover://search/result?keyword=155624915',
+                    'xhsdiscover://home'],
            url:'https://www.xiaohongshu.com/search_result?keyword=155624915' },
   douyin:{ id:'390049435',  label:'抖音',
-           scheme:'snssdk1128://user/profile?id=390049435',
-           url:'https://www.douyin.com/search/390049435' }
+           secUid:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
+           schemes:['snssdk1128://user/profile/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
+                    'snssdk1128://search/trending?keyword=390049435'],
+           url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
 };
 
 /* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖；
@@ -473,6 +484,10 @@ function go(name){
   if (name === 'star'){ cur.classList.add('under'); }
   next.classList.add('active');
   next.scrollTop = 0;
+  /* 同步两个页面各自底部 Tab 的高亮状态 */
+  document.querySelectorAll('.tabbar .tab').forEach(t=>{
+    t.classList.toggle('on', t.dataset.tab === name);
+  });
 }
 document.querySelectorAll('.tabbar .tab').forEach(t=>{
   t.addEventListener('click', ()=>go(t.dataset.tab));
@@ -532,13 +547,19 @@ function postId(p){
   return '';
 }
 
+/* 兜底用：按内容在该平台内搜索（拿不到帖子 ID 时使用） */
+function searchScheme(p){
+  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
+  if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
+  if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
+  return 'xhsdiscover://search/result?keyword=' + q;
+}
 /* 直达该条帖子的原生 App Scheme；拿不到帖子 ID 时退化为按内容搜索 */
 function deepLink(p){
   const id = postId(p);
-  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
-  if (p.platform === 'weibo')  return id ? 'sinaweibo://detail?mblogid=' + id : 'sinaweibo://search?q=' + q;
-  if (p.platform === 'douyin') return id ? 'snssdk1128://aweme/detail/' + id : 'snssdk1128://search?keyword=' + q;
-  return id ? 'xhsdiscover://item/' + id : 'xhsdiscover://search/result?keyword=' + q;
+  if (p.platform === 'weibo')  return id ? 'sinaweibo://detail?mblogid=' + id : searchScheme(p);
+  if (p.platform === 'douyin') return id ? 'snssdk1128://aweme/detail/' + id : searchScheme(p);
+  return id ? 'xhsdiscover://item/' + id : searchScheme(p);
 }
 
 /* 回退用的手机网页版地址（比 PC 网页更适合手机；装了 App 时同样会唤起） */
@@ -551,20 +572,25 @@ function webFallback(p){
                     p.platform === 'douyin' ? 'https://www.douyin.com/' : 'https://www.xiaohongshu.com/');
 }
 
-/* 用 Scheme 唤起原生 App；1.5s 内没唤起成功（未安装/无法识别）则回退网页版 */
-function openNative(scheme, web, e){
+/* 依次尝试多个 Scheme（用 | 分隔传入）；全部没唤起成功才回退网页版。
+   判定依据：唤起成功时页面会切到后台（document.hidden = true）。 */
+function openNative(schemeStr, web, e, label){
   if (e && e.preventDefault) e.preventDefault();
-  let done = false;
-  const timer = setTimeout(function(){
-    if (!document.hidden){ cleanup(); gotoWeb(web); }
-  }, 1500);
-  function cleanup(){
-    if (done) return; done = true;
-    document.removeEventListener('visibilitychange', onVis); clearTimeout(timer);
-  }
-  function onVis(){ if (document.hidden) cleanup(); }
+  const list = String(schemeStr || '').split('|').filter(Boolean);
+  if (!list.length){ gotoWeb(web); return false; }
+  if (label) toast('正在唤起' + label + '…');
+  let settled = false;
+  function onVis(){ if (document.hidden) settled = true; }
   document.addEventListener('visibilitychange', onVis);
-  try { window.location.href = scheme; } catch(_) { cleanup(); gotoWeb(web); }
+  (function attempt(i){
+    if (settled) return;                       /* 已成功唤起，停止后续尝试 */
+    if (i >= list.length){                     /* 都失败 → 打开网页版 */
+      document.removeEventListener('visibilitychange', onVis);
+      gotoWeb(web); return;
+    }
+    setTimeout(function(){ attempt(i + 1); }, 1100);
+    try { window.location.href = list[i]; } catch(_) { attempt(i + 1); }
+  })(0);
   return false;
 }
 /* WebView 未开启多窗口时 window.open 返回 null —— 此时在当前页打开网页版，保证一定跳得出去 */
@@ -572,10 +598,17 @@ function gotoWeb(web){
   const w = window.open(web, '_blank', 'noopener');
   if (!w) window.location.href = web;
 }
+/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台主页网页版 */
+function openHome(key, e){
+  const a = ACCOUNTS[key];
+  if (!a) return false;
+  return openNative(a.schemes.join('|'), a.url, e, a.label);
+}
 
 function jumpA(p, label){
-  const scheme = deepLink(p), web = webFallback(p);
-  return `<a class="jump" href="${web}" onclick="return openNative('${scheme}','${web}',event)"
+  const primary = deepLink(p), alt = searchScheme(p), web = webFallback(p);
+  const schemes = primary === alt ? [primary] : [primary, alt];
+  return `<a class="jump" href="${web}" onclick="return openNative('${schemes.join('|')}','${web}',event,'${SRC[p.platform].label}')"
     title="点击唤起${SRC[p.platform].label}App 打开本条内容，未安装则打开网页版">${label || '前往原平台查看'} ${EXT}</a>`;
 }
 
@@ -634,7 +667,7 @@ function renderDetail(){
   const acctCls = { weibo:'p-weibo', xhs:'p-xhs', douyin:'p-dy' };
   const acctStrip = ['weibo','xhs','douyin'].map(k=>{
     const a = ACCOUNTS[k];
-    return `<a class="acct-item" href="${a.url}" onclick="return openNative('${a.scheme}','${a.url}',event)"
+    return `<a class="acct-item" href="${a.url}" onclick="return openHome('${k}',event)"
       title="点击唤起${a.label}App，未安装则打开网页版">
       <div class="a-p ${acctCls[k]}">${a.label}</div>
       <div class="a-id">${a.label === '微博' ? 'UID ' : a.label + '号 '}${a.id}</div>
@@ -652,10 +685,12 @@ function renderDetail(){
     ? `<div class="rel-box"><div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relShow.length} 条</span></div>${relShow.map(postCard).join('')}
         ${relHidden ? `<div class="read-note">已清理 ${relHidden} 条已读旧帖 · 点击帖内「已读 ✓」可撤销恢复</div>` : ''}</div>`
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
+  const PF_NAME = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
+  const pfList = [...new Set(d.own.concat(d.related).map(p=>p.platform))].map(k=>PF_NAME[k] || k);
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
     <span class="live-txt">${LIVE.ok
-      ? `微博真实数据 · ${LIVE.count} 条 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 10 分钟）`
+      ? `${pfList.join(' / ') || '微博'}真实数据 · ${LIVE.count} 条 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 10 分钟）`
       : '未连接采集服务 · 当前为内置数据'}</span>
     <button class="live-btn" onclick="refreshNow()">立即刷新</button>
   </div>`;
@@ -722,9 +757,12 @@ const LIVE = { ok:false, updatedAt:0, count:0, ids:new Set() };
 const IS_CLOUD = /github\.io$|netlify\.app$|vercel\.app$|pages\.dev$/.test(location.hostname);
 
 function toLivePost(p, i){
+  /* 平台由数据自身决定（微博 / 抖音 / 小红书 共用同一套渲染与跳转逻辑） */
+  const pf = p.platform || 'weibo';
+  const prefix = pf === 'douyin' ? 'dy_' : (pf === 'xhs' ? 'xhs_' : 'wb_');
   return {
-    _uid: 'wb_' + (p.id || p.link || i),
-    platform:'weibo', account:p.account || '侯明昊', tag:p.tag || '本人',
+    _uid: prefix + (p.id || p.link || i),
+    platform:pf, account:p.account || '侯明昊', tag:p.tag || '本人',
     text:p.text || '', time:p.time || 0, link:p.link || '',
     pics:[], imgs:(p.imgs || p.pics || []).slice(0,4),
     video:!!p.video, cover:p.cover || '', vlabel:p.video ? '▶ 视频' : ''
