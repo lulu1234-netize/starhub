@@ -118,17 +118,14 @@ async function pushNew(fresh) {
 }
 
 (async () => {
-  const cookie = getCookie();
-  if (!cookie) {
-    console.log('缺少 Cookie：请先运行 export_cookies.js，或在云端配置 WEIBO_COOKIE 环境变量');
-    process.exit(2);
-  }
+  let cookie = getCookie();
+  if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音/小红书数据');
   /* 读取上一次的数据，用于识别"新帖" */
   let oldIds = new Set();
   try { JSON.parse(fs.readFileSync(OUT_FILE, 'utf8')).posts.forEach(p => oldIds.add(p.id)); } catch (e) {}
   const all = { updatedAt: Date.now(), posts: [] };
   for (const t of TARGETS) {
-    if (!t.uid) continue;
+    if (!t.uid || !cookie) continue;
     try {
       const list = await fetchOne(t, cookie, 1);
       console.log(`[${t.name}] 取到 ${list.length} 条`);
@@ -137,13 +134,29 @@ async function pushNew(fresh) {
       console.log(`[${t.name}] 失败：${e.message}`);
     }
   }
+  /* 合并抖音 / 小红书采集结果（由 collect_headless.js 生成 posts_ext.json）。
+     两个采集器互不依赖：外部平台没跑或失败，微博数据照常写入，不受影响。 */
+  try {
+    const ext = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'posts_ext.json'), 'utf8'));
+    if (ext && ext.posts && ext.posts.length) {
+      const have = new Set(all.posts.map(p => p.id));
+      const add = ext.posts.filter(p => !have.has(p.id));
+      all.posts = all.posts.concat(add);
+      const ago = Math.round((Date.now() - (ext.updatedAt || 0)) / 60000);
+      console.log(`[合并] 抖音/小红书 ${add.length} 条（${ago} 分钟前采集）`);
+    }
+  } catch (e) { /* 外部采集未跑过，忽略 */ }
   const seen = new Set();
   all.posts = all.posts.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
   all.posts.sort((a, b) => b.time - a.time);
-  if (!all.posts.length) { console.log('未取到数据（Cookie 可能过期）'); process.exit(5); }
+  if (!all.posts.length) {
+    console.log('未取到微博数据（Cookie 可能过期），且没有外部平台数据');
+    process.exit(5);
+  }
   fs.mkdirSync(path.dirname(path.resolve(OUT_FILE)), { recursive: true });
   fs.writeFileSync(OUT_FILE, JSON.stringify(all, null, 2), 'utf8');
-  console.log('已写入 ' + OUT_FILE + '，共 ' + all.posts.length + ' 条');
+  const dist = all.posts.reduce((a, p) => { a[p.platform] = (a[p.platform] || 0) + 1; return a; }, {});
+  console.log('已写入 ' + OUT_FILE + '，共 ' + all.posts.length + ' 条  ' + JSON.stringify(dist));
   const fresh = oldIds.size ? all.posts.filter(p => !oldIds.has(p.id)) : [];
   if (fresh.length) console.log('发现新帖 ' + fresh.length + ' 条');
   await pushNew(fresh);
