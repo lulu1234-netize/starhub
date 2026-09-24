@@ -11,7 +11,7 @@
      XHS_USER_ID     小红书 user_id（站内加密串，需登录态获取）
      XHS_COOKIE      小红书网页 Cookie（未登录会被登录墙拦截）
      STARHUB_EXT_OUT 输出文件，默认 data/posts_ext.json
-     STARHUB_MAX_DETAIL 单次最多抓几个详情页补时间，默认 6
+     STARHUB_MAX_DETAIL 单次最多抓几个详情页补时间，默认 10
      STARHUB_EXT_KEEP 每个平台保留的最大条数，默认 40
    输出：data/posts_ext.json（由 collect_http.js 合并进 posts.json）
    ============================================================ */
@@ -20,10 +20,105 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT_FILE = process.env.STARHUB_EXT_OUT || path.join(ROOT, 'data', 'posts_ext.json');
-const MAX_DETAIL = +(process.env.STARHUB_MAX_DETAIL || 6);
+const MAX_DETAIL = +(process.env.STARHUB_MAX_DETAIL || 10);
 const KEEP = +(process.env.STARHUB_EXT_KEEP || 40);
 
 const UA_PC = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+/* ============================================================
+   时间解析：统一到「北京时间 UTC+8」，不依赖运行环境时区
+   ------------------------------------------------------------
+   抖音/小红书给出的发布时间形态很杂：
+     · 秒级时间戳 1704067200      （10 位）
+     · 毫秒级时间戳 1704067200000 （13 位）
+     · 绝对文案 2026-01-11 / 2026-01-11 15:30 / 2026年1月11日 15:30
+     · 相对文案 刚刚 / 12分钟前 / 3小时前 / 昨天 15:30 / 2天前
+   这里全部收敛为毫秒时间戳，并按东八区输出 YYYY-MM-DD HH:mm:ss。
+   注意：全部走 Date.UTC + 固定偏移，不用 new Date(y,m,d)，
+   避免本机(UTC+8)与 GitHub Actions(UTC) 产出不同结果。
+   ============================================================ */
+const TZ_OFF = 8 * 3600e3;                 /* 北京时间 = UTC+8 */
+
+/* 东八区「墙上时间」分量 → 毫秒时间戳 */
+function shParts(y, mo, d, h, mi, s) {
+  return Date.UTC(y, (mo || 1) - 1, d || 1, h || 0, mi || 0, s || 0) - TZ_OFF;
+}
+/* 毫秒时间戳 → 北京时间 YYYY-MM-DD HH:mm:ss */
+function fmtShanghai(ts) {
+  if (!ts) return '';
+  const d = new Date(Number(ts) + TZ_OFF), p = n => String(n).padStart(2, '0');
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) +
+    ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+}
+const pad2 = n => String(n).padStart(2, '0');
+
+/* 任意形态 → 毫秒时间戳；解析不了返回 0（绝不伪造） */
+function toTimestamp(v, baseMs) {
+  if (v === null || v === undefined || v === '') return 0;
+  const base = baseMs || Date.now();
+
+  /* 1) 纯数字：按位数判定秒 / 毫秒 */
+  if (typeof v === 'number' || /^\d{9,14}$/.test(String(v).trim())) {
+    const n = Number(String(v).trim());
+    if (!isFinite(n) || n <= 0) return 0;
+    return String(n).length >= 13 ? n : n * 1000;      /* 10 位=秒，13 位=毫秒 */
+  }
+
+  const s = String(v).trim();
+
+  /* 2) ISO 8601（可带 Z 或 ±hh:mm） */
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?\s*(Z|[+-]\d{2}:?\d{2})?$/i);
+  if (m) {
+    const y = +m[1], mo = +m[2], d = +m[3], h = +m[4], mi = +m[5], sec = +(m[6] || 0);
+    const zone = m[7];
+    if (!zone) return shParts(y, mo, d, h, mi, sec);                        /* 裸串按北京时间 */
+    if (/^z$/i.test(zone)) return shParts(y, mo, d, h, mi, sec) + TZ_OFF;   /* Z 是 UTC，换算成北京 */
+    const mm = zone.match(/([+-])(\d{2}):?(\d{2})/);
+    if (mm) {
+      const off = (mm[1] === '-' ? -1 : 1) * (+mm[2] * 60 + +mm[3]) * 60000;
+      return Date.UTC(y, mo - 1, d, h, mi, sec) - off;
+    }
+  }
+
+  /* 3) 完整年月日（中文或分隔符），后面可能跟 HH:mm[:ss] */
+  m = s.match(/(\d{4})\s*[-年/.]\s*(\d{1,2})\s*[-月/.]\s*(\d{1,2})\s*日?/);
+  if (m) {
+    const rest = s.slice(m.index + m[0].length);
+    const tm = rest.match(/(\d{1,2})\s*[:：时]\s*(\d{1,2})(?:\s*[:：分]\s*(\d{1,2}))?/);
+    return shParts(+m[1], +m[2], +m[3],
+      tm ? +tm[1] : 0, tm ? +tm[2] : 0, tm ? +(tm[3] || 0) : 0);
+  }
+
+  /* 4) 今年内的「M-D」或「M-D HH:mm」 */
+  m = s.match(/^(\d{1,2})\s*[-月/]\s*(\d{1,2})\s*日?(?:\s*(\d{1,2})\s*[:：]\s*(\d{2}))?/);
+  if (m) {
+    const n = new Date(base + TZ_OFF);
+    return shParts(n.getUTCFullYear(), +m[1], +m[2], m[3] ? +m[3] : 0, m[4] ? +m[4] : 0, 0);
+  }
+
+  /* 5) 相对时间文案 */
+  const b = new Date(base + TZ_OFF);                    /* 基准时刻的北京墙上时间 */
+  const bDay = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate()) - TZ_OFF;
+  const bTs = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(),
+    b.getUTCHours(), b.getUTCMinutes(), b.getUTCSeconds()) - TZ_OFF;
+  if (/刚刚|just\s*now/i.test(s)) return bTs;
+  let r = s.match(/(\d+)\s*秒前/); if (r) return bTs - (+r[1]) * 1000;
+  r = s.match(/(\d+)\s*分(?:钟)?前/); if (r) return bTs - (+r[1]) * 60000;
+  r = s.match(/(\d+)\s*小?时前/); if (r) return bTs - (+r[1]) * 3600000;
+  r = s.match(/(\d+)\s*天(?:前)/); if (r) return bTs - (+r[1]) * 86400000;
+  r = s.match(/(\d+)\s*(?:周|星期)前/); if (r) return bTs - (+r[1]) * 604800000;
+  r = s.match(/(\d+)\s*个?月前/); if (r) return bTs - (+r[1]) * 30 * 86400000;
+  r = s.match(/(\d+)\s*年前/); if (r) return bTs - (+r[1]) * 365 * 86400000;
+  const hm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/);
+  const hh = hm ? +hm[1] : 0, mi2 = hm ? +hm[2] : 0;
+  if (/昨天|昨日/.test(s)) return bDay - 86400000 + (hh * 3600e3 + mi2 * 60e3);
+  if (/前天/.test(s)) return bDay - 2 * 86400000 + (hh * 3600e3 + mi2 * 60e3);
+  if (/今天|今日/.test(s)) return bDay + (hh * 3600e3 + mi2 * 60e3);
+
+  /* 6) 最后兜底交给 Date */
+  const t = Date.parse(s);
+  return isFinite(t) ? t : 0;
+}
 
 /* 采集目标：与 index.html 的 ACCOUNTS 保持一致 */
 const TARGETS = [
@@ -61,7 +156,7 @@ async function launch() {
     const exe = candidates.find(p => fs.existsSync(p));
     if (!exe) throw new Error('未找到本机浏览器');
     const b = await puppeteer.launch({
-      executablePath: exe, headless: 'new',
+      executablePath: exe, headless: true,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled', '--lang=zh-CN']
     });
     console.log('  [浏览器] puppeteer-core + ' + exe);
@@ -89,18 +184,66 @@ function parseCount(s) {
   if (m3) return parseInt(s, 10);
   return null;
 }
-function parseDate(s) {
-  if (!s) return 0;
-  let m = String(s).match(/(\d{4})[-年/](\d{1,2})[-月/](\d{1,2})/);
-  if (m) return new Date(+m[1], +m[2] - 1, +m[3]).getTime();
-  m = String(s).match(/^(\d{1,2})-(\d{1,2})$/);
-  if (m) { const n = new Date(); return new Date(n.getFullYear(), +m[1] - 1, +m[2]).getTime(); }
-  return 0;
+
+/* 拦截主页的接口响应：aweme_list[].create_time 是秒级 Unix 时间戳，
+   精确到秒、一次拿全，比逐条打开详情页可靠得多。只取时间，不动其它字段。 */
+function hookDouyinApi(page, sink) {
+  page.on('response', async res => {
+    try {
+      const u = (typeof res.url === 'function' ? res.url() : res.url) || '';
+      if (!/aweme\/v1\/web\/aweme\/(post|detail)|aweme\/post\/|aweme\/v1\/web\/im\/|\/aweme\/v1\/web\/query\/user\/post/.test(u)) return;
+      const st = typeof res.status === 'function' ? res.status() : res.status;
+      if (st && st >= 400) return;
+      const txt = await res.text();
+      if (!txt || txt[0] !== '{') return;
+      const j = JSON.parse(txt);
+      let list = j.aweme_list || (j.data && j.data.aweme_list) || [];
+      if (!list.length && j.aweme_detail) list = [j.aweme_detail];
+      (list || []).forEach(a => {
+        if (!a) return;
+        const id = a.aweme_id || a.awemeId;
+        const ct = (a.create_time != null) ? a.create_time : a.createTime;
+        if (id && ct) sink[String(id)] = Number(ct);
+      });
+    } catch (e) { /* 单个响应解析失败不影响整体 */ }
+  });
+}
+
+/* 页面内嵌 JSON 兜底：从 _ROUTER_DATA / RENDER_DATA / __INIT_PROPS__ 里
+   深挖 aweme_id 与 create_time 的配对 */
+async function scrapeEmbeddedTimes(page) {
+  const fn = () => {
+    const out = {};
+    const visit = (n, depth) => {
+      if (!n || depth > 14) return;
+      if (typeof n === 'string') {
+        if (n.length > 2 && (n[0] === '{' || n[0] === '[')) {
+          try { visit(JSON.parse(n), depth + 1); } catch (e) {}
+        }
+        return;
+      }
+      if (typeof n !== 'object') return;
+      if (Array.isArray(n)) { for (const v of n) visit(v, depth + 1); return; }
+      const id = n.aweme_id || n.awemeId;
+      const ct = (n.create_time != null) ? n.create_time : n.createTime;
+      if (id && ct) out[String(id)] = Number(ct);
+      for (const k in n) visit(n[k], depth + 1);
+    };
+    try {
+      ['_ROUTER_DATA', 'RENDER_DATA', '__INIT_PROPS__', '__NUXT__', '_SSR_DATA'].forEach(k => {
+        const v = window[k];
+        if (v) visit(v, 0);
+      });
+    } catch (e) {}
+    return out;
+  };
+  try { return await page.evaluate(fn); } catch (e) { return {}; }
 }
 
 async function fetchDouyinList(ctx, t) {
   const page = await newPage(ctx);
-  let ok = false;
+  const apiTimes = {};
+  hookDouyinApi(page, apiTimes);
   try {
     await page.goto('https://www.douyin.com/user/' + t.douyinSecUid,
       { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -128,7 +271,11 @@ async function fetchDouyinList(ctx, t) {
       });
       return out;
     });
-    ok = items.length > 0;
+    /* 接口数据优先，内嵌 JSON 兜底 */
+    const embedded = await scrapeEmbeddedTimes(page);
+    const times = Object.assign({}, embedded, apiTimes);
+    console.log('  [抖音] 时间来源：接口 ' + Object.keys(apiTimes).length +
+      ' 条 / 内嵌 ' + Object.keys(embedded).length + ' 条');
     return items.map(it => {
       let like = null, text = '';
       for (const ln of it.lines) {
@@ -139,13 +286,15 @@ async function fetchDouyinList(ctx, t) {
       if (!text) text = it.alt || '';
       /* alt 形如「侯明昊：标题」，去掉作者前缀避免冗余 */
       if (!text && it.alt) text = it.alt.replace(/^[^：:]{2,10}[：:]\s*/, '');
+      const ct = times[it.id];
+      const ts = ct ? toTimestamp(ct) : 0;
       return {
         id: 'dy_' + it.id,
         platform: 'douyin',
         account: t.name, tag: t.tag, kind: t.kind, star: t.star,
         text: (text || '').slice(0, 200),
         title: '',
-        time: 0, timeRaw: '',
+        time: ts, timeRaw: ct ? String(ct) : '',
         link: 'https://www.douyin.com/video/' + it.id,
         pics: [], imgs: it.cover ? [it.cover] : [],
         video: true, cover: it.cover || '',
@@ -160,9 +309,23 @@ async function fetchDouyinList(ctx, t) {
   }
 }
 
-/* 主页列表不含发布时间，需进详情页补；只补缺时间的条目，并限制单次数量 */
-async function enrichDouyinTime(ctx, posts, oldMap) {
-  const need = posts.filter(p => !p.time && !(oldMap[p.id] && oldMap[p.id].time)).slice(0, MAX_DETAIL);
+/* 时间精度分级：只允许"越补越精"，不允许被低精度值覆盖 */
+function timePrecision(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return 0;
+  if (/^\d{9,14}$/.test(s)) return 3;   /* Unix 时间戳，精确到秒 */
+  if (/[:：]/.test(s)) return 2;        /* 带时分 */
+  return 1;                              /* 只有日期 */
+}
+
+/* 主页接口没覆盖到的老作品，进详情页补时间。
+   详情页同样先取内嵌 JSON（精确到秒），再退化到正文文案
+   （绝对日期带 HH:mm，或「3小时前」「昨天 15:30」这类相对文案）。 */
+async function enrichDouyinTime(ctx, posts) {
+  const noTime = posts.filter(p => !p.time);
+  /* 精度不足 2（即缺时分）的，排在无时间条目之后补 */
+  const rough = posts.filter(p => p.time && timePrecision(p.timeRaw) < 2);
+  const need = noTime.concat(rough).slice(0, MAX_DETAIL);
   if (!need.length) return 0;
   let got = 0;
   for (const p of need) {
@@ -170,13 +333,22 @@ async function enrichDouyinTime(ctx, posts, oldMap) {
     try {
       await page.goto(p.link, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await sleep(6000);
-      const info = await page.evaluate(() => {
-        const t = document.body.innerText || '';
-        const d = t.match(/(\d{4})[-年](\d{1,2})[-月](\d{1,2})/);
-        return { raw: d ? d[0] : '' };
-      });
-      const ts = parseDate(info.raw);
-      if (ts) { p.time = ts; p.timeRaw = info.raw; got++; }
+      const ct = Object.values(await scrapeEmbeddedTimes(page))[0];
+      let ts = ct ? toTimestamp(ct) : 0, raw = ct ? String(ct) : '';
+      if (!ts) {
+        const rawText = await page.evaluate(() => {
+          const t = document.body.innerText || '';
+          let m = t.match(/\d{4}\s*[-年/.]\s*\d{1,2}\s*[-月/.]\s*\d{1,2}\s*日?(?:\s*\d{1,2}\s*[:：]\s*\d{2}(?:\s*[:：]\s*\d{2})?)?/);
+          if (m) return m[0];
+          m = t.match(/(?:昨天|前天|今天)?\s*\d{1,2}\s*[:：]\s*\d{2}|刚刚|\d+\s*(?:秒|分钟|小时|天|周|个月)前/);
+          return m ? m[0] : '';
+        });
+        if (rawText) { ts = toTimestamp(rawText); raw = rawText; }
+      }
+      /* 只在新值更精确时才覆盖，避免把精确到秒的接口值换成"只有日期"的文案 */
+      if (ts && timePrecision(raw) > timePrecision(p.timeRaw)) {
+        p.time = ts; p.timeRaw = raw; got++;
+      }
     } catch (e) { /* 单条失败不影响整体 */ }
     await page.close().catch(() => {});
     await sleep(500);
@@ -236,12 +408,16 @@ async function fetchXhs(ctx, t, cookie) {
         if (like === null && /^[\d.]+(万|亿)?$/.test(ln)) { like = parseCount(ln); continue; }
         if (!/^[\d.]+(万|亿)?$/.test(ln) && ln.length > text.length) text = ln;
       }
+      /* 小红书卡片上常见「3小时前」「昨天」「05-21」这类时间文案 */
+      const raw = (it.lines || []).find(l =>
+        /刚刚|\d+\s*(?:秒|分钟|小时|天|周|个月)前|昨天|前天|今天|\d{4}\s*[-年/.]\s*\d{1,2}\s*[-月/.]\s*\d{1,2}|^\d{1,2}\s*[-月/]\s*\d{1,2}\s*日?$/.test(l)
+      ) || '';
       return {
         id: 'xhs_' + it.id,
         platform: 'xhs',
         account: t.name, tag: t.tag, kind: t.kind, star: t.star,
         text: (text || '').slice(0, 200), title: '',
-        time: 0, timeRaw: '',
+        time: toTimestamp(raw), timeRaw: raw,
         link: 'https://www.xiaohongshu.com/explore/' + it.id,
         pics: [], imgs: it.cover ? [it.cover] : [],
         video: /<video|xg-video/i.test(it.html), cover: it.cover || '',
@@ -257,6 +433,10 @@ async function fetchXhs(ctx, t, cookie) {
 }
 
 /* ---------------- 主流程 ---------------- */
+/* 旧版本曾用 now - i*60000 伪造过一批占位时间，它们没有 timeRaw 佐证。
+   判定"可信时间"必须同时有时间戳和来源文案，否则本轮重新采集。 */
+function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
+
 (async () => {
   console.log('===== 星汇 · 抖音/小红书采集 =====');
   /* 读取上一次的结果：用于继承已抓到的发布时间，避免重复进详情页 */
@@ -279,36 +459,48 @@ async function fetchXhs(ctx, t, cookie) {
   try {
     for (const t of TARGETS) {
       const dy = await fetchDouyinList(ctx, t);
-      console.log('  [抖音] 列表 ' + dy.length + ' 条');
-      dy.forEach(p => { const o = timeIdx[p.id]; if (o && o.time) { p.time = o.time; p.timeRaw = o.timeRaw || ''; } });
-      const got = await enrichDouyinTime(ctx, dy, timeIdx);
-      console.log('  [抖音] 补充发布时间 ' + got + ' 条（共需 ' + dy.filter(p => !p.time).length + ' 条待补）');
+      console.log('  [抖音] 列表 ' + dy.length + ' 条，其中 ' +
+        dy.filter(p => p.time).length + ' 条直接拿到精确时间');
+      /* 本轮接口没覆盖到的，继承历史可信时间 */
+      dy.forEach(p => {
+        if (!p.time) {
+          const o = trustedTime(timeIdx[p.id]);
+          if (o) { p.time = o; p.timeRaw = timeIdx[p.id].timeRaw || ''; }
+        }
+      });
+      const got = await enrichDouyinTime(ctx, dy);
+      console.log('  [抖音] 详情页补时间 ' + got + ' 条（仍需补 ' + dy.filter(p => !p.time).length + ' 条）');
       all.push(...dy);
 
       const xhs = await fetchXhs(ctx, t, process.env.XHS_COOKIE || '');
       if (xhs.length) console.log('  [小红书] ' + xhs.length + ' 条');
-      xhs.forEach(p => { const o = timeIdx[p.id]; if (o && o.time) { p.time = o.time; p.timeRaw = o.timeRaw || ''; } });
+      xhs.forEach(p => {
+        if (!p.time) {
+          const o = trustedTime(timeIdx[p.id]);
+          if (o) { p.time = o; p.timeRaw = timeIdx[p.id].timeRaw || ''; }
+        }
+      });
       all.push(...xhs);
     }
   } finally {
     await ctx.b.close().catch(() => {});
   }
 
-  /* 兜底：抓不到时间的条目用采集时间占位，保证能进时间线而不被过滤掉 */
-  const now = Date.now();
-  all.forEach(p => { if (!p.time) { p.time = now - all.indexOf(p) * 60000; p.timeRaw = p.timeRaw || ''; } });
+  /* 不再伪造时间：抓不到就保持 0，排序时落到末尾，下一轮继续尝试补 */
+  all.forEach(p => { p.time = p.time || 0; p.timeStr = fmtShanghai(p.time); });
 
   const seen = new Set();
   const posts = all.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
-  posts.sort((a, b) => b.time - a.time);
+  /* 按发布时间倒序：最新发布的排最前；未知时间(0)沉底 */
+  posts.sort((a, b) => (b.time || 0) - (a.time || 0));
   const cut = {};
   const final = posts.filter(p => { cut[p.platform] = (cut[p.platform] || 0) + 1; return cut[p.platform] <= KEEP; });
 
   fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
-  fs.writeFileSync(OUT_FILE, JSON.stringify({ updatedAt: now, posts: final }, null, 2), 'utf8');
+  fs.writeFileSync(OUT_FILE, JSON.stringify({ updatedAt: Date.now(), posts: final }, null, 2), 'utf8');
   const cnt = final.reduce((a, p) => (a[p.platform] = (a[p.platform] || 0) + 1, a), {});
   console.log('✓ 写入 ' + path.relative(ROOT, OUT_FILE) + '  共 ' + final.length + ' 条  ' + JSON.stringify(cnt));
-  final.slice(0, 5).forEach(p =>
-    console.log('   · [' + p.platform + '] ' + new Date(p.time).toLocaleDateString('zh-CN') + '  ' +
+  final.slice(0, 8).forEach(p =>
+    console.log('   · [' + p.platform + '] ' + (p.timeStr || '时间未知') + '  ' +
       String(p.text).slice(0, 24).replace(/\n/g, ' ')));
 })().catch(e => { console.log('✗ 异常：' + e.message); process.exit(0); });
