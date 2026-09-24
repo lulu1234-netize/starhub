@@ -71,7 +71,8 @@
   .dot-badge{position:absolute;top:12px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--wb)}
 
   /* ---------- bottom nav ---------- */
-  .tabbar{position:sticky;bottom:0;width:100%;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  .tabbar{position:sticky;bottom:0;width:100%;margin-top:auto;/* margin-top:auto：内容不满一屏时也压到视口底部 */
+    background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
     border-top:1px solid var(--line);display:flex;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
   .tabbar .tab{flex:1;text-align:center;padding:9px 0 10px;cursor:pointer;color:var(--ink3);font-size:10.5px;user-select:none}
   .tabbar .tab svg{display:block;margin:0 auto 3px;width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -216,8 +217,9 @@
     transition:all .25s ease;z-index:99;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* 首页：入口卡片靠顶部展示（不垂直居中），内容超过一屏时正常滚动 */
-  #view-home .star-list{flex:0 0 auto;padding-bottom:104px}
+  /* 首页：入口卡片靠顶部展示（不垂直居中），内容超过一屏时正常滚动；
+     Tab 栏由 margin-top:auto 压到视口底部，这里无需再留大内边距 */
+  #view-home .star-list{flex:0 0 auto;padding-bottom:12px}
   /* 我的页：底部 Tab 已改为吸底占位元素，这里只留少量收尾留白（不要加大内边距，否则 Tab 无法贴底） */
   #view-mine{padding-bottom:0}
   #view-star .d-body{padding-bottom:96px}
@@ -305,8 +307,9 @@ const ACCOUNTS = {
                     'sinaweibo://userinfo?uid=1831550987'],
            url:'https://m.weibo.cn/u/1831550987' },
   xhs:   { id:'155624915',  label:'小红书',
-           /* profileId 留空：小红书主页需 user_id（网页端登录后才可见）。
-              拿到后填入下方两处的 ${...} 即可自动升级为「主页直达」 */
+           /* profileId：小红书主页需 user_id（网页端登录后才可见，搜索引擎也查不到）。
+              获取方法：小红书 App 打开侯明昊主页 → 右上角分享 → 复制链接，
+              链接里 /user/profile/xxxxx 那串就是 user_id，填到下面即自动升级为主页直达 */
            profileId:'',
            schemes:['xhsdiscover://search/result?keyword=155624915',
                     'xhsdiscover://home'],
@@ -572,6 +575,19 @@ function webFallback(p){
                     p.platform === 'douyin' ? 'https://www.douyin.com/' : 'https://www.xiaohongshu.com/');
 }
 
+/* 原生桥：星汇 APK 内由 Android 提供 StarHubNative.open(url)，
+   直接经系统 Intent 打开 —— WebView 里 JS 发起的 location 跳转不会经过
+   shouldOverrideUrlLoading 拦截器，必须走这条桥才能真正唤起 App/浏览器；
+   普通浏览器里没有该对象，返回 false 走网页逻辑 */
+function nativeOpen(u){
+  try {
+    if (window.StarHubNative && typeof StarHubNative.open === 'function'){
+      StarHubNative.open(u); return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
 /* 依次尝试多个 Scheme（用 | 分隔传入）；全部没唤起成功才回退网页版。
    判定依据：唤起成功时页面会切到后台（document.hidden = true）。 */
 function openNative(schemeStr, web, e, label){
@@ -589,20 +605,31 @@ function openNative(schemeStr, web, e, label){
       gotoWeb(web); return;
     }
     setTimeout(function(){ attempt(i + 1); }, 1100);
-    try { window.location.href = list[i]; } catch(_) { attempt(i + 1); }
+    try {
+      if (!nativeOpen(list[i])) window.location.href = list[i];
+    } catch(_) { attempt(i + 1); }
   })(0);
   return false;
 }
-/* WebView 未开启多窗口时 window.open 返回 null —— 此时在当前页打开网页版，保证一定跳得出去 */
+/* 网页版回退：App 内经原生桥交给系统浏览器打开（WebView 自带的渲染器
+   加载抖音/小红书网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
 function gotoWeb(web){
+  if (nativeOpen(web)) return;
   const w = window.open(web, '_blank', 'noopener');
   if (!w) window.location.href = web;
 }
-/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台主页网页版 */
+/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台主页网页版。
+   小红书拿到 user_id 后填入 ACCOUNTS.xhs.profileId，即自动升级为「主页直达」 */
 function openHome(key, e){
   const a = ACCOUNTS[key];
   if (!a) return false;
-  return openNative(a.schemes.join('|'), a.url, e, a.label);
+  let schemes = a.schemes.slice(), url = a.url;
+  if (a.profileId && key === 'xhs'){
+    schemes = ['xhsdiscover://user/profile/' + a.profileId,
+               'xiaohongshu://user/profile/' + a.profileId].concat(schemes);
+    url = 'https://www.xiaohongshu.com/user/profile/' + a.profileId;
+  }
+  return openNative(schemes.join('|'), url, e, a.label);
 }
 
 function jumpA(p, label){
