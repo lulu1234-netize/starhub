@@ -459,7 +459,15 @@ const SRC = {
   xhs:{label:'小红书', cls:'src-xhs'},
   douyin:{label:'抖音', cls:'src-dy'}
 };
+/* 完整标准时间 YYYY-MM-DD HH:mm:ss（北京时间），用于长按/详情页查看 */
+function fullTime(t){
+  if (!t) return '时间未知';
+  const d = new Date(Number(t) + 8*3600e3), p = n => String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())} ` +
+         `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+}
 function timeStr(t){
+  if (!t) return '时间未知';
   const d = new Date(t), n = new Date();
   if (isNew(t)){
     const h = d.getHours().toString().padStart(2,'0'), m = d.getMinutes().toString().padStart(2,'0');
@@ -467,7 +475,10 @@ function timeStr(t){
   }
   const diff = Math.floor((n - t)/H);
   if (diff < 24) return `${diff} 小时前`;
-  return `${d.getMonth()+1}月${d.getDate()}日`;
+  /* 跨年份的帖子补上年份，避免「4月30日」看不出是哪一年 */
+  const sameYear = d.getFullYear() === n.getFullYear();
+  return sameYear ? `${d.getMonth()+1}月${d.getDate()}日`
+                  : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
 }
 function toast(msg){
   const el = document.getElementById('toast');
@@ -793,7 +804,7 @@ function postCard(p){
         ${mediaBlock(p)}
         ${statsRow(p)}
         <div class="p-foot">
-          <span>${timeStr(p.time)}</span>
+          <span title="${fullTime(p.time)}">${timeStr(p.time)}</span>
           <button class="read-btn ${read ? 'done' : ''}" onclick="toggleRead('${p._uid}')"
             title="${read ? '点击撤销已读，恢复显示' : '阅读完成后点击，清理此帖（最新帖不受影响）'}">${read ? '已读 ✓' : '标记已读'}</button>
           ${jumpA(p)}
