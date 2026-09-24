@@ -937,22 +937,25 @@ function toLivePost(p, i){
 }
 function reuid(){
   const d = DATA.hmh;
-  d.own.forEach((p,i)=>{ if(!p._uid || p._uid.indexOf('wb_')!==0) p._uid = 'demo_own_' + i; });
-  d.related.forEach((p,i)=>{ if(!p._uid || p._uid.indexOf('wb_')!==0) p._uid = 'demo_rel_' + i; });
+  /* 只给内置示例补编号；真实采集数据保留 wb_/dy_/xhs_ 前缀的真实 _uid */
+  d.own.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_own_' + i; });
+  d.related.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_rel_' + i; });
 }
 function applyLive(posts, updatedAt){
   const d = DATA.hmh;
-  const ownReal  = posts.filter(p => p.kind !== 'related').map(toLivePost);
-  const relReal  = posts.filter(p => p.kind === 'related').map(toLivePost);
-  /* 微博部分用真实数据整体替换；小红书 / 抖音保留（目前为占位示例） */
-  d.own     = ownReal.concat(d.own.filter(p => p.platform !== 'weibo'));
-  d.related = relReal.concat(d.related.filter(p => p.platform !== 'weibo'));
+  const ownReal = posts.filter(p => p.kind !== 'related').map(toLivePost);
+  const relReal = posts.filter(p => p.kind === 'related').map(toLivePost);
+  /* 按平台合并：哪个平台采集到了真实数据，就替换掉该平台的占位示例；
+     尚未接入的平台仍保留示例内容，界面不会出现空页 */
+  const realPlats = new Set(posts.map(p => p.platform || 'weibo'));
+  d.own     = ownReal.concat(d.own.filter(p => !realPlats.has(p.platform)));
+  d.related = relReal.concat(d.related.filter(p => !realPlats.has(p.platform)));
   reuid();
   LIVE.ok = true; LIVE.updatedAt = updatedAt || Date.now(); LIVE.count = ownReal.length + relReal.length;
   LIVE.ids = new Set(posts.map(p => p.id));
-  /* 首页预览优先取真实采集到的微博最新一条 */
-  const newest = d.own.filter(p=>p.platform==='weibo').sort((a,b)=>b.time-a.time)[0]
-              || d.own.slice().sort((a,b)=>b.time-a.time)[0];
+  /* 首页预览取全部平台里最新的一条（不再固定为微博） */
+  const newest = d.own.slice().sort((a,b)=>b.time-a.time)[0]
+              || d.related.slice().sort((a,b)=>b.time-a.time)[0];
   if (newest){
     const s = DATA.stars.find(x => x.id === 'hmh');
     s.latest = newest.text.replace(/\s+/g,' ').slice(0, 34);
