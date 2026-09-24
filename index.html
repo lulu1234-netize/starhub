@@ -16,12 +16,12 @@
     --radius:18px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
+  html,body{height:100%;width:100%;max-width:100vw;overflow-x:hidden}
   body{
     font-family:-apple-system,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
     background:var(--bg); color:var(--ink); display:flex; justify-content:center;
   }
-  .phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;display:flex;flex-direction:column}
+  .phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
 
   /* ---------- views ---------- */
   .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
@@ -79,7 +79,7 @@
   .back svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .d-title{font-size:17px;font-weight:700}
   .d-sub{font-size:11px;color:var(--ink2);margin-top:1px}
-  .d-body{padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+  .d-body{padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px;min-width:0;max-width:100%}
 
   /* 实时数据状态条 */
   .live-bar{display:flex;align-items:center;gap:7px;padding:9px 12px;margin-bottom:10px;
@@ -92,7 +92,7 @@
     border-radius:14px;cursor:pointer;font-family:inherit;flex-shrink:0}
   .live-btn:active{transform:scale(.94)}
   .acct-strip{display:flex;gap:8px;margin:0 16px 2px}
-  .acct-item{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:8px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
   .acct-item:active{transform:scale(.95)}
   .acct-item:hover{box-shadow:0 4px 12px rgba(30,35,60,.08)}
@@ -128,7 +128,7 @@
   .sec-label span{font-size:11.5px;color:var(--ink3)}
 
   .own-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    box-shadow:0 1px 2px rgba(30,35,60,.04);overflow:hidden}
+    box-shadow:0 1px 2px rgba(30,35,60,.04);overflow:hidden;min-width:0;max-width:100%}
   .post{padding:14px 14px 12px;position:relative;cursor:pointer;transition:background .15s}
   .post:hover{background:#fafafa}
   .post:active{background:#f4f4f6}
@@ -142,7 +142,7 @@
   .p-src{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px;color:#fff}
   .src-weibo{background:var(--wb)} .src-xhs{background:var(--xhs)} .src-dy{background:var(--dy)}
   .p-src svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .p-text{font-size:14px;line-height:1.62;color:#333338;white-space:pre-line}
+  .p-text{font-size:14px;line-height:1.62;color:#333338;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word}
   .p-pics{display:flex;gap:6px;margin-top:9px}
   .ph{flex:1;aspect-ratio:4/3;border-radius:10px;position:relative;overflow:hidden}
   .ph svg{position:absolute;right:7px;bottom:6px;width:15px;height:15px;stroke:rgba(255,255,255,.85);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -153,6 +153,7 @@
   .ph-2{background:linear-gradient(135deg,#f2d4c7,#dda08f)}
   .ph-3{background:linear-gradient(135deg,#d4f2cf,#93c98c)}
   .ph-4{background:linear-gradient(135deg,#e8d1f0,#b78ac9)}
+  .ph-real{background:linear-gradient(135deg,#eef0f5,#dfe3ec)}
   .p-foot{display:flex;align-items:center;margin-top:9px;font-size:11.5px;color:var(--ink3)}
   .p-foot .open{margin-left:auto;display:flex;align-items:center;gap:3px;color:var(--accent);font-weight:500}
   .p-foot .open svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -555,7 +556,7 @@ function postCard(p){
     </div>
     <div class="p-main">
       <div class="p-body">
-        <div class="p-text">${p.text}</div>
+        ${(p.text && String(p.text).trim()) ? `<div class="p-text">${p.text}</div>` : (mediaBlock(p) ? '' : '<div class="p-text" style="color:var(--ink3)">（正文加载中…）</div>')}
         ${mediaBlock(p)}
         <div class="p-foot">
           <span>${timeStr(p.time)}</span>
@@ -754,6 +755,24 @@ renderMineImg();
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
+
+/* ================= 禁止整页横向拖拽（WebView 手势兜底，页面内无横向滚动需求） ================= */
+(function(){
+  let sx = 0, sy = 0, tracking = false;
+  document.addEventListener('touchstart', function(e){
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; tracking = true;
+  }, {passive:true});
+  document.addEventListener('touchmove', function(e){
+    if (!tracking) return;
+    const t = e.touches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.6){
+      e.preventDefault();           /* 横向意图明显：拦截，杜绝整页被拖走 */
+      tracking = false;
+    }
+  }, {passive:false});
+  document.addEventListener('touchend', function(){ tracking = false; });
+})();
 </script>
 </body>
 </html>
