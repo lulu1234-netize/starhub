@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#f6f5f2">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="img/icon-192.png">
@@ -16,20 +16,25 @@
     --radius:18px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;width:100%;max-width:100vw;overflow-x:hidden}
+  /* 移动端布局基准：以手机屏幕宽度为基准，禁止横滚与页面缩放，滚动完全交给内部 .view */
+  html,body{height:100%;width:100%;max-width:100vw;overflow:hidden;
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior:none}
   body{
     font-family:-apple-system,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
     background:var(--bg); color:var(--ink); display:flex; justify-content:center;
   }
-  .phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .phone{width:100%;max-width:430px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);
+    position:relative;display:flex;flex-direction:column;overflow:hidden}
 
   /* ---------- views ---------- */
   .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
     transform:translateX(100%);transition:transform .32s cubic-bezier(.3,.8,.3,1);opacity:0;pointer-events:none;
-    display:flex;flex-direction:column}
+    display:flex;flex-direction:column;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
+    padding-bottom:env(safe-area-inset-bottom)}
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
-  .view-root{transform:translateX(0);opacity:1;pointer-events:auto;overflow:hidden}
+  .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
@@ -209,10 +214,11 @@
     transition:all .25s ease;z-index:99;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* 首页：固定一屏，禁止垂直滚动，内容垂直居中完整展示 */
-  #view-home .star-list{flex:1 1 auto;overflow:hidden;justify-content:center;padding-bottom:84px}
-  /* 我的页：底部 Tab 让位，避免末行被遮挡 */
-  #view-mine{padding-bottom:80px}
+  /* 首页：入口卡片靠顶部展示（不垂直居中），内容超过一屏时正常滚动 */
+  #view-home .star-list{flex:0 0 auto;padding-bottom:104px}
+  /* 我的页 / 详情页：底部 Tab 让位，避免末行被遮挡 */
+  #view-mine{padding-bottom:96px}
+  #view-star .d-body{padding-bottom:96px}
 </style>
 </head>
 <body>
@@ -291,7 +297,7 @@
 /* ================= 官方账号配置（核对后统一引用，须在数据层之前声明） ================= */
 const ACCOUNTS = {
   weibo: { id:'1831550987', label:'微博',
-           scheme:'sinaweibo://userinfo?uid=1831550987',
+           scheme:'sinaweibo://cardlist?containerid=1005051831550987',
            url:'https://weibo.com/u/1831550987' },
   xhs:   { id:'155624915',  label:'小红书',
            scheme:'xhsdiscover://search/result?keyword=155624915',
@@ -514,33 +520,63 @@ function mediaBlock(p){
   }).join('')}</div>`;
 }
 
-/* 跳转：优先用 URL Scheme 唤起对应原生 App（微博/抖音/小红书）；
-   若 App 未安装（或桌面端浏览器无法识别 Scheme），1.8s 后自动回退到网页版 */
-function deepLink(p){
-  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
-  if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
-  if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
-  return 'xhsdiscover://search/result?keyword=' + q;
+/* 从原帖链接解析该条内容在对应平台的资源 ID（用于直达 App 内的「这一条」） */
+function postId(p){
+  const l = p.link || '';
+  let m;
+  m = l.match(/weibo\.com\/\d+\/([A-Za-z0-9]+)/);                       if (m) return m[1];
+  m = l.match(/m\.weibo\.cn\/(?:detail|status)\/([A-Za-z0-9]+)/);       if (m) return m[1];
+  m = l.match(/douyin\.com\/(?:video|note|slides)\/([0-9]+)/);          if (m) return m[1];
+  m = l.match(/xiaohongshu\.com\/(?:explore|discovery\/item)\/([A-Za-z0-9]+)/); if (m) return m[1];
+  m = l.match(/xhslink\.com\/[A-Za-z0-9]+\/([A-Za-z0-9]+)/);           if (m) return m[1];
+  return '';
 }
+
+/* 直达该条帖子的原生 App Scheme；拿不到帖子 ID 时退化为按内容搜索 */
+function deepLink(p){
+  const id = postId(p);
+  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
+  if (p.platform === 'weibo')  return id ? 'sinaweibo://detail?mblogid=' + id : 'sinaweibo://search?q=' + q;
+  if (p.platform === 'douyin') return id ? 'snssdk1128://aweme/detail/' + id : 'snssdk1128://search?keyword=' + q;
+  return id ? 'xhsdiscover://item/' + id : 'xhsdiscover://search/result?keyword=' + q;
+}
+
+/* 回退用的手机网页版地址（比 PC 网页更适合手机；装了 App 时同样会唤起） */
+function webFallback(p){
+  const id = postId(p);
+  if (p.platform === 'weibo' && id) return 'https://m.weibo.cn/detail/' + id;
+  if (p.platform === 'douyin' && id) return 'https://www.douyin.com/video/' + id;
+  if (p.platform === 'xhs' && id)    return 'https://www.xiaohongshu.com/explore/' + id;
+  return p.link || (p.platform === 'weibo' ? 'https://m.weibo.cn/' :
+                    p.platform === 'douyin' ? 'https://www.douyin.com/' : 'https://www.xiaohongshu.com/');
+}
+
+/* 用 Scheme 唤起原生 App；1.5s 内没唤起成功（未安装/无法识别）则回退网页版 */
 function openNative(scheme, web, e){
   if (e && e.preventDefault) e.preventDefault();
   let done = false;
   const timer = setTimeout(function(){
-    if (!document.hidden){ cleanup(); window.open(web, '_blank', 'noopener'); }
-  }, 1800);
+    if (!document.hidden){ cleanup(); gotoWeb(web); }
+  }, 1500);
   function cleanup(){
     if (done) return; done = true;
     document.removeEventListener('visibilitychange', onVis); clearTimeout(timer);
   }
   function onVis(){ if (document.hidden) cleanup(); }
   document.addEventListener('visibilitychange', onVis);
-  try { window.location.href = scheme; } catch(_) {}
+  try { window.location.href = scheme; } catch(_) { cleanup(); gotoWeb(web); }
   return false;
 }
+/* WebView 未开启多窗口时 window.open 返回 null —— 此时在当前页打开网页版，保证一定跳得出去 */
+function gotoWeb(web){
+  const w = window.open(web, '_blank', 'noopener');
+  if (!w) window.location.href = web;
+}
+
 function jumpA(p, label){
-  const scheme = deepLink(p), web = p.link || scheme;
+  const scheme = deepLink(p), web = webFallback(p);
   return `<a class="jump" href="${web}" onclick="return openNative('${scheme}','${web}',event)"
-    title="点击唤起${SRC[p.platform].label}App，未安装则打开网页版">${label || '前往原平台查看'} ${EXT}</a>`;
+    title="点击唤起${SRC[p.platform].label}App 打开本条内容，未安装则打开网页版">${label || '前往原平台查看'} ${EXT}</a>`;
 }
 
 /* 统一动态卡片：内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
