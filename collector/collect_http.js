@@ -26,24 +26,51 @@ const TARGETS = JSON.parse(process.env.STARHUB_TARGETS || JSON.stringify([
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
+/* 微博时间同样按「北京时间」显式解析，不依赖运行环境 TZ。
+   否则 GitHub Actions(UTC) 会把 +0800 的时间整体偏移 8 小时。 */
+const TZ_OFF = 8 * 3600e3;
+const shParts = (y, mo, d, h, mi, s) => Date.UTC(y, mo - 1, d, h, mi, s) - TZ_OFF;
+function fmtShanghai(ts) {
+  if (!ts) return '';
+  const d = new Date(Number(ts) + TZ_OFF), p = n => String(n).padStart(2, '0');
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) +
+    ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+}
 function parseTime(raw) {
   if (!raw) return 0;
+  const raw0 = String(raw).trim();
   const MON = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-  let m = String(raw).match(/^[A-Za-z]{3} ([A-Za-z]{3}) (\d{2}) (\d{2}):(\d{2}):(\d{2}) \+0800 (\d{4})$/);
-  if (m) return new Date(+m[6], MON[m[1]], +m[2], +m[3], +m[4], +m[5]).getTime();
-  m = String(raw).match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
-  const now = new Date();
-  m = String(raw).match(/^(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
-  if (m) return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
-  m = String(raw).match(/(今天|昨天)\s*(\d{2}):(\d{2})/);
+
+  /* 微博标准格式 Thu Sep 24 13:58:51 +0800 2026 —— 按串里自带的时区偏移换算成 UTC */
+  let m = raw0.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{2}):(\d{2}):(\d{2})\s+([+-])(\d{2})(\d{2})\s+(\d{4})$/);
   if (m) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[2], +m[3]);
-    if (m[1] === '昨天') d.setDate(d.getDate() - 1);
-    return d.getTime();
+    /* m: 1=月 2=日 3=时 4=分 5=秒 6=± 7=偏移时 8=偏移分 9=年 */
+    const sign = m[6] === '-' ? -1 : 1;
+    return Date.UTC(+m[9], MON[m[1]], +m[2],
+      +m[3] - sign * (+m[7]), +m[4] - sign * (+m[8]), +m[5]);
   }
-  m = String(raw).match(/(\d+)\s*(分钟|小时|天)前/);
-  if (m) return now.getTime() - (+m[1]) * (m[2] === '分钟' ? 6e4 : m[2] === '小时' ? 36e5 : 864e5);
+  /* 同上但没有时区后缀，按北京时间处理 */
+  m = raw0.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d{4})$/);
+  if (m) return shParts(+m[6], MON[m[1]] + 1, +m[2], +m[3], +m[4], +m[5]);
+
+  m = raw0.match(/(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m) return shParts(+m[1], +m[2], +m[3], +m[4], +m[5], +(m[6] || 0));
+
+  const nb = new Date(Date.now() + TZ_OFF);          /* 当前时刻的北京墙上时间 */
+  const nowTs = Date.UTC(nb.getUTCFullYear(), nb.getUTCMonth(), nb.getUTCDate(),
+    nb.getUTCHours(), nb.getUTCMinutes(), nb.getUTCSeconds()) - TZ_OFF;
+  const dayTs = Date.UTC(nb.getUTCFullYear(), nb.getUTCMonth(), nb.getUTCDate()) - TZ_OFF;
+
+  m = raw0.match(/^(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m) return shParts(nb.getUTCFullYear(), +m[1], +m[2], +m[3], +m[4], +(m[5] || 0));
+  m = raw0.match(/(今天|昨天|前天)\s*(\d{1,2}):(\d{2})/);
+  if (m) {
+    const back = m[1] === '昨天' ? 1 : m[1] === '前天' ? 2 : 0;
+    return dayTs - back * 864e5 + (+m[2]) * 3600e3 + (+m[3]) * 60e3;
+  }
+  m = raw0.match(/(\d+)\s*(分钟|小时|天)前/);
+  if (m) return nowTs - (+m[1]) * (m[2] === '分钟' ? 6e4 : m[2] === '小时' ? 36e5 : 864e5);
+  if (/刚刚/.test(raw0)) return nowTs;
   return 0;
 }
 function strip(html) {
@@ -149,6 +176,8 @@ async function pushNew(fresh) {
   const seen = new Set();
   all.posts = all.posts.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
   all.posts.sort((a, b) => b.time - a.time);
+  /* 统一补上标准日期时间串 YYYY-MM-DD HH:mm:ss（北京时间） */
+  all.posts.forEach(p => { p.timeStr = fmtShanghai(p.time); });
   if (!all.posts.length) {
     console.log('未取到微博数据（Cookie 可能过期），且没有外部平台数据');
     process.exit(5);
