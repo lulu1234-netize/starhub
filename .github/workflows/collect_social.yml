@@ -17,6 +17,10 @@ jobs:
     concurrency:
       group: starhub-data-write
       cancel-in-progress: false
+    env:
+      # 采集器内部已按 UTC+8 显式换算，这里再显式声明一次，
+      # 保证提交信息与任何 Date 相关逻辑都落在北京时间
+      TZ: Asia/Shanghai
     steps:
       - name: 拉取仓库
         uses: actions/checkout@v4
@@ -47,7 +51,7 @@ jobs:
           # 小红书两项为可选：不配置就跳过小红书，不影响抖音采集
           XHS_USER_ID: ${{ secrets.XHS_USER_ID }}
           XHS_COOKIE: ${{ secrets.XHS_COOKIE }}
-          STARHUB_MAX_DETAIL: '8'
+          STARHUB_MAX_DETAIL: '10'
         run: node collector/collect_headless.js
 
       - name: 合并全部平台数据
