@@ -135,10 +135,13 @@ async function launch() {
   /* 1) playwright（云端 GitHub Actions 用它，自带 chromium） */
   try {
     const { chromium } = require('playwright');
-    const b = await chromium.launch({
+    const opt = {
       headless: true,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled', '--lang=zh-CN']
-    });
+    };
+    /* 本机调试可指定浏览器（PLAYWRIGHT_EXECUTABLE_PATH），云端用 Playwright 自带的 chromium */
+    if (process.env.PLAYWRIGHT_EXECUTABLE_PATH) opt.executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+    const b = await chromium.launch(opt);
     return { kind: 'playwright', b };
   } catch (e) { /* 未安装，继续尝试下一种 */ }
 
