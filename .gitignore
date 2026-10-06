@@ -5,8 +5,13 @@ data/raw_last.json
 *cookie*.txt
 
 # 本机浏览器登录态（体积大且含隐私）
-browser-profile/
-collector/browser-profile/
+# 用通配符覆盖带后缀的备份目录 browser-profile-bak-<时间戳>，否则 git add -A 会误提交
+browser-profile*/
+collector/browser-profile*/
+
+# 本机探测/调试产物
+data/_probe*.json
+data/_test.json
 
 # 日志与缓存
 *.log
