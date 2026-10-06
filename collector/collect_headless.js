@@ -340,6 +340,39 @@ async function scrapeEmbeddedTimes(page) {
   try { return await page.evaluate(fn); } catch (e) { return {}; }
 }
 
+/* 深度探测：判断抖音是「识别无头环境」还是「要求登录态」。
+   分别打开主页与单个视频页，对比是谁被挡住：
+   主页挂而视频页正常 → 多半要登录 Cookie；两个都挂 → 无头指纹被识别。 */
+async function cloudProbe(ctx, t, videoId) {
+  const page = await newPage(ctx);
+  const errs = [];
+  page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 110)); });
+  page.on('pageerror', e => errs.push('PAGEERROR ' + String(e.message).slice(0, 110)));
+  const dump = async (label, url, waitMs) => {
+    try { await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+    catch (e) { console.log('  [探' + label + '] goto 失败：' + e.message.slice(0, 70)); }
+    await sleep(waitMs);
+    const s = await page.evaluate(() => ({
+      url: location.href.slice(0, 110), title: document.title,
+      postLi: document.querySelectorAll('[data-e2e="user-post-list"] li').length,
+      videoLinks: document.querySelectorAll('a[href*="/video/"]').length,
+      hasListBox: !!document.querySelector('#slidelist, [data-e2e="user-post-list"]'),
+      loginWall: /登录|后立即查看|请先登录/.test(document.body ? document.body.innerText : ''),
+      keys: (document.cookie || '').split(';').map(x => x.trim().split('=')[0]).filter(Boolean).slice(0, 10).join(','),
+      text: (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').slice(0, 320)
+    })).catch(e => ({ err: e.message.slice(0, 70) }));
+    if (s.err) { console.log('  [探' + label + '] 读取失败：' + s.err); return; }
+    console.log('  [探' + label + '] url=' + s.url);
+    console.log('  [探' + label + '] title=' + s.title + ' | 作品li=' + s.postLi + ' | 视频链接=' + s.videoLinks + ' | 列表容器=' + s.hasListBox + ' | 登录墙=' + s.loginWall);
+    console.log('  [探' + label + '] cookies=' + (s.keys || '(无)'));
+    console.log('  [探' + label + '] 正文=' + s.text);
+  };
+  await dump('主页', 'https://www.douyin.com/user/' + t.douyinSecUid, 15000);
+  if (videoId) await dump('视频页', 'https://www.douyin.com/video/' + videoId, 12000);
+  console.log('  [探] 控制台错误 ' + errs.length + ' 条：' + (errs.slice(0, 4).join(' || ') || '无'));
+  await page.close().catch(() => {});
+}
+
 async function fetchDouyinList(ctx, t) {
   const page = await newPage(ctx);
   const apiTimes = {};
@@ -598,6 +631,14 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
     ctx.ua = await detectUA(ctx);   /* 必须在 newPage 之前算好，保证 UA 与浏览器版本一致 */
   }
   catch (e) { console.log('✗ ' + e.message); process.exit(0); }   /* 无浏览器不算失败，不阻塞微博采集 */
+
+  /* 诊断模式：先做一轮深度探测，再走正常采集 */
+  if (process.env.STH_DIAG) {
+    const anyId = Object.keys(timeIdx).map(k => (k.match(/(\d{15,})/) || [])[1]).filter(Boolean)[0]
+      || '7682769398155979889';
+    try { await cloudProbe(ctx, TARGETS[0], anyId); }
+    catch (e) { console.log('  [探] 异常：' + e.message.slice(0, 110)); }
+  }
 
   const all = [];
   try {
