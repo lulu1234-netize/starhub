@@ -174,18 +174,36 @@ const TARGETS = [
 
 /* ---------------- 浏览器适配层 ---------------- */
 async function launch() {
-  /* 1) playwright（云端 GitHub Actions 用它，自带 chromium） */
+  /* 1) playwright：优先用系统安装的正式版 Chrome（channel: 'chrome'）。
+     理由：Playwright 自带的 chromium 是精简版，指纹与真实 Chrome 有差异；
+     GitHub 的 ubuntu runner 预装了 google-chrome-stable，可直接用，无需额外下载。 */
   try {
     const { chromium } = require('playwright');
     const opt = {
       headless: true,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled', '--lang=zh-CN']
     };
-    /* 本机调试可指定浏览器（PLAYWRIGHT_EXECUTABLE_PATH），云端用 Playwright 自带的 chromium */
+    /* 本机调试可指定浏览器（PLAYWRIGHT_EXECUTABLE_PATH） */
     if (process.env.PLAYWRIGHT_EXECUTABLE_PATH) opt.executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+    else opt.channel = process.env.STH_BROWSER_CHANNEL || 'chrome';
     const b = await chromium.launch(opt);
+    console.log('  [浏览器] playwright / ' + (opt.executablePath || ('channel=' + opt.channel)));
     return { kind: 'playwright', b };
-  } catch (e) { /* 未安装，继续尝试下一种 */ }
+  } catch (e) {
+    /* 正式版 Chrome 不可用（本机没装、或 playwright 版本不认这个 channel），
+       退回到 Playwright 自带的 chromium */
+    try {
+      const { chromium } = require('playwright');
+      const opt = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled', '--lang=zh-CN']
+      };
+      if (process.env.PLAYWRIGHT_EXECUTABLE_PATH) opt.executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+      const b = await chromium.launch(opt);
+      console.log('  [浏览器] playwright / 自带 chromium（正式版 Chrome 不可用：' + e.message.slice(0, 60) + '）');
+      return { kind: 'playwright', b };
+    } catch (e2) { /* 继续尝试下一种 */ }
+  }
 
   /* 2) puppeteer-core + 本机浏览器（本地调试用，浏览器路径可 CHROME_PATH 指定） */
   try {
@@ -346,8 +364,13 @@ async function scrapeEmbeddedTimes(page) {
 async function cloudProbe(ctx, t, videoId) {
   const page = await newPage(ctx);
   const errs = [];
+  const failed = [];
+  const bad = [];
+  let okCount = 0;
   page.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 110)); });
   page.on('pageerror', e => errs.push('PAGEERROR ' + String(e.message).slice(0, 110)));
+  page.on('requestfailed', r => failed.push(r.url().slice(0, 90) + ' :: ' + String(r.failure() && r.failure().errorText).slice(0, 40)));
+  page.on('response', r => { if (r.status() >= 400) bad.push(r.status() + ' ' + r.url().slice(0, 90)); else okCount++; });
   const dump = async (label, url, waitMs) => {
     try { await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
     catch (e) { console.log('  [探' + label + '] goto 失败：' + e.message.slice(0, 70)); }
@@ -369,7 +392,11 @@ async function cloudProbe(ctx, t, videoId) {
   };
   await dump('主页', 'https://www.douyin.com/user/' + t.douyinSecUid, 15000);
   if (videoId) await dump('视频页', 'https://www.douyin.com/video/' + videoId, 12000);
-  console.log('  [探] 控制台错误 ' + errs.length + ' 条：' + (errs.slice(0, 4).join(' || ') || '无'));
+  const net = '  [探] 请求成功 ' + okCount + ' 条 / 失败 ' + failed.length + ' 条 / 非2xx ' + bad.length + ' 条';
+  console.log(net);
+  if (failed.length) failed.slice(0, 6).forEach(x => console.log('  [探] FAILED ' + x));
+  if (bad.length) bad.slice(0, 6).forEach(x => console.log('  [探] BAD ' + x));
+  console.log('  [探] JS 错误 ' + errs.length + ' 条：' + (errs.slice(0, 4).join(' || ') || '无'));
   await page.close().catch(() => {});
 }
 
