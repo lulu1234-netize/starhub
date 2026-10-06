@@ -246,6 +246,47 @@ function parseCount(s) {
 
 /* 拦截主页的接口响应：aweme_list[].create_time 是秒级 Unix 时间戳，
    精确到秒、一次拿全，比逐条打开详情页可靠得多。只取时间，不动其它字段。 */
+/* 诊断专用：记录抖音相关接口的原始状态码与响应体开头。
+   只在列表抓空时才打印，正常运行时不占日志。 */
+function hookDouyinDiag(page, diag) {
+  page.on('response', async res => {
+    try {
+      const u = (typeof res.url === 'function' ? res.url() : res.url) || '';
+      if (!/aweme|passport|captcha|verify/i.test(u)) return;
+      const st = typeof res.status === 'function' ? res.status() : res.status;
+      let head = '';
+      try { head = String(await res.text()).slice(0, 260); } catch (e) { head = '(响应体读取失败)'; }
+      diag.push({ url: u.slice(0, 120), st: st, head: head.replace(/\s+/g, ' ') });
+    } catch (e) { /* 忽略 */ }
+  });
+}
+
+/* 裸 HTTP 探测：不开浏览器，直接请求抖音首页。
+   用来判断是「网络/IP 层被挡」还是「浏览器渲染层被挡」。 */
+function httpProbe() {
+  const https = require('https');
+  return new Promise(resolve => {
+    const req = https.request({
+      host: 'www.douyin.com', path: '/', method: 'GET', timeout: 20000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept-Language': 'zh-CN,zh;q=0.9'
+      }
+    }, r => {
+      let body = '';
+      r.on('data', c => { if (body.length < 4000) body += c.toString('utf8'); });
+      r.on('end', () => resolve({
+        status: r.statusCode,
+        head: body.slice(0, 240).replace(/\s+/g, ' '),
+        hasRegion: /地区|该地区|无法.*(观看|访问)|not available/i.test(body)
+      }));
+    });
+    req.on('error', e => resolve({ status: 'ERR', head: e.message, hasRegion: false }));
+    req.on('timeout', () => { req.destroy(); resolve({ status: 'TIMEOUT', head: '', hasRegion: false }); });
+    req.end();
+  });
+}
+
 function hookDouyinApi(page, sink) {
   page.on('response', async res => {
     try {
@@ -303,6 +344,13 @@ async function fetchDouyinList(ctx, t) {
   const page = await newPage(ctx);
   const apiTimes = {};
   hookDouyinApi(page, apiTimes);
+  const diag = [];
+  if (process.env.STH_DIAG) {
+    hookDouyinDiag(page, diag);
+    const hp = await httpProbe();
+    console.log('  [抖音] 裸HTTP探测 status=' + hp.status + ' 含地区限制字样=' + hp.hasRegion);
+    console.log('  [抖音] 裸HTTP正文: ' + hp.head.slice(0, 180));
+  }
   try {
     await page.goto('https://www.douyin.com/user/' + t.douyinSecUid,
       { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -335,6 +383,13 @@ async function fetchDouyinList(ctx, t) {
     if (!probe.liCount) {
       console.log('  [抖音] ⚠ 列表为空 —— title=' + probe.title +
         ' 疑似验证页=' + probe.verify + ' 正文开头=' + probe.bodyHead.replace(/\n/g, ' '));
+    }
+    if (diag.length) {
+      console.log('  [抖音] 网络层诊断（最近 ' + Math.min(diag.length, 8) + ' 条抖音相关请求）：');
+      diag.slice(-8).forEach(d => {
+        console.log('    HTTP ' + d.st + '  ' + d.url);
+        console.log('      body: ' + d.head.slice(0, 200));
+      });
     }
     const items = await page.evaluate(() => {
       const out = [];
