@@ -54,6 +54,8 @@ jobs:
           XHS_USER_ID: ${{ secrets.XHS_USER_ID }}
           XHS_COOKIE: ${{ secrets.XHS_COOKIE }}
           STARHUB_MAX_DETAIL: '10'
+          # 输出网络层诊断（接口原始状态码与响应体），用于定位云端抓空的原因
+          STH_DIAG: '1'
         run: node collector/collect_headless.js
 
       - name: 合并全部平台数据
