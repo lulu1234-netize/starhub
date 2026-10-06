@@ -25,6 +25,48 @@ const KEEP = +(process.env.STARHUB_EXT_KEEP || 40);
 
 const UA_PC = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
+/* 探测浏览器自身的 UA，并把 Headless 痕迹抹掉。
+   为什么必须这样做：Playwright/Puppeteer 自带的 Chromium 版本一直在变，
+   若写死 UA_PC（Chrome/131）而实际版本是 14x，UA 与浏览器指纹不一致，
+   抖音会据此判定为自动化工具并返回空列表 —— 本机抓得到、云端抓不到的典型原因。 */
+async function detectUA(ctx) {
+  try {
+    let page;
+    if (ctx.kind === 'playwright') {
+      const c = await ctx.b.newContext();
+      page = await c.newPage();
+    } else {
+      page = await ctx.b.newPage();
+    }
+    const ua = await page.evaluate(() => navigator.userAgent);
+    await (page.context ? page.context().close() : page.close()).catch(() => {});
+    const fixed = String(ua || '')
+      .replace('HeadlessChrome/', 'Chrome/')
+      .replace('Headless', '');
+    if (fixed && /Chrome\/\d+/.test(fixed)) {
+      console.log('  [浏览器] 采用匹配 UA: ' + fixed.slice(0, 78));
+      return fixed;
+    }
+  } catch (e) { /* 探测失败就用兜底 UA */ }
+  return UA_PC;
+}
+
+/* 隐藏常见的自动化标记（Playwright/Puppeteer 的 API 名不同，需分支） */
+async function applyStealth(page, kind) {
+  const fn = () => {
+    try {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+      if (!window.navigator.chrome) window.navigator.chrome = { runtime: {} };
+      Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN', 'zh'] });
+      Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    } catch (e) { }
+  };
+  try {
+    if (kind === 'playwright') await page.addInitScript(fn);
+    else await page.evaluateOnNewDocument(fn);
+  } catch (e) { /* 不支持时忽略，不致命 */ }
+}
+
 /* ============================================================
    时间解析：统一到「北京时间 UTC+8」，不依赖运行环境时区
    ------------------------------------------------------------
@@ -172,16 +214,19 @@ async function launch() {
 async function newPage(ctx) {
   if (ctx.kind === 'playwright') {
     const context = await ctx.b.newContext({
-      userAgent: UA_PC,
+      userAgent: ctx.ua,
       viewport: { width: 1440, height: 900 },
       locale: 'zh-CN'
     });
-    return await context.newPage();
+    const p = await context.newPage();
+    await applyStealth(p, 'playwright');
+    return p;
   }
   const p = await ctx.b.newPage();
-  await p.setUserAgent(UA_PC);
+  await p.setUserAgent(ctx.ua);
   if (p.setViewportSize) await p.setViewportSize({ width: 1440, height: 900 });
   else if (p.setViewport) await p.setViewport({ width: 1440, height: 900 });
+  await applyStealth(p, 'puppeteer');
   return p;
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -477,7 +522,11 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
   const timeIdx = Object.assign({}, cur, oldMap);
 
   let ctx = null;
-  try { ctx = await launch(); console.log('  [浏览器] ' + ctx.kind + ' 已启动'); }
+  try {
+    ctx = await launch();
+    console.log('  [浏览器] ' + ctx.kind + ' 已启动');
+    ctx.ua = await detectUA(ctx);   /* 必须在 newPage 之前算好，保证 UA 与浏览器版本一致 */
+  }
   catch (e) { console.log('✗ ' + e.message); process.exit(0); }   /* 无浏览器不算失败，不阻塞微博采集 */
 
   const all = [];
