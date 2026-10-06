@@ -2,14 +2,23 @@ name: 抖音采集（腾讯云函数）
 
 on:
   schedule:
-    # UTC 时间每 6 小时 :30 分触发；对应北京时间 08:30 / 14:30 / 20:30 / 02:30
-    - cron: '30 */6 * * *'
+    # UTC 每 20 分钟触发（北京时间全天一致）。
+    # 单次采集约 2-4 分钟，故 20 分钟间隔可确保上一次必然结束、不会并发叠加。
+    # 实际数据延迟 = 采集耗时 + 等待下一次触发（0~20 分钟）。
+    - cron: '*/20 * * * *'
   workflow_dispatch: {}
+
+# 防止上一次未跑完就叠加下一次（GitHub Actions 同一 workflow 默认会并发排队）
+concurrency:
+  group: douyin-collect
+  cancel-in-progress: false
 
 jobs:
   invoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # 采集含冷启动 + 多个 60s 超时串行等待，保守留足余量。
+    # 原8 分钟偏紧，慢速情况下尾部可能被强杀导致写回中断。
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
