@@ -1,6 +1,237 @@
 {
-  "updatedAt": 1791275848452,
+  "updatedAt": 1791276852287,
   "posts": [
+    {
+      "id": "5349511636713979",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "有件温暖的事，想早一点告诉你们～\n很高兴成为@雪中飞 全球品牌代言人！\n等一场雪，也等你来赴约\n这个冬天雪场见！❄️\n#雪中飞全球品牌代言人侯明昊##滑雪特色的时尚户外##雪中飞明星冰雪天团##源自滑雪向野而飞##雪中飞中国冰雪羽绒服品牌##羽绒服宝藏品牌# ​​​",
+      "time": 1790906426000,
+      "timeRaw": "Fri Oct 02 10:00:26 +0800 2026",
+      "link": "https://weibo.com/1831550987/RkM1tsaBZ",
+      "pics": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1ihn8nbwm4uj243n5dl7wl.jpg"
+      ],
+      "imgs": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1ihn8nbwm4uj243n5dl7wl.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx2.sinaimg.cn/orj960/6d2b400bgy1ihn8nbwm4uj243n5dl7wl.jpg",
+      "timeStr": "2026-10-02 10:00:26"
+    },
+    {
+      "id": "5349318082167095",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "准备见面了 ​​​",
+      "time": 1790860278000,
+      "timeRaw": "Thu Oct 01 21:11:18 +0800 2026",
+      "link": "https://weibo.com/1831550987/RkGZi95L9",
+      "pics": [
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ihn5rp6mbxj21w02ioe82.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ihn5rqzb7vj21du1ug4qp.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihn5rsfsztj216o1ndqko.jpg",
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1ihn5rmayunj216e1kj7ku.jpg"
+      ],
+      "imgs": [
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ihn5rp6mbxj21w02ioe82.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ihn5rqzb7vj21du1ug4qp.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihn5rsfsztj216o1ndqko.jpg",
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1ihn5rmayunj216e1kj7ku.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ihn5rp6mbxj21w02ioe82.jpg",
+      "timeStr": "2026-10-01 21:11:18"
+    },
+    {
+      "id": "5349300643304188",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "愿山河锦绣，繁荣昌盛！#中华人民共和国成立77周年##祝新中国生日快乐#\n\n转发 @央视新闻：【转发接力！#一人一句祝福祖国母亲#🇨🇳】10月1日，#中华人民共和国成立77周年#。一起传递祝福，祝伟大祖国山河锦绣、国泰民安！家国同行，共赴新程！#祝新中国生日快乐# ​​​",
+      "time": 1790856121000,
+      "timeRaw": "Thu Oct 01 20:02:01 +0800 2026",
+      "link": "https://weibo.com/1831550987/RkGxadRzm",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-01 20:02:01"
+    },
+    {
+      "id": "5348578684044517",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "致敬每一位英烈！#向烈士致敬# #从未忘记你们#\n\n转发 @央视新闻：#从未忘记你们#【一起转发！#向烈士致敬#】9月30日是烈士纪念日。他们以鲜血捍卫国家尊严，用生命换来家国安宁。英雄从未远去，精神生生不息。让我们一同向烈士致以最崇高的敬意，烈士英名万古流芳！#英雄永垂不朽# ​​​",
+      "time": 1790683993000,
+      "timeRaw": "Tue Sep 29 20:13:13 +0800 2026",
+      "link": "https://weibo.com/1831550987/RknKIgYa9",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-29 20:13:13"
+    },
+    {
+      "id": "5347095646306762",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "👆🏻我只能提示到这了～中秋快乐！#中秋小圆满# #中秋猜猜乐# ​​​",
+      "time": 1790330409000,
+      "timeRaw": "Fri Sep 25 18:00:09 +0800 2026",
+      "link": "https://weibo.com/1831550987/RjLaIqsFY",
+      "pics": [],
+      "imgs": [
+        "https://tvax4.sinaimg.cn/crop.0.0.1080.1080.180/6d2b400bly8ig8kr00bbgj20u00u0my5.jpg?KID=imgbed,tva&Expires=1791287653&ssig=A0%2BhMjjmNU"
+      ],
+      "video": false,
+      "cover": "https://tvax4.sinaimg.cn/crop.0.0.1080.1080.180/6d2b400bly8ig8kr00bbgj20u00u0my5.jpg?KID=imgbed,tva&Expires=1791287653&ssig=A0%2BhMjjmNU",
+      "timeStr": "2026-09-25 18:00:09"
+    },
+    {
+      "id": "5347091758973980",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "🥮吃了吗 ​​​",
+      "time": 1790329482000,
+      "timeRaw": "Fri Sep 25 17:44:42 +0800 2026",
+      "link": "https://weibo.com/1831550987/RjL4rBExC",
+      "pics": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1ihg23x1kvwj22io1w0kjn.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1ihg23yyxxzj21n318bx6p.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1ihg23v6eb8j21jc21tqv5.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1ihg23zzmwuj248s2vqkjn.jpg"
+      ],
+      "imgs": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1ihg23x1kvwj22io1w0kjn.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1ihg23yyxxzj21n318bx6p.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1ihg23v6eb8j21jc21tqv5.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1ihg23zzmwuj248s2vqkjn.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx1.sinaimg.cn/orj960/6d2b400bly1ihg23x1kvwj22io1w0kjn.jpg",
+      "timeStr": "2026-09-25 17:44:42"
+    },
+    {
+      "id": "5346672533046041",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "郑州，我们再见一面。\n#侯明昊属于我们的巡回演唱会##微博演出季# ​​​",
+      "time": 1790229531000,
+      "timeRaw": "Thu Sep 24 13:58:51 +0800 2026",
+      "link": "https://weibo.com/1831550987/RjAahcMpH",
+      "pics": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1ihemrcienuj22802yoqv9.jpg"
+      ],
+      "imgs": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1ihemrcienuj22802yoqv9.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx2.sinaimg.cn/orj960/6d2b400bly1ihemrcienuj22802yoqv9.jpg",
+      "timeStr": "2026-09-24 13:58:51"
+    },
+    {
+      "id": "5346255653832443",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "藏锋入局，扭转乾坤。前路险峻，杨无间与你们共进退！#碧血蝉##碧血蝉殊途同归版预告#\n\n转发 @碧血蝉官博：江湖诡谈探案剧#碧血蝉# 全新预告片发布！\n朝堂诡谲暗斗，江湖危机四伏。长生宫长老杨无间&朝廷密探沈青石&白虹楼少主周槐，且看小分队如何搅动风云，破悬案，寻长生，窥天机！@爱奇艺 芝麻荚工作室倾力打造，迷局将启，敬邀诸君，共赴此局。\n领衔主演(按姓氏笔画排序)：张文昕@张文昕昕儿 侯明昊 ​​​ ...展开",
+      "time": 1790130139000,
+      "timeRaw": "Wed Sep 23 10:22:19 +0800 2026",
+      "link": "https://weibo.com/1831550987/RjpjTg4ZB",
+      "pics": [],
+      "imgs": [
+        "https://wx1.sinaimg.cn/orj480/eea12313gy1ihctogsmjtj21hc0u0ws8.jpg"
+      ],
+      "video": true,
+      "cover": "https://wx1.sinaimg.cn/orj480/eea12313gy1ihctogsmjtj21hc0u0ws8.jpg",
+      "timeStr": "2026-09-23 10:22:19"
+    },
+    {
+      "id": "5345380552147210",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "很开心能在这个舞台 把这份力量唱给大家听\n#2026湾区升明月##2026湾区升明月大湾区电影音乐晚会# ​​​",
+      "time": 1789921498000,
+      "timeRaw": "Mon Sep 21 00:24:58 +0800 2026",
+      "link": "https://weibo.com/1831550987/Rj2yr90Aq",
+      "pics": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalksoopaj22dc35s7wi.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ihalktk27ij22dc35su0x.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalkrrlmej22dc35shdt.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalkuh9wvj22dc35s7wh.jpg"
+      ],
+      "imgs": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalksoopaj22dc35s7wi.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ihalktk27ij22dc35su0x.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalkrrlmej22dc35shdt.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalkuh9wvj22dc35s7wh.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx1.sinaimg.cn/orj960/6d2b400bgy1ihalksoopaj22dc35s7wi.jpg",
+      "timeStr": "2026-09-21 00:24:58"
+    },
+    {
+      "id": "5344213499908090",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "#九一八事变爆发95周年#中华民族的复兴脚步不可阻挡。勿忘国耻，吾辈自强！\n\n转发 @新华社：【#九一八事变95年了#】1931年9月18日，九一八事变爆发。14年间，中华儿女共赴国难、浴血奋战。那些流血牺牲，我们不能忘，不敢忘！警报为历史而鸣，钟声为和平而响。曾经的苦难教会我们珍惜，砥砺我们前行，中华民族复兴的脚步不可阻挡。勿忘历史，吾辈自强！#九一八事变爆发95年# ​​​ ...展开",
+      "time": 1789643252000,
+      "timeRaw": "Thu Sep 17 19:07:32 +0800 2026",
+      "link": "https://weibo.com/1831550987/Riyc5FzxU",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-17 19:07:32"
+    },
+    {
+      "id": "5341978742230140",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "期待松韵新戏，许兰香今晚见！\n\n转发 @谭松韵seven：#兰香如故开播# 世事有起落，脚下自有路。兰草虽折损于墙角落满尘埃，但香气如故，从未折骨。我是许兰香也是沈嘉兰，今晚见！ #兰香如故# 谭松韵seven的微博视频 ​​​",
+      "time": 1789110444000,
+      "timeRaw": "Fri Sep 11 15:07:24 +0800 2026",
+      "link": "https://weibo.com/1831550987/RhC3E9ma0",
+      "pics": [],
+      "imgs": [
+        "https://wx3.sinaimg.cn/orj480/001qtNoPly1igzjgw3jmrj613y0miajf02.jpg"
+      ],
+      "video": true,
+      "cover": "https://wx3.sinaimg.cn/orj480/001qtNoPly1igzjgw3jmrj613y0miajf02.jpg",
+      "timeStr": "2026-09-11 15:07:24"
+    },
     {
       "id": "dy_7682769398155979889",
       "platform": "douyin",
@@ -25,6 +256,123 @@
         "collect": null
       },
       "timeStr": "2026-09-07 20:29:05"
+    },
+    {
+      "id": "5340297880145832",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "今晚我们心跳同频🥝 ​​​",
+      "time": 1788709695000,
+      "timeRaw": "Sun Sep 06 23:48:15 +0800 2026",
+      "link": "https://weibo.com/1831550987/RgUkA0BW8",
+      "pics": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1igudugdyp3j20xi18o7j0.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1iguduhqwjrj21401hckaz.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1igudufla1wj21051c7wuv.jpg"
+      ],
+      "imgs": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bgy1igudugdyp3j20xi18o7j0.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1iguduhqwjrj21401hckaz.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bgy1igudufla1wj21051c7wuv.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx2.sinaimg.cn/orj960/6d2b400bgy1igudugdyp3j20xi18o7j0.jpg",
+      "timeStr": "2026-09-06 23:48:15"
+    },
+    {
+      "id": "5338782012281651",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "#抗战胜利81年了# 14年浴血奋战，四万万人不屈抗争，先烈们用鲜血换来山河无恙。\n\n转发 @新华社：#抗战胜利81年了#【转发！#铭记81年前的伟大胜利#】14年浴血奋战，四万万人不屈抗争，先烈们用鲜血换来山河无恙。硝烟虽已远去，但胜利的号角穿越时空，仍在回响。今天的中国无惧任何风浪，绝不屈服于任何敌人！一起铭记伟大胜利，向着伟大复兴奋勇前行！ ​​​",
+      "time": 1788348284000,
+      "timeRaw": "Wed Sep 02 19:24:44 +0800 2026",
+      "link": "https://weibo.com/1831550987/RggTD9zyP",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-02 19:24:44"
+    },
+    {
+      "id": "5338749445867917",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "演唱会限定一 ​​​",
+      "time": 1788340520000,
+      "timeRaw": "Wed Sep 02 17:15:20 +0800 2026",
+      "link": "https://weibo.com/1831550987/Rgg36oCvP",
+      "pics": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1igpfxt4fxkj21w02io4qq.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igpfxo868bj21f01w0kjl.jpg",
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1igpfxmb9exj22io1w07wi.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1igpfxqvt0tj22io1w07wj.jpg"
+      ],
+      "imgs": [
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1igpfxt4fxkj21w02io4qq.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igpfxo868bj21f01w0kjl.jpg",
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1igpfxmb9exj22io1w07wi.jpg",
+        "https://wx1.sinaimg.cn/orj960/6d2b400bly1igpfxqvt0tj22io1w07wj.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx1.sinaimg.cn/orj960/6d2b400bly1igpfxt4fxkj21w02io4qq.jpg",
+      "timeStr": "2026-09-02 17:15:20"
+    },
+    {
+      "id": "5337964961334938",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "郑州见💚\n#侯明昊属于我们的演唱会##微博演出季# ​​​",
+      "time": 1788153484000,
+      "timeRaw": "Mon Aug 31 13:18:04 +0800 2026",
+      "link": "https://weibo.com/1831550987/RfVDO5Bhg",
+      "pics": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1igmxwmsimlj22802yo7wr.jpg"
+      ],
+      "imgs": [
+        "https://wx2.sinaimg.cn/orj960/6d2b400bly1igmxwmsimlj22802yo7wr.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx2.sinaimg.cn/orj960/6d2b400bly1igmxwmsimlj22802yo7wr.jpg",
+      "timeStr": "2026-08-31 13:18:04"
+    },
+    {
+      "id": "5337320804844519",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "帮我给这组图起个名字🤔 ​​​",
+      "time": 1787999905000,
+      "timeRaw": "Sat Aug 29 18:38:25 +0800 2026",
+      "link": "https://weibo.com/1831550987/RfESQkkhp",
+      "pics": [
+        "https://wx4.sinaimg.cn/orj960/6d2b400bly1igkvq1w9raj21ht1zrtrx.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvxlos8hj21w02iohdt.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvpv0iu0j21w02io4qq.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvwmwqzvj21w02iob2a.jpg"
+      ],
+      "imgs": [
+        "https://wx4.sinaimg.cn/orj960/6d2b400bly1igkvq1w9raj21ht1zrtrx.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvxlos8hj21w02iohdt.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvpv0iu0j21w02io4qq.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bly1igkvwmwqzvj21w02iob2a.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx4.sinaimg.cn/orj960/6d2b400bly1igkvq1w9raj21ht1zrtrx.jpg",
+      "timeStr": "2026-08-29 18:38:25"
     },
     {
       "id": "dy_7676423920309134961",
@@ -52,6 +400,44 @@
       "timeStr": "2026-08-21 18:05:23"
     },
     {
+      "id": "5334375392871084",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "#侯明昊张碧晨唱尽爱而不得#  和@张碧晨 又合作上了。这次是一首关于“爱而不得”的《甲乙丙丁》，从亲密到陌生，不甘、拉扯、狠不下心又不得不放手。一起来听吧！ #天赐的声音7##天赐的声音# 侯明昊的微博视频 ​​​",
+      "time": 1787297664000,
+      "timeRaw": "Fri Aug 21 15:34:24 +0800 2026",
+      "link": "https://weibo.com/1831550987/Reqgbc2TO",
+      "pics": [],
+      "imgs": [
+        "https://wx4.sinaimg.cn/orj480/6d2b400bly1igbhn5wdulj21hc0u03zx.jpg"
+      ],
+      "video": true,
+      "cover": "https://wx4.sinaimg.cn/orj480/6d2b400bly1igbhn5wdulj21hc0u03zx.jpg",
+      "timeStr": "2026-08-21 15:34:24"
+    },
+    {
+      "id": "5333935102102021",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "步履踏光，尽显星耀格调，日常之上，共筑双向羁绊\n我与@天美意官方微博 一起共创的「星耀老爹鞋」\n将星光与偏爱藏进鞋履\n把属于我们的双向陪伴藏于步履之间\n愿每一次的出发，都有彼此同行\n\n天美意×侯明昊 联名设计款 \n8月20日 20:00 天猫预售开启\n8月24日 20:00 全渠道限量发售\n\n ​​​ ...展开",
+      "time": 1787192691000,
+      "timeRaw": "Thu Aug 20 10:24:51 +0800 2026",
+      "link": "https://weibo.com/1831550987/ReeO28OPz",
+      "pics": [],
+      "imgs": [
+        "https://wx3.sinaimg.cn/orj480/6d2b400bly1iga33hu7xej20hg0naq8n.jpg"
+      ],
+      "video": true,
+      "cover": "https://wx3.sinaimg.cn/orj480/6d2b400bly1iga33hu7xej20hg0naq8n.jpg",
+      "timeStr": "2026-08-20 10:24:51"
+    },
+    {
       "id": "dy_7675672814900925817",
       "platform": "douyin",
       "account": "侯明昊",
@@ -77,6 +463,33 @@
       "timeStr": "2026-08-19 17:30:43"
     },
     {
+      "id": "5333496132010052",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "节日快乐🥝99\n#心动来电# ​​​",
+      "time": 1787088032000,
+      "timeRaw": "Wed Aug 19 05:20:32 +0800 2026",
+      "link": "https://weibo.com/1831550987/Re3o18qUc",
+      "pics": [
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgmjlnqj235s2dce81.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ig8kgs1c5vj235s2eqnpd.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgod3azj235s2egb29.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgpccktj25fn46dnpf.jpg"
+      ],
+      "imgs": [
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgmjlnqj235s2dce81.jpg",
+        "https://wx4.sinaimg.cn/orj960/6d2b400bgy1ig8kgs1c5vj235s2eqnpd.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgod3azj235s2egb29.jpg",
+        "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgpccktj25fn46dnpf.jpg"
+      ],
+      "video": false,
+      "cover": "https://wx3.sinaimg.cn/orj960/6d2b400bgy1ig8kgmjlnqj235s2dce81.jpg",
+      "timeStr": "2026-08-19 05:20:32"
+    },
+    {
       "id": "dy_7674644737072890993",
       "platform": "douyin",
       "account": "侯明昊",
@@ -100,6 +513,25 @@
         "collect": null
       },
       "timeStr": "2026-08-16 23:01:15"
+    },
+    {
+      "id": "5332673096326887",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "现在是 2026年8月16日22点50分\n这条视频（朋友圈）是侯明昊与你们共创的\n我们永远在一起 bb \n#微博演出季# 侯明昊的微博视频  ​​​",
+      "time": 1786891805000,
+      "timeRaw": "Sun Aug 16 22:50:05 +0800 2026",
+      "link": "https://weibo.com/1831550987/RdHYxqxUz",
+      "pics": [],
+      "imgs": [
+        "https://wx1.sinaimg.cn/orj480/6d2b400bgy1ig625oog4hj20u0141k4p.jpg"
+      ],
+      "video": true,
+      "cover": "https://wx1.sinaimg.cn/orj480/6d2b400bgy1ig625oog4hj20u0141k4p.jpg",
+      "timeStr": "2026-08-16 22:50:05"
     },
     {
       "id": "dy_7673770356745979505",
@@ -375,6 +807,23 @@
         "collect": null
       },
       "timeStr": "2026-05-20 17:20:15"
+    },
+    {
+      "id": "5295007168988519",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "“期待去证明我们的未来” ​​​",
+      "time": 1777911548000,
+      "timeRaw": "Tue May 05 00:19:08 +0800 2026",
+      "link": "https://weibo.com/1831550987/QDRzmBIk7",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-05-05 00:19:08"
     },
     {
       "id": "dy_7593946546509810021",
