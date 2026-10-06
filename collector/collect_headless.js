@@ -306,10 +306,25 @@ async function fetchDouyinList(ctx, t) {
   try {
     await page.goto('https://www.douyin.com/user/' + t.douyinSecUid,
       { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await sleep(9000);
-    /* 轻微滚动，触发懒加载，保证拿到更多作品 */
-    await page.evaluate(() => window.scrollBy(0, 1200)).catch(() => {});
-    await sleep(2500);
+    /* 轮询等作品列表渲染出来，而不是固定等待若干秒。
+       云端 runner 比本机慢得多，固定 sleep(9000) 常常等不到 li 出现，
+       表现为页面标题正常、正文却只有页脚。这里边滚边等，最多 60 秒。 */
+    const t0 = Date.now();
+    let liCount = 0;
+    for (let i = 0; i < 30; i++) {
+      liCount = await page.evaluate(
+        () => document.querySelectorAll('[data-e2e="user-post-list"] li').length
+      ).catch(() => 0);
+      if (liCount > 0) break;
+      await page.evaluate(() => window.scrollBy(0, 500)).catch(() => {});
+      await sleep(2000);
+    }
+    console.log('  [抖音] 列表渲染等待 ' + (Date.now() - t0) + 'ms，li=' + liCount);
+    if (liCount) {
+      /* 已出首屏，再滚一次触发懒加载，多拿几条 */
+      await page.evaluate(() => window.scrollBy(0, 1200)).catch(() => {});
+      await sleep(3000);
+    }
     /* 抓空时输出现场线索：本机浏览器能抓到、云端抓不到，多半是 headless 被反爬识别 */
     const probe = await page.evaluate(() => ({
       liCount: document.querySelectorAll('[data-e2e="user-post-list"] li').length,
