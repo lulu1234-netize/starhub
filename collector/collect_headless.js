@@ -163,7 +163,18 @@ async function launch() {
     return { kind: 'puppeteer', b };
   } catch (e) { throw new Error('无可用浏览器：请执行 npm install playwright && npx playwright install chromium（' + e.message + '）'); }
 }
+/* 注意：Playwright 与 puppeteer 的 Page API 并不通用。
+   setUserAgent 只有 puppeteer 有，Playwright 必须在 newContext 时传 userAgent，
+   否则云端（Playwright）会在这一步抛 "p.setUserAgent is not a function"。 */
 async function newPage(ctx) {
+  if (ctx.kind === 'playwright') {
+    const context = await ctx.b.newContext({
+      userAgent: UA_PC,
+      viewport: { width: 1440, height: 900 },
+      locale: 'zh-CN'
+    });
+    return await context.newPage();
+  }
   const p = await ctx.b.newPage();
   await p.setUserAgent(UA_PC);
   if (p.setViewportSize) await p.setViewportSize({ width: 1440, height: 900 });
@@ -503,4 +514,10 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
   final.slice(0, 8).forEach(p =>
     console.log('   · [' + p.platform + '] ' + (p.timeStr || '时间未知') + '  ' +
       String(p.text).slice(0, 24).replace(/\n/g, ' ')));
-})().catch(e => { console.log('✗ 异常：' + e.message); process.exit(0); });
+})().catch(e => {
+  console.log('✗ 异常：' + e.message);
+  /* 必须让任务失败：否则像 setUserAgent 这类 API 不兼容错误会被静默吞掉，
+     Actions 一直显示绿色成功、数据却永远不更新（曾这样静默失败 11 天才被发现）。
+     注意：只有"本机没有可用浏览器"才走 exit(0)，那是环境未就位，不该报警。 */
+  process.exit(1);
+});
