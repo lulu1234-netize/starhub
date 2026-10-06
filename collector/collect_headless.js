@@ -389,6 +389,29 @@ async function cloudProbe(ctx, t, videoId) {
     console.log('  [探' + label + '] title=' + s.title + ' | 作品li=' + s.postLi + ' | 视频链接=' + s.videoLinks + ' | 列表容器=' + s.hasListBox + ' | 登录墙=' + s.loginWall);
     console.log('  [探' + label + '] cookies=' + (s.keys || '(无)'));
     console.log('  [探' + label + '] 正文=' + s.text);
+    const html = await page.evaluate(() =>
+      document.documentElement.outerHTML.slice(0, 900).replace(/\s+/g, ' ')
+    ).catch(() => '');
+    console.log('  [探' + label + '] HTML抬头=' + html);
+    /* 「Please wait...」可能是质询等待页，给它足够时间，看它会不会自己放行 */
+    if (process.env.STH_WAIT) {
+      const max = Math.max(1, Math.min(30, parseInt(process.env.STH_WAIT, 10) || 9));
+      let got = 0;
+      for (let i = 0; i < max; i++) {
+        got = await page.evaluate(
+          () => document.querySelectorAll('[data-e2e="user-post-list"] li').length
+        ).catch(() => 0);
+        if (i % 3 === 0) {
+          const hint = await page.evaluate(() => ({
+            t: document.title,
+            txt: (document.body ? document.body.innerText : '').replace(/\s+/g, ' ').slice(0, 80)
+          })).catch(() => ({ t: '', txt: '' }));
+          console.log('  [探' + label + '] 第 ' + (i * 10) + 's li=' + got + ' title=' + hint.t + ' 正文=' + hint.txt);
+        }
+        if (got > 0) { console.log('  [探' + label + '] 第 ' + (i * 10) + ' 秒等到列表出现'); break; }
+        await sleep(10000);
+      }
+    }
   };
   await dump('主页', 'https://www.douyin.com/user/' + t.douyinSecUid, 15000);
   if (videoId) await dump('视频页', 'https://www.douyin.com/video/' + videoId, 12000);
