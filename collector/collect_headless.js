@@ -265,6 +265,17 @@ async function fetchDouyinList(ctx, t) {
     /* 轻微滚动，触发懒加载，保证拿到更多作品 */
     await page.evaluate(() => window.scrollBy(0, 1200)).catch(() => {});
     await sleep(2500);
+    /* 抓空时输出现场线索：本机浏览器能抓到、云端抓不到，多半是 headless 被反爬识别 */
+    const probe = await page.evaluate(() => ({
+      liCount: document.querySelectorAll('[data-e2e="user-post-list"] li').length,
+      title: document.title,
+      verify: /验证|滑动|captcha|安全/i.test(document.body ? document.body.innerText : ''),
+      bodyHead: (document.body ? document.body.innerText : '').slice(0, 160)
+    })).catch(() => ({ liCount: -1, title: '(读取失败)', verify: false, bodyHead: '' }));
+    if (!probe.liCount) {
+      console.log('  [抖音] ⚠ 列表为空 —— title=' + probe.title +
+        ' 疑似验证页=' + probe.verify + ' 正文开头=' + probe.bodyHead.replace(/\n/g, ' '));
+    }
     const items = await page.evaluate(() => {
       const out = [];
       document.querySelectorAll('[data-e2e="user-post-list"] li').forEach(li => {
@@ -498,6 +509,15 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
     }
   } finally {
     await ctx.b.close().catch(() => {});
+  }
+
+  /* 关键保护：一条都没抓到时绝不覆盖历史结果。
+     否则反爬一旦生效（云端 headless 常被识别），空结果会把 posts_ext.json 清空，
+     连带 posts.json 里的抖音历史数据全部丢失（10-06 真实踩过，39 条掉到 21 条）。 */
+  if (!all.length) {
+    const hadThis = Object.keys(oldMap).length;
+    console.log('✗ 本次未取到任何条目：保留上一次的 ' + hadThis + ' 条不动，不写空文件');
+    process.exit(1);
   }
 
   /* 不再伪造时间：抓不到就保持 0，排序时落到末尾，下一轮继续尝试补 */
