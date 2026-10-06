@@ -1,0 +1,22 @@
+name: 抖音采集（腾讯云函数）
+
+on:
+  schedule:
+    # UTC 时间每 6 小时 :30 分触发；对应北京时间 08:30 / 14:30 / 20:30 / 02:30
+    - cron: '30 */6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: 调用腾讯云函数采集抖音并写回
+        run: node scripts/scf_invoke.js
+        env:
+          TC_SECRET_ID: ${{ secrets.TC_SECRET_ID }}
+          TC_SECRET_KEY: ${{ secrets.TC_SECRET_KEY }}
