@@ -242,6 +242,24 @@
   /* 我的页：底部 Tab 已改为吸底占位元素，这里只留少量收尾留白（不要加大内边距，否则 Tab 无法贴底） */
   #view-mine{padding-bottom:0}
   #view-star .d-body{padding-bottom:96px}
+
+  /* 图片加载失败兜底：保留占位块而非空白 */
+  .ph.imgfail{background:linear-gradient(135deg,#e9ecf3,#d7dbe6)}
+  .ph.imgfail img{display:none}
+  .ph.imgfail::after{content:'图片加载失败';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#8a8f99}
+  /* 视频封面中央播放按钮 */
+  .vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;
+    background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .vplay svg{width:18px;height:18px;fill:#fff;margin-left:2px}
+  /* 已读折叠（紧凑）卡片 */
+  .post.folded{cursor:pointer}
+  .post.folded .p-collapsed{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.5;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fold-hint{margin-left:auto;font-size:11px;color:var(--ink3)}
+  .fold-more{text-align:center;font-size:12.5px;color:var(--accent);font-weight:600;
+    padding:11px;margin-top:2px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;cursor:pointer}
+  .fold-more:active{background:#f4f4f6}
 </style>
 </head>
 <body>
@@ -495,14 +513,26 @@ const IMG_KEY = id => 'starhub_img_' + id;
 function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
 
 /* ================= 已读状态（本机持久化） =================
-   规则：帖子被点「已读」后，若它不是其平台（分区内）最新的一条，则从列表清理隐藏；
-   各平台最新一条无论是否已读，始终保留显示；未点已读的帖子永远保留。 */
+   折叠 / 已读模型：
+   - readSet：已读帖 UID 集合（持久化到 localStorage）；已读即折叠（除非被展开）。
+   - revealed：本会话内被手动/批量展开的已读帖（按 own / rel 分区），不持久化。
+   - STARTUP_UIDS / startupDone：启动快照，启动即把当时全部帖标为已读并折叠；
+     快照之外后续新加载的帖默认不折叠、直接展示。 */
 const READ_KEY = 'starhub_read';
 const readSet = new Set((()=>{ try{ return JSON.parse(store.getItem(READ_KEY) || '[]'); }catch(e){ return []; } })());
 function saveRead(){ try{ store.setItem(READ_KEY, JSON.stringify([...readSet])); }catch(e){} }
 function toggleRead(uid){
   readSet.has(uid) ? readSet.delete(uid) : readSet.add(uid);
   saveRead(); renderDetail();
+}
+let revealed = { own:new Set(), rel:new Set() };   /* 已展开（取消折叠）的帖子，按分区记录 */
+let STARTUP_UIDS = new Set();                       /* 启动时就存在的帖子，默认视为已读 */
+let startupDone = false;                            /* 启动快照只捕获一次 */
+function startupSnap(){
+  const d = DATA.hmh;
+  d.own.forEach(p=>{ if(!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); } });
+  d.related.forEach(p=>{ if(!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); } });
+  saveRead();
 }
 function changeImg(id, input){
   const file = input.files && input.files[0];
@@ -548,7 +578,7 @@ function renderHome(){
   list.innerHTML = DATA.stars.map(s=>`
     <div class="star-card" onclick="${s.implemented ? `openStar('${s.id}')` : `toast('卢昱晓模块即将上线，当前为占位卡片')`}">
       ${s.online ? '<div class="dot-badge"></div>' : ''}
-      <div class="avatar ${s.id==='hmh'?'avatar-hmh':'avatar-lyx'}"><img src="${getStarImg(s)}" alt="${s.name}"></div>
+      <div class="avatar ${s.id==='hmh'?'avatar-hmh':'avatar-lyx'}"><img src="${getStarImg(s)}" alt="${s.name}" referrerpolicy="no-referrer"></div>
       <div class="star-info">
         <div class="star-name">${s.name}
           ${s.implemented ? '<span class="badge-new">测试中</span>' : '<span class="badge-soon">即将上线</span>'}
@@ -573,10 +603,14 @@ function setFilter(k){ curFilter = k; renderDetail(); }
 const PH_CLS = { weibo:'ph-weibo', xhs:'ph-xhs', douyin:'ph-dy' };
 function mediaBlock(p){
   const badge = p.video ? `<span class="vbadge">${p.vlabel || '▶ 视频'}</span>` : '';
+  const play  = p.video ? `<span class="vplay"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>` : '';
   const pcls = PH_CLS[p.platform] || 'ph-weibo';
+  /* referrerpolicy=no-referrer 绕过图床（新浪 / 抖音）Referer 防盗链，否则在 github.io 域下被 403；
+     onerror 不再隐藏图片，而是给 .ph 加 imgfail 显示占位提示，避免空白 */
+  const imgTag = u => `<img src="${u}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.ph').classList.add('imgfail')">`;
   if (p.imgs && p.imgs.length){
     return `<div class="p-pics">${p.imgs.slice(0,3).map((u,i)=>
-      `<div class="ph ph-real"><img src="${u}" alt="" loading="lazy" onerror="this.style.display='none'">${(p.video && i===0) ? badge : ''}</div>`
+      `<div class="ph ph-real">${imgTag(u)}${(p.video && i===0) ? badge + play : ''}</div>`
     ).join('')}</div>`;
   }
   const legacy = (p.pics && p.pics.length) ? p.pics : [];
@@ -584,14 +618,14 @@ function mediaBlock(p){
   if (!legacy.length){
     if (!hasCover && !p.video) return '';            /* 纯文本动态：与微博保持一致，不加媒体块 */
     return `<div class="p-pics"><div class="ph ${pcls}">
-      ${hasCover ? `<img src="${p.cover}" alt="" loading="lazy" onerror="this.style.display='none'">` : CAM}
-      <span class="ph-tip">${p.video ? '视频封面待采集' : '封面待采集'}</span>${badge}</div></div>`;
+      ${hasCover ? imgTag(p.cover) : CAM}
+      <span class="ph-tip">${p.video ? '视频封面待采集' : '封面待采集'}</span>${badge}${play}</div></div>`;
   }
   return `<div class="p-pics">${legacy.map((c,i)=>{
     const real = (hasCover && i === 0);
-    const cover = real ? `<img src="${p.cover}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
+    const cover = real ? imgTag(p.cover) : '';
     const cls = /^ph-/.test(String(c)) || real ? (real ? 'ph-real' : pcls) : c;
-    return `<div class="ph ${cls}">${cover}${(!real && i === 0) ? '<span class="ph-tip">封面待采集</span>' : ''}${real ? '' : CAM}${(p.video && i===0) ? badge : ''}</div>`;
+    return `<div class="ph ${cls}">${cover}${(!real && i === 0) ? '<span class="ph-tip">封面待采集</span>' : ''}${real ? '' : CAM}${(p.video && i===0) ? badge + play : ''}</div>`;
   }).join('')}</div>`;
 }
 
@@ -814,31 +848,71 @@ function postCard(p){
   </div>`;
 }
 
-/* 展示规则：
-   1) 排序一律按发布时间倒序；
-   2) 帖子点「已读」后，若不是其平台内最新的一条 → 清理隐藏；
-   3) 各平台最新一条（无论是否已读）以及所有未读帖子，永远保留显示；
-   4) 平台筛选只影响可见性，不影响上面 2)~3) 的判定。 */
-function pick(list){
-  const kept = list.filter(p => !(readSet.has(p._uid) && !isLatestOfPlatform(p, list)));
-  return kept
-    .filter(p => curFilter === 'all' || p.platform === curFilter)
-    .sort((a,b) => b.time - a.time);
+/* 展示规则（折叠 / 已读模型）：
+   1) 启动时（startupSnap）将当时全部帖子标记为已读 → 默认折叠为紧凑行，节省空间；
+   2) 已读帖子渲染为折叠紧凑卡，点击单条或底部「展开 N 条」可展开（每次 +5 条）；
+   3) 后续新加载（不在启动快照里的）帖子默认不折叠、直接以完整卡展示；
+   4) 用户手动「标记已读」的新帖随即进入已读集合 → 自动折叠，遵循上面规则。 */
+function postCardCollapsed(p, key){
+  const s = SRC[p.platform], av = String(p.account || '？').trim().charAt(0) || '？';
+  const preview = (p.text && String(p.text).trim())
+    ? p.text.replace(/\s+/g, ' ').trim()
+    : (p.video ? '视频动态' : '媒体动态');
+  return `
+  <div class="post folded" data-uid="${p._uid}" onclick="expandOne('${key}','${p._uid}')">
+    <div class="p-top">
+      <span class="p-av ${AV_CLS[p.platform] || 'av-weibo'}">${av}</span>
+      <span class="p-account">${p.account}</span>
+      <span class="p-tag">${p.tag}</span>
+      <span class="p-src ${s.cls}">${s.label}${EXT}</span>
+    </div>
+    <div class="p-collapsed">${preview}</div>
+    <div class="p-foot">
+      <span title="${fullTime(p.time)}">${timeStr(p.time)}</span>
+      <span class="fold-hint">已读 · 点击展开</span>
+    </div>
+  </div>`;
 }
-function isLatestOfPlatform(p, list){
-  return list.filter(x => x.platform === p.platform).every(x => x.time <= p.time);
+/* 分区渲染：传入完整列表（平台筛选在内部按 curFilter 处理）；
+   已读且未展开的帖子折叠为紧凑卡，其余以完整卡展示 */
+function sectionRender(list, key){
+  let sorted = list.slice().sort((a,b)=>b.time-a.time);
+  if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
+  const readPosts = sorted.filter(p=>readSet.has(p._uid));
+  const html = sorted.map(p=>{
+    const folded = readSet.has(p._uid) && !revealed[key].has(p._uid);
+    return folded ? postCardCollapsed(p, key) : postCard(p);
+  }).join('');
+  const remaining = readPosts.filter(p=>!revealed[key].has(p._uid)).length;
+  const btn = remaining > 0
+    ? `<div class="fold-more" onclick="expandMore('${key}')">展开 ${Math.min(5, remaining)} 条已读帖（还差 ${remaining} 条折叠）</div>`
+    : '';
+  return html + btn;
 }
-/* 该分区被已读清理掉的数量（用于提示条） */
-function hiddenCount(list){
-  return list.filter(p => readSet.has(p._uid) && !isLatestOfPlatform(p, list)).length;
+/* 底部按钮：每次多展开 5 条已读帖（按时间倒序，从较新的已读帖开始） */
+function expandMore(key){
+  const d = DATA[curStar];
+  let list = (key === 'own') ? d.own : d.related;
+  if (curFilter !== 'all') list = list.filter(p => p.platform === curFilter);
+  const sorted = list.slice().sort((a,b)=>b.time-a.time);
+  let added = 0;
+  for (const p of sorted){
+    if (readSet.has(p._uid) && !revealed[key].has(p._uid)){
+      revealed[key].add(p._uid); added++;
+      if (added >= 5) break;
+    }
+  }
+  renderDetail();
 }
+/* 单条折叠卡点击展开 */
+function expandOne(key, uid){ revealed[key].add(uid); renderDetail(); }
 
 function renderDetail(){
   const d = DATA[curStar];
   const viewEl = document.getElementById('view-star');
   const sv = viewEl.scrollTop;   /* 重渲染后保持滚动位置，避免折叠/筛选时跳动 */
-  const ownShow = pick(d.own);
-  const relShow = pick(d.related);
+  const ownAll = curFilter === 'all' ? d.own : d.own.filter(p => p.platform === curFilter);
+  const relAll = curFilter === 'all' ? d.related : d.related.filter(p => p.platform === curFilter);
   const todaySum = d.own.concat(d.related).filter(p => isNew(p.time)).length;
   const acctCls = { weibo:'p-weibo', xhs:'p-xhs', douyin:'p-dy' };
   const acctStrip = ['weibo','xhs','douyin'].map(k=>{
@@ -852,14 +926,11 @@ function renderDetail(){
   }).join('');
   const tabs = FILTERS.map(([k,l]) =>
     `<button class="ftab ${curFilter===k ? 'on' : ''}" onclick="setFilter('${k}')">${l}</button>`).join('');
-  const ownHidden = hiddenCount(d.own), relHidden = hiddenCount(d.related);
-  const ownBlock = ownShow.length
-    ? `<div class="own-box">${ownShow.map(postCard).join('')}
-        ${ownHidden ? `<div class="read-note">已清理 ${ownHidden} 条已读旧帖 · 点击帖内「已读 ✓」可撤销恢复</div>` : ''}</div>`
+  const ownBlock = ownAll.length
+    ? `<div class="own-box">${sectionRender(d.own, 'own')}</div>`
     : `<div class="empty-sm">当前筛选下暂无本人动态</div>`;
-  const relBlock = relShow.length
-    ? `<div class="rel-box"><div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relShow.length} 条</span></div>${relShow.map(postCard).join('')}
-        ${relHidden ? `<div class="read-note">已清理 ${relHidden} 条已读旧帖 · 点击帖内「已读 ✓」可撤销恢复</div>` : ''}</div>`
+  const relBlock = relAll.length
+    ? `<div class="rel-box"><div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relAll.length} 条</span></div>${sectionRender(d.related, 'rel')}</div>`
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
   const PF_NAME = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
   const pfList = [...new Set(d.own.concat(d.related).map(p=>p.platform))].map(k=>PF_NAME[k] || k);
@@ -900,7 +971,7 @@ function renderMineImg(){
     const custom = !!store.getItem(IMG_KEY(s.id));
     return `
     <div class="img-card">
-      <div class="img-thumb"><img src="${getStarImg(s)}" alt="${s.name}"></div>
+      <div class="img-thumb"><img src="${getStarImg(s)}" alt="${s.name}" referrerpolicy="no-referrer"></div>
       <div class="img-info">
         <b>${s.name}</b>
         <div class="img-status">${custom ? '已自定义（保存在本机）' : '默认图片'}</div>
@@ -981,9 +1052,16 @@ async function loadLive(silent){
       if (j && j.posts && j.posts.length){ data = j; break; }
     }catch(e){ /* file:// 打开或未连服务时忽略，继续使用内置数据 */ }
   }
-  if (!data){ if(!silent) toast('未连接采集服务，当前为内置数据'); return false; }
+  if (!data){
+    if(!silent) toast('未连接采集服务，当前为内置数据');
+    /* 没有任何线上数据：用内置示例作为启动快照，同样标记已读并折叠 */
+    if(!startupDone){ startupSnap(); startupDone = true; if(curStar) renderDetail(); }
+    return false;
+  }
   const isNew = data.posts.some(p => !LIVE.ids.has(p.id));
   applyLive(data.posts, data.updatedAt);
+  /* 首次加载成功：把当时全部帖子（含真实采集）纳入启动快照 → 默认已读折叠 */
+  if (!startupDone){ startupSnap(); startupDone = true; }
   renderHome();
   if (curStar) renderDetail();
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
