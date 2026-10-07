@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#f6f5f2">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="img/icon-192.png">
@@ -251,11 +252,19 @@
   .vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;
     background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;pointer-events:none}
   .vplay svg{width:18px;height:18px;fill:#fff;margin-left:2px}
-  /* 已读折叠（紧凑）卡片 */
-  .post.folded{cursor:pointer}
-  .post.folded .p-collapsed{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.5;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .fold-hint{margin-left:auto;font-size:11px;color:var(--ink3)}
+  /* 整体折叠：分区折叠占位条 */
+  .fold-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:14px 16px;margin:6px 0;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;cursor:pointer}
+  .fold-bar:active{background:#f4f4f6}
+  .fold-bar-txt{font-size:13px;color:var(--ink2)}
+  .fold-bar-btn{font-size:13px;font-weight:700;color:var(--accent)}
+  /* 收起全部 */
+  .fold-collapse{text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);
+    padding:10px;margin:8px 0 2px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;cursor:pointer}
+  .fold-collapse:active{background:#f4f4f6}
+  /* 继续展开更多 */
   .fold-more{text-align:center;font-size:12.5px;color:var(--accent);font-weight:600;
     padding:11px;margin-top:2px;background:var(--card);border:1px solid var(--line);
     border-radius:14px;cursor:pointer}
@@ -512,28 +521,10 @@ const store = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeIt
 const IMG_KEY = id => 'starhub_img_' + id;
 function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
 
-/* ================= 已读状态（本机持久化） =================
-   折叠 / 已读模型：
-   - readSet：已读帖 UID 集合（持久化到 localStorage）；已读即折叠（除非被展开）。
-   - revealed：本会话内被手动/批量展开的已读帖（按 own / rel 分区），不持久化。
-   - STARTUP_UIDS / startupDone：启动快照，启动即把当时全部帖标为已读并折叠；
-     快照之外后续新加载的帖默认不折叠、直接展示。 */
-const READ_KEY = 'starhub_read';
-const readSet = new Set((()=>{ try{ return JSON.parse(store.getItem(READ_KEY) || '[]'); }catch(e){ return []; } })());
-function saveRead(){ try{ store.setItem(READ_KEY, JSON.stringify([...readSet])); }catch(e){} }
-function toggleRead(uid){
-  readSet.has(uid) ? readSet.delete(uid) : readSet.add(uid);
-  saveRead(); renderDetail();
-}
-let revealed = { own:new Set(), rel:new Set() };   /* 已展开（取消折叠）的帖子，按分区记录 */
-let STARTUP_UIDS = new Set();                       /* 启动时就存在的帖子，默认视为已读 */
-let startupDone = false;                            /* 启动快照只捕获一次 */
-function startupSnap(){
-  const d = DATA.hmh;
-  d.own.forEach(p=>{ if(!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); } });
-  d.related.forEach(p=>{ if(!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); } });
-  saveRead();
-}
+/* ================= 折叠状态（本机，不持久化） =================
+   整体折叠模型：每个分区（本人 / 相关账号）默认全部折叠（显示 0 条），
+   用户点「展开 N 条」每点一次多显示 5 条；点「收起全部」则重新折叠该分区。 */
+let revealedCount = { own:0, rel:0 };   /* 各分区当前显示的帖子数量 */
 function changeImg(id, input){
   const file = input.files && input.files[0];
   if (!file) return;
@@ -820,7 +811,7 @@ function jumpA(p, label){
    内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
 const AV_CLS = { weibo:'av-weibo', xhs:'av-xhs', douyin:'av-dy' };
 function postCard(p){
-  const s = SRC[p.platform], today = isNew(p.time), read = readSet.has(p._uid);
+  const s = SRC[p.platform], today = isNew(p.time);
   const av = String(p.account || '？').trim().charAt(0) || '？';
   return `
   <div class="post" data-uid="${p._uid}">
@@ -839,8 +830,6 @@ function postCard(p){
         ${statsRow(p)}
         <div class="p-foot">
           <span title="${fullTime(p.time)}">${timeStr(p.time)}</span>
-          <button class="read-btn ${read ? 'done' : ''}" onclick="toggleRead('${p._uid}')"
-            title="${read ? '点击撤销已读，恢复显示' : '阅读完成后点击，清理此帖（最新帖不受影响）'}">${read ? '已读 ✓' : '标记已读'}</button>
           ${jumpA(p)}
         </div>
       </div>
@@ -848,64 +837,43 @@ function postCard(p){
   </div>`;
 }
 
-/* 展示规则（折叠 / 已读模型）：
-   1) 启动时（startupSnap）将当时全部帖子标记为已读 → 默认折叠为紧凑行，节省空间；
-   2) 已读帖子渲染为折叠紧凑卡，点击单条或底部「展开 N 条」可展开（每次 +5 条）；
-   3) 后续新加载（不在启动快照里的）帖子默认不折叠、直接以完整卡展示；
-   4) 用户手动「标记已读」的新帖随即进入已读集合 → 自动折叠，遵循上面规则。 */
-function postCardCollapsed(p, key){
-  const s = SRC[p.platform], av = String(p.account || '？').trim().charAt(0) || '？';
-  const preview = (p.text && String(p.text).trim())
-    ? p.text.replace(/\s+/g, ' ').trim()
-    : (p.video ? '视频动态' : '媒体动态');
-  return `
-  <div class="post folded" data-uid="${p._uid}" onclick="expandOne('${key}','${p._uid}')">
-    <div class="p-top">
-      <span class="p-av ${AV_CLS[p.platform] || 'av-weibo'}">${av}</span>
-      <span class="p-account">${p.account}</span>
-      <span class="p-tag">${p.tag}</span>
-      <span class="p-src ${s.cls}">${s.label}${EXT}</span>
-    </div>
-    <div class="p-collapsed">${preview}</div>
-    <div class="p-foot">
-      <span title="${fullTime(p.time)}">${timeStr(p.time)}</span>
-      <span class="fold-hint">已读 · 点击展开</span>
-    </div>
-  </div>`;
-}
-/* 分区渲染：传入完整列表（平台筛选在内部按 curFilter 处理）；
-   已读且未展开的帖子折叠为紧凑卡，其余以完整卡展示 */
+/* 分区渲染（整体折叠模型）：
+   1) 各分区默认显示 revealedCount[key] 条（初始 0 → 全部折叠，不显示任何帖子内容）；
+   2) 折叠时显示一条占位条「本区共 N 条 · 已折叠」+「展开 5 条」入口；
+   3) 点「展开 N 条」每次多显示 5 条；已展开后顶部出现「收起全部」一键重新折叠；
+   4) 平台筛选在内部按 curFilter 处理。 */
 function sectionRender(list, key){
   let sorted = list.slice().sort((a,b)=>b.time-a.time);
   if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
-  const readPosts = sorted.filter(p=>readSet.has(p._uid));
-  const html = sorted.map(p=>{
-    const folded = readSet.has(p._uid) && !revealed[key].has(p._uid);
-    return folded ? postCardCollapsed(p, key) : postCard(p);
-  }).join('');
-  const remaining = readPosts.filter(p=>!revealed[key].has(p._uid)).length;
-  const btn = remaining > 0
-    ? `<div class="fold-more" onclick="expandMore('${key}')">展开 ${Math.min(5, remaining)} 条已读帖（还差 ${remaining} 条折叠）</div>`
-    : '';
-  return html + btn;
+  const total = sorted.length;
+  if (total === 0) return '';
+  const shown = Math.min(revealedCount[key], total);
+  const cards = sorted.slice(0, shown).map(p => postCard(p)).join('');
+  let ctrl = '';
+  if (shown < total){
+    const more = Math.min(5, total - shown);
+    ctrl += `<div class="fold-more" onclick="expandMore('${key}')">展开 ${more} 条（已显示 ${shown}/${total}）</div>`;
+  }
+  if (shown > 0){
+    ctrl = `<div class="fold-collapse" onclick="collapseAll('${key}')">收起全部 ▲</div>` + ctrl;
+  }
+  if (shown === 0){
+    ctrl = `<div class="fold-bar" onclick="expandMore('${key}')">
+      <span class="fold-bar-txt">本区共 ${total} 条动态 · 已折叠</span>
+      <span class="fold-bar-btn">展开 ${Math.min(5, total)} 条 ›</span></div>`;
+  }
+  return cards + ctrl;
 }
-/* 底部按钮：每次多展开 5 条已读帖（按时间倒序，从较新的已读帖开始） */
+/* 每次多展开 5 条 */
 function expandMore(key){
   const d = DATA[curStar];
   let list = (key === 'own') ? d.own : d.related;
   if (curFilter !== 'all') list = list.filter(p => p.platform === curFilter);
-  const sorted = list.slice().sort((a,b)=>b.time-a.time);
-  let added = 0;
-  for (const p of sorted){
-    if (readSet.has(p._uid) && !revealed[key].has(p._uid)){
-      revealed[key].add(p._uid); added++;
-      if (added >= 5) break;
-    }
-  }
+  revealedCount[key] = Math.min(revealedCount[key] + 5, list.length);
   renderDetail();
 }
-/* 单条折叠卡点击展开 */
-function expandOne(key, uid){ revealed[key].add(uid); renderDetail(); }
+/* 一键重新折叠该分区 */
+function collapseAll(key){ revealedCount[key] = 0; renderDetail(); }
 
 function renderDetail(){
   const d = DATA[curStar];
@@ -957,8 +925,9 @@ function renderDetail(){
 
 function openStar(id){
   curStar = id; curFilter = 'all';
+  revealedCount = { own:0, rel:0 };
   document.getElementById('dName').textContent = '侯明昊';
-  document.getElementById('dSub').textContent = '三平台统一时间线 · 按时间倒序 · 已读旧帖自动清理';
+  document.getElementById('dSub').textContent = '三平台统一时间线 · 按时间倒序 · 默认折叠，点击展开浏览';
   renderDetail();
   go('star');
 }
@@ -1054,14 +1023,10 @@ async function loadLive(silent){
   }
   if (!data){
     if(!silent) toast('未连接采集服务，当前为内置数据');
-    /* 没有任何线上数据：用内置示例作为启动快照，同样标记已读并折叠 */
-    if(!startupDone){ startupSnap(); startupDone = true; if(curStar) renderDetail(); }
     return false;
   }
   const isNew = data.posts.some(p => !LIVE.ids.has(p.id));
   applyLive(data.posts, data.updatedAt);
-  /* 首次加载成功：把当时全部帖子（含真实采集）纳入启动快照 → 默认已读折叠 */
-  if (!startupDone){ startupSnap(); startupDone = true; }
   renderHome();
   if (curStar) renderDetail();
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
