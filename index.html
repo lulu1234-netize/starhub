@@ -38,12 +38,15 @@
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
   .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
-  /* 边缘滑动返回指示箭头 */
-  .edge-back{position:fixed;left:12px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;
+  /* 边缘滑动返回指示箭头（跟随进度出现在左侧） */
+  .edge-back{position:fixed;left:30px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;
     background:rgba(20,20,28,.34);color:#fff;display:flex;align-items:center;justify-content:center;
     box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:opacity .15s ease;z-index:200;pointer-events:none}
   .edge-back svg{width:22px;height:22px}
   .edge-back.show{opacity:1}
+  /* 左边缘常驻提示条：告诉用户这里可以右滑返回，长按也不干扰 */
+  .edge-hint{position:fixed;left:0;top:50%;transform:translateY(-50%);width:3px;height:56px;
+    background:var(--brand,#e0796a);opacity:.16;border-radius:0 3px 3px 0;z-index:199;pointer-events:none}
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
@@ -623,8 +626,10 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
    仅左侧边缘触发，且需明显「右向横滑」才提交，纵向滚动交给原生( touch-action:pan-y )，互不干扰。
    桌面预览可用鼠标从左边拖动演示（App 内仅触摸生效）。 */
 (function(){
-  const EDGE = 26;                       // 左边缘触发区宽度(px)
-  const THRESHOLD = 72;                  // 提交所需最小位移(px)
+  /* 触发区宽度：26px 太窄（约5mm），手指腹按下时中心就飘出去了，手势永远启动不了。
+     放宽到 76px —— 仍占屏幕宽度约 20%，不会误触页面内容。 */
+  const EDGE = 76;
+  const THRESHOLD = 64;                    // 提交所需最小位移(px)
   const ALLOW_MOUSE = !isPhone();        // App 内(手机)只用触摸；桌面预览允许鼠标演示
   let sw = null;                         // 当前手势状态
   let animating = false;                 // 提交/回弹动画进行中，避免叠加
@@ -646,18 +651,40 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
   function showArrow(p){ const a = makeArrow(); a.classList.add('show'); a.style.opacity = String(Math.min(1, 0.25 + p * 0.75)); }
   function hideArrow(){ const a = document.getElementById('edgeBack'); if (a) a.classList.remove('show'); }
 
-  function onDown(e){
-    if (sw || animating) return;
-    if (!e.isPrimary) return;
-    if (e.pointerType === 'mouse' && !ALLOW_MOUSE) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.clientX > EDGE) return;        // 不在左边缘
-    sw = { x0:e.clientX, y0:e.clientY, locked:false, view:null, under:null, isHome:false };
+  /* 左边缘常驻提示条：初始化时插一条，让用户知道边缘可滑动 */
+  function mountHint(){
+    if (document.getElementById('edgeHint')) return;
+    const h = document.createElement('div');
+    h.id = 'edgeHint'; h.className = 'edge-hint';
+    document.body.appendChild(h);
   }
-  function onMove(e){
+
+  /* 把 pointer 事件与 touch 事件归一化成同一种参数对象。
+     部分安卓 WebView 在整页可拖动时会把 pointer 事件吞掉，只绑 pointer 会导致手势永不触发，
+     所以两条通道都监听，同一次手势只会命中先到的那条（sw 非空时后到的直接忽略）。 */
+  function normPointer(e){
+    return { x:e.clientX, y:e.clientY, cancelable:e.cancelable, type:e.pointerType, primary:e.isPrimary, button:e.button, src:e };
+  }
+  function normTouch(e){
+    const t = e.touches && e.touches.length ? e.touches[0]
+            : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : null);
+    if (!t) return null;
+    return { x:t.clientX, y:t.clientY, cancelable:e.cancelable, type:'touch', primary:true, button:0, src:e };
+  }
+
+  function onDown(p){
+    if (sw || animating) return;
+    if (!p.primary) return;
+    if (p.type === 'mouse' && !ALLOW_MOUSE) return;
+    if (p.type === 'mouse' && p.button !== 0) return;
+    /* 触点在左边缘内：起点略微放宽余量，因为手指落点比感知点更靠左 */
+    if (p.x > EDGE) return;
+    sw = { x0:p.x, y0:p.y, locked:false, view:null, under:null, isHome:false };
+  }
+  function onMove(p){
     if (!sw) return;
-    const dx = e.clientX - sw.x0;
-    const dy = e.clientY - sw.y0;
+    const dx = p.x - sw.x0;
+    const dy = p.y - sw.y0;
     if (!sw.locked){
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;          // 等待方向明确
       if (Math.abs(dy) > Math.abs(dx)){ sw = null; return; }      // 纵向滑动→放弃，交回原生滚动
@@ -670,7 +697,7 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
       v.style.transition = 'none';
       if (sw.under && sw.under !== v) sw.under.style.transition = 'none';
     }
-    if (e.cancelable){ try { e.preventDefault(); } catch(_){} }
+    if (p.cancelable){ try { p.src.preventDefault(); } catch(_){} }
     const dist = Math.max(0, dx);
     const w = window.innerWidth || document.documentElement.clientWidth;
     const prog = Math.min(1, dist / (w * 0.55));
@@ -683,13 +710,13 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
     }
     showArrow(prog);
   }
-  function onUp(e){
+  function onUp(p){
     if (!sw) return;
     const s = sw; sw = null;
     if (!s.locked) return;
-    const dx = (e.clientX != null ? e.clientX : s.x0) - s.x0;
+    const dx = (p.x != null ? p.x : s.x0) - s.x0;
     const w = window.innerWidth || document.documentElement.clientWidth;
-    const commit = (dx >= THRESHOLD) || (dx >= w * 0.34);
+    const commit = (dx >= THRESHOLD) || (dx >= w * 0.30);
     const v = s.view, u = s.under;
     const ease = 'transform .3s cubic-bezier(.3,.8,.3,1), opacity .3s ease';
     v.style.transition = ease;
@@ -723,10 +750,13 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
   }
   function clearInline(el){ if (!el) return; el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; }
 
-  /* 退出应用：优先走原生桥；非 App 环境(桌面预览)降级为回首页，避免“卡住” */
+  /* 退出应用：优先走原生桥；非 App 环境(桌面预览)降级为回首页，避免"卡住"。
+     必须经window.StarHubNative 取桥，不能裸写StarHubNative ——
+     原生桥是异步注入的，页面脚本先于注入执行时裸引用会抛 ReferenceError。 */
   function nativeExit(){
     try {
-      if (window.StarHubNative && typeof StarHubNative.exitApp === 'function'){ StarHubNative.exitApp(); return; }
+      var bridge = window.StarHubNative;
+      if (bridge && typeof bridge.exitApp === 'function'){ bridge.exitApp(); return; }
     } catch(_) {}
     try { go('home'); } catch(_) {}
   }
@@ -737,10 +767,26 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
     go('home'); return 'home';
   };
 
-  document.addEventListener('pointerdown', onDown, { passive:true });
-  document.addEventListener('pointermove', onMove, { passive:false });
-  document.addEventListener('pointerup', onUp, { passive:true });
-  document.addEventListener('pointercancel', onUp, { passive:true });
+  mountHint();
+  /* touch 通道优先（安卓 WebView 上最可靠），pointer 通道兜底桌面鼠标。
+     两条通道共用同一份状态，sw 非空时后到的事件被 onDown 挡掉，不会重复触发。 */
+  document.addEventListener('touchstart', function(e){
+    const p = normTouch(e); if (p) onDown(p);
+  }, { passive:true });
+  document.addEventListener('touchmove', function(e){
+    const p = normTouch(e); if (p) onMove(p);
+  }, { passive:false });
+  document.addEventListener('touchend', function(e){
+    const p = normTouch(e); if (p) onUp(p);
+  }, { passive:true });
+  document.addEventListener('touchcancel', function(e){
+    const p = normTouch(e); if (p) onUp(p);
+  }, { passive:true });
+
+  document.addEventListener('pointerdown', function(e){ onDown(normPointer(e)); }, { passive:true });
+  document.addEventListener('pointermove', function(e){ onMove(normPointer(e)); }, { passive:false });
+  document.addEventListener('pointerup', function(e){ onUp(normPointer(e)); }, { passive:true });
+  document.addEventListener('pointercancel', function(e){ onUp(normPointer(e)); }, { passive:true });
 })();
 
 /* ================= 首页渲染 ================= */
@@ -872,9 +918,8 @@ function webFallback(p){
    普通浏览器里没有该对象，返回 false 走网页逻辑 */
 function nativeOpen(u){
   try {
-    if (window.StarHubNative && typeof StarHubNative.open === 'function'){
-      StarHubNative.open(u); return true;
-    }
+    var b = window.StarHubNative;
+    if (b && typeof b.open === 'function'){ b.open(u); return true; }
   } catch(_) {}
   return false;
 }
@@ -882,7 +927,7 @@ function nativeOpen(u){
 /* ============ 运行环境判定：一切跳转以手机端为准 ============
    App 内（有原生桥）＝手机；手机浏览器按 UA / 粗指针判定；桌面不算手机。 */
 function isPhone(){
-  if (window.StarHubNative && typeof StarHubNative.open === 'function') return true;
+  try { if (window.StarHubNative && typeof window.StarHubNative.open === 'function') return true; } catch(_) {}
   if (navigator.maxTouchPoints > 0 && window.matchMedia
       && window.matchMedia('(pointer:coarse)').matches) return true;
   return /Android|iPhone|iPad|iPod|Windows Phone|HarmonyOS|Mobile/i.test(navigator.userAgent || '');
@@ -1278,23 +1323,9 @@ ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
 
-/* ================= 禁止整页横向拖拽（WebView 手势兜底，页面内无横向滚动需求） ================= */
-(function(){
-  let sx = 0, sy = 0, tracking = false;
-  document.addEventListener('touchstart', function(e){
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; tracking = true;
-  }, {passive:true});
-  document.addEventListener('touchmove', function(e){
-    if (!tracking) return;
-    const t = e.touches[0];
-    const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.6){
-      e.preventDefault();           /* 横向意图明显：拦截，杜绝整页被拖走 */
-      tracking = false;
-    }
-  }, {passive:false});
-  document.addEventListener('touchend', function(){ tracking = false; });
-})();
+/* 整页横向拖拽兜底已移除：它与边缘右滑手势争抢同一条touchmove 通道，
+   会在手势锁定前抢先preventDefault，导致边缘返回永远触发不了。
+   现在由手势模块内部的横向锁定（touch-action:pan-y + preventDefault）统一负责。 */
 </script>
 </body>
 </html>
