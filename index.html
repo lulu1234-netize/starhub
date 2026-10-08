@@ -252,7 +252,7 @@
   .vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;
     background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;pointer-events:none}
   .vplay svg{width:18px;height:18px;fill:#fff;margin-left:2px}
-  /* 整体折叠：分区折叠占位条 */
+  /* 整体折叠：分区折叠占位条（默认全部隐藏时显示） */
   .fold-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:14px 16px;margin:6px 0;background:var(--card);border:1px solid var(--line);
     border-radius:14px;cursor:pointer}
@@ -264,7 +264,7 @@
     padding:10px;margin:8px 0 2px;background:var(--card);border:1px solid var(--line);
     border-radius:14px;cursor:pointer}
   .fold-collapse:active{background:#f4f4f6}
-  /* 继续展开更多 */
+  /* 继续展开更多已读帖（每次 5 条） */
   .fold-more{text-align:center;font-size:12.5px;color:var(--accent);font-weight:600;
     padding:11px;margin-top:2px;background:var(--card);border:1px solid var(--line);
     border-radius:14px;cursor:pointer}
@@ -521,10 +521,40 @@ const store = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeIt
 const IMG_KEY = id => 'starhub_img_' + id;
 function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
 
-/* ================= 折叠状态（本机，不持久化） =================
-   整体折叠模型：每个分区（本人 / 相关账号）默认全部折叠（显示 0 条），
-   用户点「展开 N 条」每点一次多显示 5 条；点「收起全部」则重新折叠该分区。 */
-let revealedCount = { own:0, rel:0 };   /* 各分区当前显示的帖子数量 */
+/* ================= 已读 / 折叠状态 =================
+   规则（合并「整体折叠」+「标记已读」两套要求）：
+   - 分区（本人 / 相关账号）默认整体折叠：已读帖全部隐藏，只留一条占位条。
+   - readSet：已读帖 UID 集合（持久化到 localStorage）。
+   - 未读帖（新帖 / 取消已读的帖）始终完整展开显示，不受整体折叠影响 →「新帖默认不折叠」。
+   - 启动时把当时全部帖标为已读（ensureStartupSnap，快照只捕获一次并持久化标记），
+     所以「现有帖子默认折叠」；之后用户「取消已读」的选择跨刷新仍保持展开。
+   - 点某帖「标记已读」→ 加入 readSet → 该帖进入折叠区（隐藏）；
+     点「已读 ✓」取消已读 → 移出 readSet → 该帖回到展开区常驻显示。
+   - 折叠区提供「展开 N 条已读帖」（每次 +5）与「收起全部 ▲」两个入口。 */
+const READ_KEY = 'starhub_read';
+const SNAP_KEY = 'starhub_snap_done';
+const readSet = new Set((()=>{ try{ return JSON.parse(store.getItem(READ_KEY) || '[]'); }catch(e){ return []; } })());
+function saveRead(){ try{ store.setItem(READ_KEY, JSON.stringify([...readSet])); }catch(e){} }
+function toggleRead(uid){
+  if (readSet.has(uid)) readSet.delete(uid); else readSet.add(uid);   /* 取消已读 / 标记已读 */
+  revealed.own.delete(uid); revealed.rel.delete(uid);                 /* 折叠区里若有它，一并清掉，避免残留展开态 */
+  saveRead(); renderDetail();
+}
+let revealed = { own:new Set(), rel:new Set() };   /* 折叠区里被「展开 N 条」放出来的已读帖，仅本会话有效 */
+let STARTUP_UIDS = new Set();                       /* 启动时就存在的帖子，已标为已读 */
+let startupDone = (store.getItem(SNAP_KEY) === '1'); /* 启动快照只捕获一次（持久化） */
+function ensureStartupSnap(){
+  if (startupDone) return;
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id]; if (!d) return;
+    d.own.concat(d.related).forEach(p=>{
+      if (!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); }
+    });
+  });
+  saveRead();
+  startupDone = true;
+  try{ store.setItem(SNAP_KEY, '1'); }catch(e){}
+}
 function changeImg(id, input){
   const file = input.files && input.files[0];
   if (!file) return;
@@ -811,7 +841,7 @@ function jumpA(p, label){
    内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
 const AV_CLS = { weibo:'av-weibo', xhs:'av-xhs', douyin:'av-dy' };
 function postCard(p){
-  const s = SRC[p.platform], today = isNew(p.time);
+  const s = SRC[p.platform], today = isNew(p.time), read = readSet.has(p._uid);
   const av = String(p.account || '？').trim().charAt(0) || '？';
   return `
   <div class="post" data-uid="${p._uid}">
@@ -830,6 +860,8 @@ function postCard(p){
         ${statsRow(p)}
         <div class="p-foot">
           <span title="${fullTime(p.time)}">${timeStr(p.time)}</span>
+          <button class="read-btn ${read ? 'done' : ''}" onclick="toggleRead('${p._uid}')"
+            title="${read ? '点击取消已读，保持展开' : '阅读完成后点击，将其折叠收纳'}">${read ? '已读 ✓' : '标记已读'}</button>
           ${jumpA(p)}
         </div>
       </div>
@@ -837,43 +869,57 @@ function postCard(p){
   </div>`;
 }
 
-/* 分区渲染（整体折叠模型）：
-   1) 各分区默认显示 revealedCount[key] 条（初始 0 → 全部折叠，不显示任何帖子内容）；
-   2) 折叠时显示一条占位条「本区共 N 条 · 已折叠」+「展开 5 条」入口；
-   3) 点「展开 N 条」每次多显示 5 条；已展开后顶部出现「收起全部」一键重新折叠；
+/* 分区渲染（合并「整体折叠」+「标记已读」）：
+   1) 未读帖（新帖 / 取消已读的帖）→ 始终完整展开显示，不受整体折叠影响；
+   2) 已读帖 → 默认隐藏（折叠区），只露出占位条；点「展开 N 条」每次放出 5 条；
+   3) 已读帖全部放出后显示「收起全部 ▲」，点击重新把它们收进折叠区；
    4) 平台筛选在内部按 curFilter 处理。 */
 function sectionRender(list, key){
   let sorted = list.slice().sort((a,b)=>b.time-a.time);
   if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
-  const total = sorted.length;
-  if (total === 0) return '';
-  const shown = Math.min(revealedCount[key], total);
-  const cards = sorted.slice(0, shown).map(p => postCard(p)).join('');
+  if (sorted.length === 0) return '';
+  /* 未读帖：常驻展开区 */
+  const open = sorted.filter(p => !readSet.has(p._uid));
+  /* 已读帖：折叠区，当前已放出的部分 */
+  const readAll = sorted.filter(p => readSet.has(p._uid));
+  const readShown = readAll.filter(p => revealed[key].has(p._uid));
+  const readHidden = readAll.filter(p => !revealed[key].has(p._uid));
+  /* 展示顺序：未读帖在上（时间倒序），已展开的已读帖跟在后面 */
+  const cards = open.concat(readShown).map(p => postCard(p)).join('');
   let ctrl = '';
-  if (shown < total){
-    const more = Math.min(5, total - shown);
-    ctrl += `<div class="fold-more" onclick="expandMore('${key}')">展开 ${more} 条（已显示 ${shown}/${total}）</div>`;
+  /* 折叠区还有未放出的已读帖 → 「展开 N 条已读帖」入口 */
+  if (readHidden.length > 0){
+    ctrl += `<div class="fold-more" onclick="expandMore('${key}')">展开 ${Math.min(5, readHidden.length)} 条已读帖（还差 ${readHidden.length} 条折叠）</div>`;
   }
-  if (shown > 0){
+  /* 折叠区已放出帖子 → 「收起全部」入口 */
+  if (readShown.length > 0){
     ctrl = `<div class="fold-collapse" onclick="collapseAll('${key}')">收起全部 ▲</div>` + ctrl;
   }
-  if (shown === 0){
+  /* 整区没有任何内容显示（无未读帖、已读帖也全折叠）→ 显示整体折叠占位条 */
+  if (open.length === 0 && readShown.length === 0){
     ctrl = `<div class="fold-bar" onclick="expandMore('${key}')">
-      <span class="fold-bar-txt">本区共 ${total} 条动态 · 已折叠</span>
-      <span class="fold-bar-btn">展开 ${Math.min(5, total)} 条 ›</span></div>`;
+      <span class="fold-bar-txt">本区共 ${sorted.length} 条动态 · 已折叠</span>
+      <span class="fold-bar-btn">展开 ${Math.min(5, sorted.length)} 条 ›</span></div>` + ctrl;
   }
   return cards + ctrl;
 }
-/* 每次多展开 5 条 */
+/* 展开折叠区：每次多放出 5 条已读帖（按时间倒序，从较新的已读帖开始） */
 function expandMore(key){
   const d = DATA[curStar];
   let list = (key === 'own') ? d.own : d.related;
   if (curFilter !== 'all') list = list.filter(p => p.platform === curFilter);
-  revealedCount[key] = Math.min(revealedCount[key] + 5, list.length);
+  const sorted = list.slice().sort((a,b)=>b.time-a.time);
+  let added = 0;
+  for (const p of sorted){
+    if (readSet.has(p._uid) && !revealed[key].has(p._uid)){
+      revealed[key].add(p._uid); added++;
+      if (added >= 5) break;
+    }
+  }
   renderDetail();
 }
-/* 一键重新折叠该分区 */
-function collapseAll(key){ revealedCount[key] = 0; renderDetail(); }
+/* 收起全部：该分区已放出的已读帖重新收进折叠区（未读帖不受影响，保持展开） */
+function collapseAll(key){ revealed[key].clear(); renderDetail(); }
 
 function renderDetail(){
   const d = DATA[curStar];
@@ -925,9 +971,9 @@ function renderDetail(){
 
 function openStar(id){
   curStar = id; curFilter = 'all';
-  revealedCount = { own:0, rel:0 };
+  revealed = { own:new Set(), rel:new Set() };
   document.getElementById('dName').textContent = '侯明昊';
-  document.getElementById('dSub').textContent = '三平台统一时间线 · 按时间倒序 · 默认折叠，点击展开浏览';
+  document.getElementById('dSub').textContent = '三平台统一时间线 · 已读帖自动折叠 · 可标记已读收纳';
   renderDetail();
   go('star');
 }
@@ -1023,10 +1069,13 @@ async function loadLive(silent){
   }
   if (!data){
     if(!silent) toast('未连接采集服务，当前为内置数据');
+    ensureStartupSnap();                 /* 无线上数据时，用内置示例作为启动快照，全部标为已读折叠 */
+    if (curStar) renderDetail();
     return false;
   }
   const isNew = data.posts.some(p => !LIVE.ids.has(p.id));
   applyLive(data.posts, data.updatedAt);
+  ensureStartupSnap();                   /* 首次加载成功：把当时全部帖子纳入启动快照 → 默认已读折叠 */
   renderHome();
   if (curStar) renderDetail();
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
@@ -1050,6 +1099,7 @@ window.addEventListener('error', e=>{
 });
 renderHome();
 renderMineImg();
+ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
