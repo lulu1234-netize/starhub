@@ -43,7 +43,9 @@ jobs:
           # 每次运行都留下痕迹，避免仓库长期无活动导致定时任务被 GitHub 自动停用
           echo "{\"at\":\"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"}" > data/lastcheck.json
           # posts_ext.json 是抖音/小红书的采集结果，一并纳入，避免本次提交把它冲掉
+          # data/img 是本地化后的微博图片（采集器下载），存在才提交
           git add -A data/posts.json data/posts_ext.json data/lastcheck.json
+          if [ -d data/img ]; then git add -A data/img; fi
           if git diff --staged --quiet; then
             echo "本次没有新内容，跳过提交"
           else
