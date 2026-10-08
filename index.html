@@ -897,13 +897,11 @@ function sectionRender(list, key){
   let sorted = list.slice().sort((a,b)=>b.time-a.time);
   if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
   if (sorted.length === 0) return '';
-  /* 分组：本人(own)整体一组；相关账号(rel)按 account 分组，每个分组各自保留最新 2 条常驻展开（pinned） */
-  const groups = {};
-  if (key === 'own') groups['__hmh__'] = sorted;
-  else sorted.forEach(p => { const g = p.account || '其他'; if (!groups[g]) groups[g] = []; groups[g].push(p); });
-  const pinned = new Set();
-  Object.values(groups).forEach(g => g.slice(0, 2).forEach(p => pinned.add(p._uid)));
-  /* 展开的帖 = 未读帖 ∪ pinned（pinned 即使已读也强制展开，避免整区全折叠后一片空白） */
+  /* pinned：本区时间倒序最新 2 条，强制常驻展开（即使已读也展开，避免整区全折叠后一片空白）。
+     相关账号区为跨所有账号的全局最新 2 条（不再按账号各自保留 2 条）；其余已读帖照常折叠。
+     新帖发布后自动以最新 2 条保活，原第 3 条（已读）随之折叠，确保未折叠帖子始终只保留最新 2 条。 */
+  const pinned = new Set(sorted.slice(0, 2).map(p => p._uid));
+  /* 展开的帖 = 未读帖 ∪ pinned（pinned 即使已读也强制展开） */
   const open = sorted.filter(p => !readSet.has(p._uid) || pinned.has(p._uid));
   /* 已读且非 pinned 的帖：进入折叠区 */
   const readAll = sorted.filter(p => readSet.has(p._uid) && !pinned.has(p._uid));
@@ -970,12 +968,13 @@ function renderDetail(){
     : `<div class="empty-sm">当前筛选下暂无本人动态</div>`;
   const relBlock = relAll.length
     ? (() => {
+        /* 固定 4 个微博相关账号筛选，不动态生成多余筛选项 */
+        const REL_ACCOUNTS = ['侯明昊工作室','侯明昊全球后援会','侯明昊的桃园杂货铺','侯会有期-昊友汇'];
         const relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
-        const accts = [...new Set(relAll.map(p => p.account).filter(Boolean))];
         const relTabs = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
-          .concat(accts.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
+          .concat(REL_ACCOUNTS.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
         return `<div class="rel-box">
-          <div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relAll.length} 条</span></div>
+          <div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relList.length} 条</span></div>
           <div class="filter-tabs rel-tabs">${relTabs.join('')}</div>
           ${sectionRender(relList, 'rel')}</div>`;
       })()
