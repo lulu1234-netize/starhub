@@ -897,14 +897,22 @@ function sectionRender(list, key){
   let sorted = list.slice().sort((a,b)=>b.time-a.time);
   if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
   if (sorted.length === 0) return '';
-  /* pinned：本区时间倒序最新 2 条，强制常驻展开（即使已读也展开，避免整区全折叠后一片空白）。
-     相关账号区为跨所有账号的全局最新 2 条（不再按账号各自保留 2 条）；其余已读帖照常折叠。
-     新帖发布后自动以最新 2 条保活，原第 3 条（已读）随之折叠，确保未折叠帖子始终只保留最新 2 条。 */
-  const pinned = new Set(sorted.slice(0, 2).map(p => p._uid));
-  /* 展开的帖 = 未读帖 ∪ pinned（pinned 即使已读也强制展开） */
-  const open = sorted.filter(p => !readSet.has(p._uid) || pinned.has(p._uid));
-  /* 已读且非 pinned 的帖：进入折叠区 */
-  const readAll = sorted.filter(p => readSet.has(p._uid) && !pinned.has(p._uid));
+  /* 展开规则（本人区与所有相关账号区统一适用）：
+     - 未读帖（新帖）始终展开；
+     - 若未读 >= 2 条，则已读帖全部折叠（即使已读是最新的一条，也照样折叠）；
+     - 若未读 < 2 条，则按时间倒序把已读帖补充进展开集合，使「展开总数」保持为最新的 2 条。 */
+  const unread = sorted.filter(p => !readSet.has(p._uid));
+  const expanded = new Set(unread.map(p => p._uid));
+  if (unread.length < 2){
+    for (const p of sorted){          /* sorted 已按时间倒序排列 */
+      if (expanded.size >= 2) break;
+      if (readSet.has(p._uid)) expanded.add(p._uid);
+    }
+  }
+  /* 展开区：未读帖 ∪ 经上述规则补充进来的最新已读帖 */
+  const open = sorted.filter(p => expanded.has(p._uid));
+  /* 已读且未进入展开区的帖：进入折叠区 */
+  const readAll = sorted.filter(p => readSet.has(p._uid) && !expanded.has(p._uid));
   const readShown = readAll.filter(p => revealed[key].has(p._uid));
   const readHidden = readAll.filter(p => !revealed[key].has(p._uid));
   /* 展示顺序：展开帖在上（时间倒序），已放出的已读帖跟在后面 */
@@ -918,7 +926,7 @@ function sectionRender(list, key){
   if (readShown.length > 0){
     ctrl = `<div class="fold-collapse" onclick="collapseAll('${key}')">收起全部 ▲</div>` + ctrl;
   }
-  /* 整区无任何内容显示（无未读帖、已读帖也全折叠、且无 pinned）→ 显示整体折叠占位条 */
+  /* 整区无任何展开帖、已读帖也全折叠 → 显示整体折叠占位条 */
   if (open.length === 0 && readShown.length === 0){
     ctrl = `<div class="fold-bar" onclick="expandMore('${key}')">
       <span class="fold-bar-txt">本区共 ${sorted.length} 条动态 · 已折叠</span>
