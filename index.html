@@ -28,7 +28,7 @@
     position:relative;display:flex;flex-direction:column;overflow:hidden}
 
   /* ---------- views ---------- */
-  .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
+  .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);touch-action:pan-y;
     transform:translateX(100%);transition:transform .32s cubic-bezier(.3,.8,.3,1);opacity:0;pointer-events:none;
     display:flex;flex-direction:column;
     -webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
@@ -609,6 +609,133 @@ function go(name){
 document.querySelectorAll('.tabbar .tab').forEach(t=>{
   t.addEventListener('click', ()=>go(t.dataset.tab));
 });
+
+/* ================= 边缘滑动手势导航 =================
+   从屏幕左侧窄边(EDGE)向右滑动：
+     · 子页面(明星详情 / 我的) → 返回首页；
+     · 首页 → 退出应用程序（经原生桥 StarHubNative.exitApp）。
+   仅左侧边缘触发，且需明显「右向横滑」才提交，纵向滚动交给原生( touch-action:pan-y )，互不干扰。
+   桌面预览可用鼠标从左边拖动演示（App 内仅触摸生效）。 */
+(function(){
+  const EDGE = 26;                       // 左边缘触发区宽度(px)
+  const THRESHOLD = 72;                  // 提交所需最小位移(px)
+  const ALLOW_MOUSE = !isPhone();        // App 内(手机)只用触摸；桌面预览允许鼠标演示
+  let sw = null;                         // 当前手势状态
+  let animating = false;                 // 提交/回弹动画进行中，避免叠加
+
+  function activeView(){
+    return document.querySelector('.view.active') || document.getElementById('view-home');
+  }
+  function makeArrow(){
+    let el = document.getElementById('edgeBack');
+    if (!el){
+      el = document.createElement('div');
+      el.id = 'edgeBack';
+      el.className = 'edge-back';
+      el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function showArrow(p){ const a = makeArrow(); a.classList.add('show'); a.style.opacity = String(Math.min(1, 0.25 + p * 0.75)); }
+  function hideArrow(){ const a = document.getElementById('edgeBack'); if (a) a.classList.remove('show'); }
+
+  function onDown(e){
+    if (sw || animating) return;
+    if (!e.isPrimary) return;
+    if (e.pointerType === 'mouse' && !ALLOW_MOUSE) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.clientX > EDGE) return;        // 不在左边缘
+    sw = { x0:e.clientX, y0:e.clientY, locked:false, view:null, under:null, isHome:false };
+  }
+  function onMove(e){
+    if (!sw) return;
+    const dx = e.clientX - sw.x0;
+    const dy = e.clientY - sw.y0;
+    if (!sw.locked){
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;          // 等待方向明确
+      if (Math.abs(dy) > Math.abs(dx)){ sw = null; return; }      // 纵向滑动→放弃，交回原生滚动
+      if (dx <= 0){ sw = null; return; }                          // 向左滑→放弃
+      sw.locked = true;                                           // 锁定为右向横滑
+      const v = activeView();
+      sw.view = v;
+      sw.isHome = (v.id === 'view-home');
+      sw.under = document.querySelector('.view.under') || (sw.isHome ? null : document.getElementById('view-home'));
+      v.style.transition = 'none';
+      if (sw.under && sw.under !== v) sw.under.style.transition = 'none';
+    }
+    if (e.cancelable){ try { e.preventDefault(); } catch(_){} }
+    const dist = Math.max(0, dx);
+    const w = window.innerWidth || document.documentElement.clientWidth;
+    const prog = Math.min(1, dist / (w * 0.55));
+    sw.view.style.transform = 'translateX(' + dist + 'px)';
+    sw.view.style.opacity = sw.isHome ? String(1 - prog * 0.35) : '1';
+    if (sw.under && sw.under !== sw.view){
+      const off = -18 * (1 - prog);                               // 下层页随进度从 -18% 回到 0（视差）
+      sw.under.style.transform = 'translateX(' + off + '%)';
+      sw.under.style.opacity = String(0.4 + 0.6 * prog);
+    }
+    showArrow(prog);
+  }
+  function onUp(e){
+    if (!sw) return;
+    const s = sw; sw = null;
+    if (!s.locked) return;
+    const dx = (e.clientX != null ? e.clientX : s.x0) - s.x0;
+    const w = window.innerWidth || document.documentElement.clientWidth;
+    const commit = (dx >= THRESHOLD) || (dx >= w * 0.34);
+    const v = s.view, u = s.under;
+    const ease = 'transform .3s cubic-bezier(.3,.8,.3,1), opacity .3s ease';
+    v.style.transition = ease;
+    if (u && u !== v) u.style.transition = ease;
+    hideArrow();
+    animating = true;
+    const done = () => { animating = false; };
+    if (commit){
+      if (s.isHome){
+        v.style.transform = 'translateX(100%)';
+        v.style.opacity = '0';
+        const fin = () => { nativeExit(); done(); };
+        v.addEventListener('transitionend', fin, { once:true });
+        setTimeout(fin, 380);
+      } else {
+        v.style.transform = 'translateX(100%)';
+        if (u){ u.style.transform = 'translateX(0)'; u.style.opacity = '1'; }
+        const fin = () => {
+          if (document.body.contains(v)){ go('home'); clearInline(v); if (u) clearInline(u); }
+          done();
+        };
+        v.addEventListener('transitionend', fin, { once:true });
+        setTimeout(fin, 380);
+      }
+    } else {
+      v.style.transform = 'translateX(0)';
+      v.style.opacity = '1';
+      if (u){ u.style.transform = 'translateX(-18%)'; u.style.opacity = '0.4'; }
+      setTimeout(() => { clearInline(v); if (u) clearInline(u); done(); }, 320);
+    }
+  }
+  function clearInline(el){ if (!el) return; el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; }
+
+  /* 退出应用：优先走原生桥；非 App 环境(桌面预览)降级为回首页，避免“卡住” */
+  function nativeExit(){
+    try {
+      if (window.StarHubNative && typeof StarHubNative.exitApp === 'function'){ StarHubNative.exitApp(); return; }
+    } catch(_) {}
+    try { go('home'); } catch(_) {}
+  }
+  /* 硬件返回键与滑动手势保持一致：子页面回首页、首页退出 */
+  window.__starhubBack = function(){
+    const v = document.querySelector('.view.active') || document.getElementById('view-home');
+    if (!v || v.id === 'view-home'){ nativeExit(); return 'exit'; }
+    go('home'); return 'home';
+  };
+
+  document.addEventListener('pointerdown', onDown, { passive:true });
+  document.addEventListener('pointermove', onMove, { passive:false });
+  document.addEventListener('pointerup', onUp, { passive:true });
+  document.addEventListener('pointercancel', onUp, { passive:true });
+})();
 
 /* ================= 首页渲染 ================= */
 function renderHome(){
