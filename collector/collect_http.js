@@ -21,7 +21,11 @@ function getCookie() {
 }
 
 const TARGETS = JSON.parse(process.env.STARHUB_TARGETS || JSON.stringify([
-  { star: 'hmh', name: '侯明昊', uid: '1831550987', kind: 'own', tag: '本人' }
+  { star: 'hmh', name: '侯明昊', uid: '1831550987', kind: 'own', tag: '本人' },
+  { star: 'hmh', name: '侯明昊工作室', uid: '5763552342', kind: 'related', tag: '工作室' },
+  { star: 'hmh', name: '侯明昊全球后援会', uid: '5702872851', kind: 'related', tag: '全球后援会' },
+  { star: 'hmh', name: '侯明昊的桃园杂货铺', uid: '7821215116', kind: 'related', tag: '桃园杂货铺' },
+  { star: 'hmh', name: '侯会有期-昊友汇', uid: '2125740311', kind: 'related', tag: '昊友汇' }
 ]));
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';

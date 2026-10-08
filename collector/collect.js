@@ -20,7 +20,10 @@ const PROFILE = path.join(ROOT, 'browser-profile');
 /* 追踪目标：一个明星下可挂多个账号源 */
 const TARGETS = [
   { star: 'hmh', name: '侯明昊', uid: '1831550987', kind: 'own',      tag: '本人' },
-  { star: 'hmh', name: '碧血蝉官博', uid: '', kind: 'related', tag: '剧方官博' }
+  { star: 'hmh', name: '侯明昊工作室', uid: '5763552342', kind: 'related', tag: '工作室' },
+  { star: 'hmh', name: '侯明昊全球后援会', uid: '5702872851', kind: 'related', tag: '全球后援会' },
+  { star: 'hmh', name: '侯明昊的桃园杂货铺', uid: '7821215116', kind: 'related', tag: '桃园杂货铺' },
+  { star: 'hmh', name: '侯会有期-昊友汇', uid: '2125740311', kind: 'related', tag: '昊友汇' }
 ];
 
 const log = [];
