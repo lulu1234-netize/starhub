@@ -369,12 +369,25 @@ const ACCOUNTS = {
 
 /* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖）。
    一律使用各平台**移动端**搜索页（桌面版网页在手机上观感/可用性都更差）。 */
+/* encodeURIComponent 遇到「被按 UTF-16 单元切半的 emoji」（残缺代理对）会抛
+   URIError: URI malformed，直接打断整条渲染链。这里逐码点降级编码，
+   编不了的坏字符直接丢弃，保证永不抛错。 */
+function safeEncode(s){
+  try { return encodeURIComponent(s); }
+  catch(e){
+    let out = '';
+    for (const ch of String(s)){          /* for..of 按完整码点遍历 */
+      try { out += encodeURIComponent(ch); } catch(e2){ /* 跳过残缺字符 */ }
+    }
+    return out;
+  }
+}
 function contentLink(platform, text){
   let raw = String(text || '').replace(/\s+/g, ' ').trim();
   /* 去掉「【示例占位】…」这类提示语，避免拿着占位文案去做无意义的搜索 */
   raw = raw.replace(/[【\[(（][^\]】)）]{0,20}(示例|占位|演示|待补充)[^\]】)）]{0,20}[】\])）]/g, '').trim();
   const key = (/示例|占位|演示|加载中/.test(raw) || raw.length < 2) ? '侯明昊' : raw.slice(0, 16);
-  const q = encodeURIComponent(key);
+  const q = safeEncode(key);
   if (platform === 'weibo')  return 'https://m.weibo.cn/search?containerid=100103type%3D1%26q%3D' + q;
   if (platform === 'douyin') return 'https://www.douyin.com/search/' + q;
   return 'https://www.xiaohongshu.com/search_result?keyword=' + q;
@@ -691,7 +704,7 @@ function postId(p){
 
 /* 兜底用：按内容在该平台内搜索（拿不到帖子 ID 时使用） */
 function searchScheme(p){
-  const q = encodeURIComponent((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
+  const q = safeEncode((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
   if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
   if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
   return 'xhsdiscover://search/result?keyword=' + q;
