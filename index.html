@@ -555,18 +555,21 @@ function toggleRead(uid){
 }
 let revealed = { own:new Set(), rel:new Set() };   /* 折叠区里被「展开 N 条」放出来的已读帖，仅本会话有效 */
 let STARTUP_UIDS = new Set();                       /* 启动时就存在的帖子，已标为已读 */
-let startupDone = (store.getItem(SNAP_KEY) === '1'); /* 启动快照只捕获一次（持久化） */
+let startupDone = (store.getItem(SNAP_KEY) === '1'); /* 启动快照只捕获一次（持久化，仅针对真实数据） */
 function ensureStartupSnap(){
-  if (startupDone) return;
+  const d = DATA.hmh;
+  const hasReal = !!(d && (d.own.concat(d.related).some(p => p._uid && String(p._uid).indexOf('demo_') !== 0)));
+  /* 真实数据快照已完成 → 锁定：之后轮询新抓到的帖保持未读（默认不折叠） */
+  if (startupDone && hasReal) return;
   (DATA.stars || []).forEach(s=>{
-    const d = DATA[s.id]; if (!d) return;
-    d.own.concat(d.related).forEach(p=>{
+    const dd = DATA[s.id]; if (!dd) return;
+    dd.own.concat(dd.related).forEach(p=>{
       if (!STARTUP_UIDS.has(p._uid)){ STARTUP_UIDS.add(p._uid); readSet.add(p._uid); }
     });
   });
   saveRead();
-  startupDone = true;
-  try{ store.setItem(SNAP_KEY, '1'); }catch(e){}
+  /* 仅当当前数据已是真实数据时才落下锁定标记；demo 占位阶段不锁定，等真实数据到达后重做 */
+  if (hasReal){ startupDone = true; try{ store.setItem(SNAP_KEY, '1'); }catch(e){} }
 }
 function changeImg(id, input){
   const file = input.files && input.files[0];
