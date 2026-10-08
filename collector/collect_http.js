@@ -9,6 +9,7 @@
    ============================================================ */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT_FILE = process.env.STARHUB_OUT || path.join(ROOT, 'data', 'posts.json');
@@ -148,6 +149,65 @@ async function pushNew(fresh) {
   }
 }
 
+/* ---------- 图片本地化 ----------
+   新浪图床防盗链已收紧：仅放行带 weibo.com/weibo.cn Referer 的请求，
+   无 Referer、github.io、127.0.0.1 等一律 403；而浏览器 / WebView 都
+   无法为 <img> 伪造跨域 Referer，前端无解。
+   所以由采集器（GitHub Actions 云端）代为下载图片存入仓库 data/img/，
+   posts.json 改写为仓库内相对路径 —— 任何端都同源直读，永久有效。 */
+function imgFileName(u) {
+  const m = String(u).match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i);
+  const ext = (m ? m[1] : 'jpg').toLowerCase();
+  return crypto.createHash('md5').update(u).digest('hex').slice(0, 16) + '.' + (ext === 'jpeg' ? 'jpg' : ext);
+}
+
+async function localizeImages(posts) {
+  const jobs = new Map();                     /* 原始 URL -> 文件名（全局去重） */
+  const hit = u => typeof u === 'string' && u.indexOf('sinaimg.cn') >= 0;
+  for (const p of posts) {
+    for (const f of ['imgs', 'pics', 'cover']) {
+      const arr = Array.isArray(p[f]) ? p[f] : [p[f]];
+      for (const u of arr) if (hit(u) && !jobs.has(u)) jobs.set(u, imgFileName(u));
+    }
+  }
+  if (!jobs.size) return;
+  const IMG_DIR = path.join(ROOT, 'data', 'img');
+  fs.mkdirSync(IMG_DIR, { recursive: true });
+  const list = [...jobs.entries()];
+  console.log(`[图片] 需本地化 ${list.length} 张`);
+  let ok = 0, fail = 0;
+  const CONC = 6;                             /* 并发 6，避免触发风控 */
+  for (let i = 0; i < list.length; i += CONC) {
+    await Promise.all(list.slice(i, i + CONC).map(async ([u, fn]) => {
+      const dest = path.join(IMG_DIR, fn);
+      if (fs.existsSync(dest) && fs.statSync(dest).size > 0) { ok++; return; }
+      try {
+        const r = await fetch(u, {
+          headers: { Referer: 'https://weibo.com/', 'User-Agent': UA },
+          signal: AbortSignal.timeout(20000)
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (buf.length < 1000) throw new Error('too small ' + buf.length);
+        fs.writeFileSync(dest, buf);
+        ok++;
+      } catch (e) { fail++; console.log('  [图片失败] ' + fn + ' ' + e.message); }
+    }));
+  }
+  console.log(`[图片] 成功 ${ok} 失败 ${fail}`);
+  /* 只改写下载成功的 URL；失败的保留原直链兜底 */
+  const rw = u => {
+    if (!hit(u)) return u;
+    const dest = path.join(IMG_DIR, jobs.get(u));
+    return (fs.existsSync(dest) && fs.statSync(dest).size > 0) ? 'data/img/' + jobs.get(u) : u;
+  };
+  for (const p of posts) {
+    if (Array.isArray(p.imgs)) p.imgs = p.imgs.map(rw);
+    if (Array.isArray(p.pics)) p.pics = p.pics.map(rw);
+    if (typeof p.cover === 'string') p.cover = rw(p.cover);
+  }
+}
+
 (async () => {
   let cookie = getCookie();
   if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音/小红书数据');
@@ -182,6 +242,7 @@ async function pushNew(fresh) {
   all.posts.sort((a, b) => b.time - a.time);
   /* 统一补上标准日期时间串 YYYY-MM-DD HH:mm:ss（北京时间） */
   all.posts.forEach(p => { p.timeStr = fmtShanghai(p.time); });
+  await localizeImages(all.posts);
   if (!all.posts.length) {
     console.log('未取到微博数据（Cookie 可能过期），且没有外部平台数据');
     process.exit(5);
