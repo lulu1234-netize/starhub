@@ -38,6 +38,12 @@
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
   .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
+  /* 边缘滑动返回指示箭头 */
+  .edge-back{position:fixed;left:12px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;
+    background:rgba(20,20,28,.34);color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:opacity .15s ease;z-index:200;pointer-events:none}
+  .edge-back svg{width:22px;height:22px}
+  .edge-back.show{opacity:1}
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
