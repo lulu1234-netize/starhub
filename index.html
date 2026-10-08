@@ -113,6 +113,7 @@
 
   /* 平台筛选 */
   .filter-tabs{display:flex;gap:8px;padding:0 2px;flex-wrap:wrap}
+  .rel-tabs{margin:8px 2px 2px}
   .ftab{padding:6px 14px;border-radius:16px;background:#fff;border:1px solid var(--line);
     font-size:12.5px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:all .15s}
   .ftab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
@@ -633,6 +634,8 @@ let curStar = null;
 const FILTERS = [['all','全部'],['weibo','仅微博'],['xhs','仅小红书'],['douyin','仅抖音']];
 
 function setFilter(k){ curFilter = k; renderDetail(); }
+let curRelFilter = 'all';        /* all | 相关账号 account 名（按账号筛选各自内容） */
+function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDetail(); }
 
 /* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
    ① 采到的真实多图 → 真图；② 单张封面（cover）→ 真图 + 角标；
@@ -894,13 +897,19 @@ function sectionRender(list, key){
   let sorted = list.slice().sort((a,b)=>b.time-a.time);
   if (curFilter !== 'all') sorted = sorted.filter(p => p.platform === curFilter);
   if (sorted.length === 0) return '';
-  /* 未读帖：常驻展开区 */
-  const open = sorted.filter(p => !readSet.has(p._uid));
-  /* 已读帖：折叠区，当前已放出的部分 */
-  const readAll = sorted.filter(p => readSet.has(p._uid));
+  /* 分组：本人(own)整体一组；相关账号(rel)按 account 分组，每个分组各自保留最新 2 条常驻展开（pinned） */
+  const groups = {};
+  if (key === 'own') groups['__hmh__'] = sorted;
+  else sorted.forEach(p => { const g = p.account || '其他'; if (!groups[g]) groups[g] = []; groups[g].push(p); });
+  const pinned = new Set();
+  Object.values(groups).forEach(g => g.slice(0, 2).forEach(p => pinned.add(p._uid)));
+  /* 展开的帖 = 未读帖 ∪ pinned（pinned 即使已读也强制展开，避免整区全折叠后一片空白） */
+  const open = sorted.filter(p => !readSet.has(p._uid) || pinned.has(p._uid));
+  /* 已读且非 pinned 的帖：进入折叠区 */
+  const readAll = sorted.filter(p => readSet.has(p._uid) && !pinned.has(p._uid));
   const readShown = readAll.filter(p => revealed[key].has(p._uid));
   const readHidden = readAll.filter(p => !revealed[key].has(p._uid));
-  /* 展示顺序：未读帖在上（时间倒序），已展开的已读帖跟在后面 */
+  /* 展示顺序：展开帖在上（时间倒序），已放出的已读帖跟在后面 */
   const cards = open.concat(readShown).map(p => postCard(p)).join('');
   let ctrl = '';
   /* 折叠区还有未放出的已读帖 → 「展开 N 条已读帖」入口 */
@@ -911,7 +920,7 @@ function sectionRender(list, key){
   if (readShown.length > 0){
     ctrl = `<div class="fold-collapse" onclick="collapseAll('${key}')">收起全部 ▲</div>` + ctrl;
   }
-  /* 整区没有任何内容显示（无未读帖、已读帖也全折叠）→ 显示整体折叠占位条 */
+  /* 整区无任何内容显示（无未读帖、已读帖也全折叠、且无 pinned）→ 显示整体折叠占位条 */
   if (open.length === 0 && readShown.length === 0){
     ctrl = `<div class="fold-bar" onclick="expandMore('${key}')">
       <span class="fold-bar-txt">本区共 ${sorted.length} 条动态 · 已折叠</span>
@@ -960,7 +969,16 @@ function renderDetail(){
     ? `<div class="own-box">${sectionRender(d.own, 'own')}</div>`
     : `<div class="empty-sm">当前筛选下暂无本人动态</div>`;
   const relBlock = relAll.length
-    ? `<div class="rel-box"><div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relAll.length} 条</span></div>${sectionRender(d.related, 'rel')}</div>`
+    ? (() => {
+        const relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
+        const accts = [...new Set(relAll.map(p => p.account).filter(Boolean))];
+        const relTabs = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
+          .concat(accts.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
+        return `<div class="rel-box">
+          <div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relAll.length} 条</span></div>
+          <div class="filter-tabs rel-tabs">${relTabs.join('')}</div>
+          ${sectionRender(relList, 'rel')}</div>`;
+      })()
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
   const PF_NAME = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
   const pfList = [...new Set(d.own.concat(d.related).map(p=>p.platform))].map(k=>PF_NAME[k] || k);
@@ -986,7 +1004,7 @@ function renderDetail(){
 }
 
 function openStar(id){
-  curStar = id; curFilter = 'all';
+  curStar = id; curFilter = 'all'; curRelFilter = 'all';
   revealed = { own:new Set(), rel:new Set() };
   document.getElementById('dName').textContent = '侯明昊';
   document.getElementById('dSub').textContent = '三平台统一时间线 · 已读帖自动折叠 · 可标记已读收纳';
