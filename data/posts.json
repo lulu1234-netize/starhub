@@ -1,6 +1,50 @@
 {
-  "updatedAt": 1791525595553,
+  "updatedAt": 1791527101928,
   "posts": [
+    {
+      "id": "5352110348307285",
+      "platform": "weibo",
+      "account": "侯明昊全球后援会",
+      "tag": "全球后援会",
+      "kind": "related",
+      "star": "hmh",
+      "text": "以歌为翼，热爱入戏，侯明昊闪耀视界。感谢无数丰富的作品，丰富了咱们的2026。\n\n转发 @侯明昊：创见·新生！2026#微博视界大会# 正式开启！恭喜#入青云##电视剧逍遥##玉茗茶骨##雀骨# 入围2026#微博视界大会年度推荐#，感谢大家看见纪伯宰、红烨、陆江来、萧无衣，见证我的每一次成长与蜕变！快来和我一起参与年度推荐【微博视界大会·年度推荐】，携手@微博视界大会 三大赛段角逐巅峰，为好作品助力 ​​​ ...展开",
+      "time": 1791526007000,
+      "timeRaw": "Fri Oct 09 14:06:47 +0800 2026",
+      "link": "https://weibo.com/5702872851/RlRCWyR6t",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-09 14:06:47"
+    },
+    {
+      "id": "5352108837569727",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "创见·新生！2026#微博视界大会# 正式开启！恭喜#入青云##电视剧逍遥##玉茗茶骨##雀骨# 入围2026#微博视界大会年度推荐#，感谢大家看见纪伯宰、红烨、陆江来、萧无衣，见证我的每一次成长与蜕变！快来和我一起参与年度推荐【微博视界大会·年度推荐】，携手@微博视界大会 三大赛段角逐巅峰，为好作品助力 ​​​ ...展开",
+      "time": 1791525647000,
+      "timeRaw": "Fri Oct 09 14:00:47 +0800 2026",
+      "link": "https://weibo.com/1831550987/RlRAvvLen",
+      "pics": [
+        "data/img/bfac4727d32f288c.jpg",
+        "data/img/c2ebb31e1b558795.jpg",
+        "data/img/7676981730818afe.jpg",
+        "data/img/a9e3ac4cd91f2f7e.jpg"
+      ],
+      "imgs": [
+        "data/img/bfac4727d32f288c.jpg",
+        "data/img/c2ebb31e1b558795.jpg",
+        "data/img/7676981730818afe.jpg",
+        "data/img/a9e3ac4cd91f2f7e.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/bfac4727d32f288c.jpg",
+      "timeStr": "2026-10-09 14:00:47"
+    },
     {
       "id": "5352078855897703",
       "platform": "weibo",
@@ -1168,10 +1212,10 @@
       "link": "https://weibo.com/1831550987/RjLaIqsFY",
       "pics": [],
       "imgs": [
-        "data/img/a9da0ada06febc78.jpg"
+        "data/img/6ea8454701e0d4aa.jpg"
       ],
       "video": false,
-      "cover": "data/img/a9da0ada06febc78.jpg",
+      "cover": "data/img/6ea8454701e0d4aa.jpg",
       "timeStr": "2026-09-25 18:00:09"
     },
     {
@@ -1314,23 +1358,6 @@
       "video": false,
       "cover": "data/img/cc5902f0d855b750.jpg",
       "timeStr": "2026-09-24 13:58:02"
-    },
-    {
-      "id": "5346415719220408",
-      "platform": "weibo",
-      "account": "侯明昊全球后援会",
-      "tag": "全球后援会",
-      "kind": "related",
-      "star": "hmh",
-      "text": "侯明昊超话 \n【10月天美意杭州见面会名额招募 】\n#侯明昊天美意品牌代言人# 🥝#侯明昊碧血蝉#\n\n🔸活动信息\n活动：天美意杭州见面会\n时间：2026年10月（具体时间代公布，请确定能预留时间出席）\n地点：杭州\n\n🔸名额分配（4名）\n站子1名\n粉丝3名\n\n【踩楼微博将于09.24日20:03开启，请自查确保 ​​​ ...展开",
-      "time": 1790168302000,
-      "timeRaw": "Wed Sep 23 20:58:22 +0800 2026",
-      "link": "https://weibo.com/5702872851/Rjtu3CGEg",
-      "pics": [],
-      "imgs": [],
-      "video": false,
-      "cover": "",
-      "timeStr": "2026-09-23 20:58:22"
     },
     {
       "id": "5346255653832443",
@@ -1916,33 +1943,6 @@
         "comment": null,
         "collect": null
       }
-    },
-    {
-      "id": "5333496132010052",
-      "platform": "weibo",
-      "account": "侯明昊",
-      "tag": "本人",
-      "kind": "own",
-      "star": "hmh",
-      "text": "节日快乐🥝99\n#心动来电# ​​​",
-      "time": 1787088032000,
-      "timeRaw": "Wed Aug 19 05:20:32 +0800 2026",
-      "link": "https://weibo.com/1831550987/Re3o18qUc",
-      "pics": [
-        "data/img/76c85da145d9076d.jpg",
-        "data/img/d822dd963968b499.jpg",
-        "data/img/46dc4ec3f7a8a92e.jpg",
-        "data/img/592f878ee4add4e5.jpg"
-      ],
-      "imgs": [
-        "data/img/76c85da145d9076d.jpg",
-        "data/img/d822dd963968b499.jpg",
-        "data/img/46dc4ec3f7a8a92e.jpg",
-        "data/img/592f878ee4add4e5.jpg"
-      ],
-      "video": false,
-      "cover": "data/img/76c85da145d9076d.jpg",
-      "timeStr": "2026-08-19 05:20:32"
     },
     {
       "id": "dy_7674644737072890993",
