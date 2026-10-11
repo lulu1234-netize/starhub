@@ -1032,7 +1032,9 @@ function openHome(key, uid, e){
   const id = uid || a.id;
   let schemes = a.schemes.slice(), url = a.url;
   if (key === 'weibo'){
-    schemes = [`sinaweibo://cardlist?containerid=100505${id}`, `sinaweibo://userinfo?uid=${id}`];
+    /* userinfo?uid 是直达用户主页最稳的 scheme；cardlist 在新版微博常被弱化（唤起后落空白页），
+       故降为后备。两者都失败则走网页兜底 m.weibo.cn/u/<uid>（已验证有效） */
+    schemes = [`sinaweibo://userinfo?uid=${id}`, `sinaweibo://cardlist?containerid=100505${id}`];
     url = `https://m.weibo.cn/u/${id}`;
   } else if (a.profileId && key === 'xhs'){
     schemes = ['xhsdiscover://user/profile/' + a.profileId,
