@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1791704164044,
+  "updatedAt": 1791705084001,
   "posts": [
     {
       "id": "5352496505291884",
@@ -21,6 +21,23 @@
       "video": false,
       "cover": "data/img/c44828258846b148.jpg",
       "timeStr": "2026-10-10 15:41:14"
+    },
+    {
+      "id": "5352436328825564",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n新商务官宣节奏\n10.10 品牌vb&📕发布teaser预热（已发布）\n10.12 10：00 品牌&艺人官宣主kv，\n           平台vb\n10.13  品牌&艺人发布main video，\n           平台📕（发布时间待定）\n\n若有变动以实际发布为准\nvb：CASETiFY的主页\n📕：CASETiFY ​​​",
+      "time": 1791603727000,
+      "timeRaw": "Sat Oct 10 11:42:07 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rm06IB1VO",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-10 11:42:07"
     },
     {
       "id": "5352110348307285",
@@ -895,6 +912,50 @@
       "timeStr": "2026-10-01 20:02:01"
     },
     {
+      "id": "5349227249009637",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n新商务官宣节奏📣\n官宣: 时间10.02  10:00 \n同款上新: 时间10.22  10:00\n\n指路 @雪中飞 @侯明昊\n雪中飞的主页\n\n\n如有变动以实际发布为准～ ​​​",
+      "time": 1790838623000,
+      "timeRaw": "Thu Oct 01 15:10:23 +0800 2026",
+      "link": "https://weibo.com/7845560949/RkECMBNOJ",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-01 15:10:23"
+    },
+    {
+      "id": "5349159320423738",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话📨 #小侯的每月来信# \n2026.9月来信原图抵达请🥝 查收 \n季节轮换、总有新的故事值得期盼🍁\n秋风说，我们快快见面吧❤️ ​​​",
+      "time": 1790822427000,
+      "timeRaw": "Thu Oct 01 10:40:27 +0800 2026",
+      "link": "https://weibo.com/7845560949/RkCRe1Meu",
+      "pics": [
+        "data/img/c52159528f1422fb.jpg",
+        "data/img/c9dc5678d9041676.jpg",
+        "data/img/aa917ae01a96e39c.jpg",
+        "data/img/86ead5737ec8ca4d.jpg"
+      ],
+      "imgs": [
+        "data/img/c52159528f1422fb.jpg",
+        "data/img/c9dc5678d9041676.jpg",
+        "data/img/aa917ae01a96e39c.jpg",
+        "data/img/86ead5737ec8ca4d.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/c52159528f1422fb.jpg",
+      "timeStr": "2026-10-01 10:40:27"
+    },
+    {
       "id": "5349149182002019",
       "platform": "weibo",
       "account": "侯明昊工作室",
@@ -1233,10 +1294,10 @@
       "link": "https://weibo.com/1831550987/RjLaIqsFY",
       "pics": [],
       "imgs": [
-        "data/img/7cc7bb22e390f49b.jpg"
+        "data/img/496b98fe5ad2e666.jpg"
       ],
       "video": false,
-      "cover": "data/img/7cc7bb22e390f49b.jpg",
+      "cover": "data/img/496b98fe5ad2e666.jpg",
       "timeStr": "2026-09-25 18:00:09"
     },
     {
@@ -1320,6 +1381,23 @@
       "video": false,
       "cover": "",
       "timeStr": "2026-09-24 20:03:37"
+    },
+    {
+      "id": "5346717751838921",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话#侯明昊碧血蝉# #侯明昊杨无间# \n 💡9.25碧血蝉中秋物料节奏\n【碧血蝉官博】\n10:00  中秋花絮\n【碧血蝉官抖】\n10:00 中秋花絮\n\n【爱奇艺官博】\n10:02  中秋花絮\n【爱奇艺小红书】\n10:02  中秋花絮\n【爱奇艺视频号】\n10:02  中秋花絮\n\n如有变动，以实际发布为准～ ​​​",
+      "time": 1790240312000,
+      "timeRaw": "Thu Sep 24 16:58:32 +0800 2026",
+      "link": "https://weibo.com/7845560949/RjBld7Io1",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-24 16:58:32"
     },
     {
       "id": "5346673808115408",
@@ -1442,6 +1520,23 @@
       "video": false,
       "cover": "data/img/ee645488db417b9a.jpg",
       "timeStr": "2026-09-22 13:11:08"
+    },
+    {
+      "id": "5345900864209327",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话#侯明昊碧血蝉# 🥝#侯明昊杨无间# \n9.23 悦享会发布规划\n\n【碧血蝉官博】\n10:15 角色预告\n10:30 侠冢案剧照\n\n【@侯明昊】\n10:15后 转发预告片\n\n【碧血蝉官抖】\n10:15角色预告\n10:30侠冢案剧照\n\n【爱奇艺官博、🍠】\n10:50 角色预告\n10:53 侠冢案剧照\n\n如有变动，以实际发布为准 ​​​",
+      "time": 1790045550000,
+      "timeRaw": "Tue Sep 22 10:52:30 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rjg5EhF2n",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-22 10:52:30"
     },
     {
       "id": "5345575274286406",
@@ -1586,6 +1681,23 @@
       "timeStr": "2026-09-20 16:07:52"
     },
     {
+      "id": "5344929329973521",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n同步📢\n“湾区升明月”2026大湾区电影音乐晚会宣传发布计划\n\n9月20日\n15:00开始 艺人阵容官宣（ID、采访等视频陆续发布）\n按姓氏拼音首字母顺序，9宫格/组发布\n\n✅【发布渠道】\n电影频道新媒体矩阵\n（微博@电影频道融媒体中心 @中国电影报道 等电影频道微博矩阵账号及抖音、视频号 ​​​ ...展开",
+      "time": 1789813919000,
+      "timeRaw": "Sat Sep 19 18:31:59 +0800 2026",
+      "link": "https://weibo.com/7845560949/RiQOEFQzf",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-19 18:31:59"
+    },
+    {
       "id": "5344236075221576",
       "platform": "weibo",
       "account": "侯明昊的桃园杂货铺",
@@ -1618,6 +1730,23 @@
       "video": false,
       "cover": "",
       "timeStr": "2026-09-17 19:07:32"
+    },
+    {
+      "id": "5344209920066362",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n📢 新行程更新\n🕐时间：9.20 \n🇲🇴活动：澳门·大湾区升明月中秋晚会 ​​​",
+      "time": 1789642398000,
+      "timeRaw": "Thu Sep 17 18:53:18 +0800 2026",
+      "link": "https://weibo.com/7845560949/Riy6k0hgm",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-09-17 18:53:18"
     },
     {
       "id": "5341978742230140",
@@ -1775,6 +1904,33 @@
       "timeStr": "2026-09-02 17:15:20"
     },
     {
+      "id": "5338325179172923",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话📨 #小侯的每月来信# \n2026.8月来信原图抵达请🥝 查收 \n积厚待发，期待属于我们的未来❤～ ​​​",
+      "time": 1788239367000,
+      "timeRaw": "Tue Sep 01 13:09:27 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rg50NCuin",
+      "pics": [
+        "data/img/81865047e25d0d72.jpg",
+        "data/img/fdb728098ebc3f99.jpg",
+        "data/img/ab2dfc0635774f73.jpg",
+        "data/img/a098483d3e0efe71.jpg"
+      ],
+      "imgs": [
+        "data/img/81865047e25d0d72.jpg",
+        "data/img/fdb728098ebc3f99.jpg",
+        "data/img/ab2dfc0635774f73.jpg",
+        "data/img/a098483d3e0efe71.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/81865047e25d0d72.jpg",
+      "timeStr": "2026-09-01 13:09:27"
+    },
+    {
       "id": "5337964961334938",
       "platform": "weibo",
       "account": "侯明昊",
@@ -1842,6 +1998,23 @@
       "timeStr": "2026-08-28 21:30:38"
     },
     {
+      "id": "5336175456027084",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n南京江豚音乐节官宣节奏🎶\n官宣时间 ：8.26  15:28\n演出时间 ：10月4日\n\n南京江豚音乐节官方微博的主页\n具体以实际发布为准，如有变动另行通知～ ​​​",
+      "time": 1787726832000,
+      "timeRaw": "Wed Aug 26 14:47:12 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rfb5vphV2",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-26 14:47:12"
+    },
+    {
       "id": "dy_7676423920309134961",
       "platform": "douyin",
       "account": "侯明昊",
@@ -1884,6 +2057,23 @@
       "video": true,
       "cover": "data/img/597948c891dd241a.jpg",
       "timeStr": "2026-08-21 15:34:24"
+    },
+    {
+      "id": "5334129673246559",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话 \n🚩《天赐7》8.21官方节奏\n【10:00】节目预告\n【10:30】单期海报合集\n【12:00-15:00】节目卡断\n【机动发布】直拍、清唱、无伴奏\n【22:30】版权平台卡断\n​#侯明昊天赐的声音#\n\n​@浙江卫视天赐的声音 ​​​",
+      "time": 1787239080000,
+      "timeRaw": "Thu Aug 20 23:18:00 +0800 2026",
+      "link": "https://weibo.com/7845560949/RejRRdCzR",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-20 23:18:00"
     },
     {
       "id": "5333939526830183",
@@ -1947,6 +2137,23 @@
         "comment": null,
         "collect": null
       }
+    },
+    {
+      "id": "5333372588262957",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "#侯明昊碧血蝉# #侯明昊杨无间# \n碧血蝉物料发布📢\n剧照-官博@碧血蝉官博 \n时间：8月19日10点\n碧血蝉官博的主页 ​​​",
+      "time": 1787058577000,
+      "timeRaw": "Tue Aug 18 21:09:37 +0800 2026",
+      "link": "https://weibo.com/7845560949/Re0aKyFzv",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-18 21:09:37"
     },
     {
       "id": "dy_7674644737072890993",
@@ -2054,6 +2261,23 @@
         "comment": null,
         "collect": null
       }
+    },
+    {
+      "id": "5331574054454542",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n🚩《天赐7》8.14官方节奏\n【10:00】本周预告\n【10:30】单期海报合集\n【12:00-15:00】节目卡断\n【机动发布】直拍、清唱、无伴奏\n【21:30】版权平台卡断\n#侯明昊天赐的声音# \n浙江卫视天赐的声音的主页 ​​​",
+      "time": 1786629773000,
+      "timeRaw": "Thu Aug 13 22:02:53 +0800 2026",
+      "link": "https://weibo.com/7845560949/RdfnTiGPs",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-13 22:02:53"
     },
     {
       "id": "5331045893542155",
@@ -2232,6 +2456,23 @@
       "timeStr": "2026-08-07 13:07:45"
     },
     {
+      "id": "5328231886226836",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话  \n8月7日 行程同步\n13点-14点: MAC 南京线下活动  \n                   天猫MAC啵啵间直播\n20点-21点: 李佳琦TB啵啵间 \n\n⚠️温馨提示：请勿相信黄🐂渠道，谨防诈骗，保护好个人财产安全。 ​​​",
+      "time": 1785832938000,
+      "timeRaw": "Tue Aug 04 16:42:18 +0800 2026",
+      "link": "https://weibo.com/7845560949/RbQriq7SQ",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-04 16:42:18"
+    },
+    {
       "id": "5327797683749533",
       "platform": "weibo",
       "account": "侯会有期-昊友汇",
@@ -2247,6 +2488,23 @@
       "video": false,
       "cover": "",
       "timeStr": "2026-08-03 11:56:55"
+    },
+    {
+      "id": "5327645115155802",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "",
+      "time": 1785693041000,
+      "timeRaw": "Mon Aug 03 01:50:41 +0800 2026",
+      "link": "https://weibo.com/7845560949/RbBaTlDg6",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-03 01:50:41"
     },
     {
       "id": "5327617600269156",
@@ -2304,6 +2562,101 @@
       "timeStr": "2026-08-02 22:54:16"
     },
     {
+      "id": "5327581852208488",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话#侯明昊0803生日快乐#\n芭莎男士\n8月3日\n13:14\n封面发布及预售\n\n15:00\n内页发布\n\n17：20 \n内页2发布\n\n18:03 幕后重bang（含生日祝福）\n\n8月4日 视频花絮发布时间更新: 17:20 ​​​",
+      "time": 1785677958000,
+      "timeRaw": "Sun Aug 02 21:39:18 +0800 2026",
+      "link": "https://weibo.com/7845560949/RbzwR9gwM",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-02 21:39:18"
+    },
+    {
+      "id": "5327580139881226",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话#侯明昊0803生日快乐#\n碧血蝉-生日物料节奏及文案\n1. 平面生日物料\n发布时间：8月3日0点\n发布账号：官博\n\n2. 生日短视频\n发布时间：8月3日8点03分\n发布账号：官博及官抖\n\n3. 杨无间人物特辑\n发布时间：8月3日9点\n发布账号：剧官博、爱奇艺官博、爱奇艺🍠 ​​​",
+      "time": 1785677549000,
+      "timeRaw": "Sun Aug 02 21:32:29 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rbzu5FsyC",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-08-02 21:32:29"
+    },
+    {
+      "id": "5327061017432645",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话📨 #小侯的每月来信# \n2026.7月来信原图抵达请🥝 查收 \n🎂 🎤🎬，想念就要多多见面～ ​​​",
+      "time": 1785553781000,
+      "timeRaw": "Sat Aug 01 11:09:41 +0800 2026",
+      "link": "https://weibo.com/7845560949/RblYNvbzn",
+      "pics": [
+        "data/img/92dd010d9b009867.jpg",
+        "data/img/0756c91e01c8b52f.jpg",
+        "data/img/e721262ee9419803.jpg",
+        "data/img/67cecdabb324c770.jpg"
+      ],
+      "imgs": [
+        "data/img/92dd010d9b009867.jpg",
+        "data/img/0756c91e01c8b52f.jpg",
+        "data/img/e721262ee9419803.jpg",
+        "data/img/67cecdabb324c770.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/92dd010d9b009867.jpg",
+      "timeStr": "2026-08-01 11:09:41"
+    },
+    {
+      "id": "5326280836778524",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "更新预售时间【8月3日13:14】与预售平台\n\n转发 @桃圈播报员：芭莎男士杂志八月刊封面（生日刊）发布节奏\n\n侯明昊超话\n\n7月30日\n10:10\n平面预告1\n\n7月30日\n13:11\n平面预告2➕加购链接\n\n7月31日\n13:14\n视频预告\n\n8月2日\n10:10\nwho am I 视频\n\n8月3日\n13:14\n预售开启\n微博:芭莎男士\n天猫:时尚传媒旗舰店（搜索“芭莎男士侯明昊”）\n\n@芭莎男士 ​​​",
+      "time": 1785367772000,
+      "timeRaw": "Thu Jul 30 07:29:32 +0800 2026",
+      "link": "https://weibo.com/7845560949/Rb1Grsrp2",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-07-30 07:29:32"
+    },
+    {
+      "id": "5326118961808448",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "芭莎男士杂志八月刊封面（生日刊）发布节奏\n\n侯明昊超话\n\n7月30日\n10:10\n平面预告1\n\n7月30日\n13:11\n平面预告2➕加购链接\n\n7月31日\n13:14\n视频预告\n\n8月2日\n10:10\nwho am I 视频\n\n8月3日\n13:14\n预售开启\n微博:芭莎男士\n天猫:时尚传媒旗舰店（搜索“芭莎男士侯明昊”）\n\n@芭莎男士 ​​​",
+      "time": 1785329178000,
+      "timeRaw": "Wed Jul 29 20:46:18 +0800 2026",
+      "link": "https://weibo.com/7845560949/RaXtm7Asw",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-07-29 20:46:18"
+    },
+    {
       "id": "dy_7667075424498145905",
       "platform": "douyin",
       "account": "侯明昊",
@@ -2352,6 +2705,23 @@
         "comment": null,
         "collect": null
       }
+    },
+    {
+      "id": "5321711818899480",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "预估直播出场时间为【7月17日】：19:33-19:53 ，大家可以提前蹲守，在此之前可以继续做雀骨热度\n\n转发 @桃圈播报员：侯明昊超话🥝 #侯明昊雀骨# 🥝#侯明昊碧血蝉# \n\n新增: 爱奇艺717会员节\n 【7月17日】\n直播时间（预估）：19:33-19:53 \n大家可以提前蹲守，在此之前可以继续做雀骨热度\n\n直播时间以实际为准 ​​​",
+      "time": 1784278432000,
+      "timeRaw": "Fri Jul 17 16:53:52 +0800 2026",
+      "link": "https://weibo.com/7845560949/R96P3Bla0",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-07-17 16:53:52"
     },
     {
       "id": "dy_7663119382751424443",
@@ -2990,6 +3360,31 @@
       "video": false,
       "cover": "data/img/499437d32ec4ef93.jpg",
       "timeStr": "2024-04-28 20:26:25"
+    },
+    {
+      "id": "4914328233578606",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话\n\n📢桃圈播报员功能指引\n\n🥝粉丝建议与交流\n可发送相关邮件至与工作室沟通邮箱 📮hmh0803fans@163.com\n播报员将不定期通过本博针对可公开部分与大家解答、交流沟通。\n\n🥝线上线下可公开行程动态提醒\n\n🥝其他粉圈事宜同步 ​​​",
+      "time": 1687150617000,
+      "timeRaw": "Mon Jun 19 12:56:57 +0800 2023",
+      "link": "https://weibo.com/7845560949/N60K3f0Xs",
+      "pics": [
+        "data/img/f8b4095e377eb23f.jpg",
+        "data/img/f998ad6ff4e6f425.jpg",
+        "data/img/7a9a7c138d01a361.jpg"
+      ],
+      "imgs": [
+        "data/img/f8b4095e377eb23f.jpg",
+        "data/img/f998ad6ff4e6f425.jpg",
+        "data/img/7a9a7c138d01a361.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/f8b4095e377eb23f.jpg",
+      "timeStr": "2023-06-19 12:56:57"
     },
     {
       "id": "dy_7227807739005783333",
