@@ -1256,8 +1256,36 @@ function reuid(){
     d.related.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_' + s.id + '_rel_' + i; });
   });
 }
+/* 账号归属纠正：按该明星的相关账号名单判定，
+   「XX工作室 / 后援会 / 粉丝号」等一律算 related，只有本人号才是 own。
+   （采集器早期用「昵称包含明星名」判本人，会把工作室误判成本人；此处兜底纠正） */
+const ACCT_TAGS = {
+  '侯明昊工作室':'工作室', '侯明昊全球后援会':'全球后援会', '侯明昊的桃园杂货铺':'桃园杂货铺',
+  '侯会有期-昊友汇':'昊友汇', '桃圈播报员':'桃圈', '桃园云包小分队':'桃园杂货铺',
+  '卢昱晓工作室':'工作室', '卢昱晓官方粉丝后援会':'后援会', '噜噜哈嘿':'粉丝号',
+  '鲈鱼烧小卖部':'小卖部', '小雨露传声筒':'传声筒'
+};
+function fixAccountKind(p){
+  const acct = String(p.account || '').trim();
+  const tag = ACCT_TAGS[acct];
+  if (tag){ p.kind = 'related'; p.tag = tag; return; }   /* 名单内 = 相关账号 */
+  /* 本人号：昵称等于明星名，或在其后仅附加装饰字符（例：卢昱晓_） */
+  const star = (DATA.stars || []).find(s => s.id === p.star);
+  if (star){
+    const nm = String(star.name || '').replace(/[\s_·・\-—]+/g, '');
+    const n  = acct.replace(/[\s_·・\-—]+/g, '');
+    if (nm && n === nm){ p.kind = 'own'; p.tag = '本人'; return; }
+    if (nm && n.startsWith(nm) && n.length - nm.length <= 2){
+      const tail = n.slice(nm.length);
+      if (!/工作室|后援|会|官方|粉丝|团|站|社|号|小卖|铺|解说|应援|超话|运营|事务|中心|全球|联盟|集|部/.test(tail)){
+        p.kind = 'own'; p.tag = '本人';
+      }
+    }
+  }
+}
 function applyLive(posts, updatedAt){
   /* 按 star 分流：每条帖自带 star 字段（采集器写入），分桶后逐明星合并 */
+  posts.forEach(fixAccountKind);
   const byStar = {};
   posts.forEach(p => { const s = p.star || 'hmh'; (byStar[s] = byStar[s] || []).push(p); });
   /* 全局真实平台集合：任一明星某平台有真实数据，则该平台占位示例被替换（避免重复） */
