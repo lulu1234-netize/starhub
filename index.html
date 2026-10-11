@@ -684,12 +684,20 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    - 点某帖「标记已读」→ 加入 readSet → 该帖进入折叠区（隐藏）；
      点「已读 ✓」取消已读 → 移出 readSet → 该帖回到展开区常驻显示。
    - 折叠区提供「展开 N 条已读帖」（每次 +5）与「收起全部 ▲」两个入口。 */
-const READ_KEY = 'starhub_read';
+/* ===== 分享版开关（URL 带 ?share=1）=====
+   仅「分享出去的安装包」内置该参数（见 apkbuild/build.ps1 -Share）：
+   · 打开即把全部帖子视为已读 → 全部折叠，首屏清爽不凌乱；
+   · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
+     → 本人手机（无该参数）与后续正常使用完全不受影响。 */
+const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
+const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
+const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
 const readSet = new Set((()=>{ try{ return JSON.parse(store.getItem(READ_KEY) || '[]'); }catch(e){ return []; } })());
 function saveRead(){ try{ store.setItem(READ_KEY, JSON.stringify([...readSet])); }catch(e){} }
 function toggleRead(uid){
-  if (readSet.has(uid)) readSet.delete(uid); else readSet.add(uid);   /* 取消已读 / 标记已读 */
+  if (readSet.has(uid)){ readSet.delete(uid); if (SHARE_MODE) SHARE_UNREAD.add(uid); }
+  else { readSet.add(uid); SHARE_UNREAD.delete(uid); }                 /* 取消已读 / 标记已读 */
   revealed.own.delete(uid); revealed.rel.delete(uid);                 /* 折叠区里若有它，一并清掉，避免残留展开态 */
   saveRead(); renderDetail();
 }
@@ -702,6 +710,15 @@ function ensureStartupSnap(){
     const d = DATA[s.id];
     if (d && (d.own.concat(d.related).some(p => p._uid && String(p._uid).indexOf('demo_') !== 0))) hasReal = true;
   });
+  if (SHARE_MODE){
+    /* 分享版：每次数据刷新都把全部帖标为已读（手动取消已读的除外），且不落锁定标记 */
+    (DATA.stars || []).forEach(s=>{
+      const dd = DATA[s.id]; if (!dd) return;
+      dd.own.concat(dd.related).forEach(p=>{ if (!SHARE_UNREAD.has(p._uid)) readSet.add(p._uid); });
+    });
+    saveRead();
+    return;
+  }
   /* 真实数据快照已完成 → 锁定：之后轮询新抓到的帖保持未读（默认不折叠） */
   if (startupDone && hasReal) return;
   (DATA.stars || []).forEach(s=>{
