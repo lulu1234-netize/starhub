@@ -451,6 +451,10 @@ function xhsStartUrl(starId){
   return p_search() + encodeURIComponent(s.name || '');
 }
 function p_search(){ return (SYNC_PLATFORMS.find(x=>x.key==='xhs')||{}).search || ''; }
+/* 小红书只有「侯明昊本人账号」有内容，相关账号为空、不采集 → 同步按钮只给侯明昊 */
+function syncStars(p){
+  return (p && p.key === 'xhs') ? (DATA.stars || []).filter(s => s.id === 'hmh') : (DATA.stars || []);
+}
 function saveXhsUrls(){
   (DATA.stars || []).forEach(s=>{
     const el = document.getElementById('xhsUrl_' + s.id);
@@ -483,14 +487,15 @@ function renderSyncBox(){
       小红书会自动从搜索页进入 TA 的主页（未跳转可手动点开），等作品列表加载出来，
       左上角会显示已抓到的条数，然后点右上角「完成并上传」。
       小红书接口不返回发布时间，这类笔记会显示「时间未知」并排在列表末尾。</div>
+    <div class="sync-note" style="margin-top:4px">小红书目前只有<b>侯明昊本人账号</b>有内容，
+      相关账号（粉丝站等）在小红书上为空、不采集，搜索结果里的粉丝/路人笔记会自动跳过。</div>
     ${SYNC_PLATFORMS.map((p, pi) => `
       <div class="sync-row">
         <span class="sync-tag">${p.label}</span>
-        ${(DATA.stars||[]).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
+        ${syncStars(p).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
       </div>`).join('')}
     <div class="sync-row" style="gap:6px;margin-top:6px">
       <input id="xhsUrl_hmh" class="xhs-url" placeholder="侯明昊 小红书主页链接（可选）" value="${(store.getItem('starhub_xhs_url_hmh')||'').replace(/"/g,'&quot;')}">
-      <input id="xhsUrl_lyx" class="xhs-url" placeholder="卢昱晓 小红书主页链接（可选）" value="${(store.getItem('starhub_xhs_url_lyx')||'').replace(/"/g,'&quot;')}">
       <button class="img-btn ghost" onclick="saveXhsUrls()">保存链接</button>
     </div>
     <div class="sync-note" style="margin:2px 0 8px">小红书 App → TA 的主页 → 右上角分享 → 复制链接，粘到上面保存，
@@ -587,10 +592,11 @@ const DATA = {
       platforms:['微博','小红书','抖音'],
       acct:{ weibo:'1831550987', xhs:'155624915', douyin:'390049435' },
       latest:'藏锋入局，扭转乾坤。前路险峻，杨无间与你们共进退！' },
+    /* 小红书暂无本人内容（相关账号也为空）→ 不展示小红书入口、不采集 */
     { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:true, online:true,
       img:'img/lyx.jpg',
-      platforms:['微博','小红书','抖音'],
-      acct:{ weibo:'5503575607', xhs:'277466513', douyin:'1109107012' },
+      platforms:['微博','抖音'],
+      acct:{ weibo:'5503575607', douyin:'1109107012' },
       latest:null }
   ],
   hmh: {
