@@ -42,8 +42,10 @@
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
-  .home-head h1{font-size:26px;font-weight:700;letter-spacing:.5px}
-  .home-head p{font-size:13px;color:var(--ink2);margin-top:5px}
+  .home-head h1{font-size:28px;font-weight:800;letter-spacing:1px;display:inline-block;
+    background:linear-gradient(120deg,#3a4a8c,#7a5cc9 55%,#c05a8e);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .home-head p{font-size:13px;color:var(--ink2);margin-top:5px;letter-spacing:.04em}
   .star-list{padding:8px 18px 110px;display:flex;flex-direction:column;gap:14px}
   .star-card{
     background:var(--card);border-radius:var(--radius);padding:16px 16px;
@@ -238,7 +240,9 @@
   .mine-note{padding:20px 30px;text-align:center;font-size:11px;color:var(--ink3);line-height:1.7}
 
   /* ---------- 图片管理 ---------- */
-  .sec-title{margin:6px 20px 8px;font-size:12px;color:var(--ink2);font-weight:600;letter-spacing:.5px}
+  .sec-title{margin:14px 20px 8px;font-size:12px;color:var(--ink2);font-weight:700;letter-spacing:.5px;
+    display:flex;align-items:center;gap:7px}
+  .sec-title::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--accent)}
   .img-card{margin:0 18px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
     padding:12px;display:flex;align-items:center;gap:13px}
   .img-thumb{width:66px;height:66px;border-radius:14px;overflow:hidden;flex-shrink:0;background:#eceaf0}
@@ -288,6 +292,30 @@
     padding:11px;margin-top:2px;background:var(--card);border:1px solid var(--line);
     border-radius:14px;cursor:pointer}
   .fold-more:active{background:#f4f4f6}
+
+  /* ===== 视觉优化：我的页头像 / 数据同步卡片化 ===== */
+  .mine-av{box-shadow:0 10px 24px rgba(58,74,140,.28)}
+  .mine-head h2{font-size:19px;letter-spacing:.06em}
+  #syncMgr{margin:0 18px 4px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;box-shadow:0 1px 2px rgba(30,35,60,.04)}
+  #syncMgr .sync-note{font-size:11.5px;color:var(--ink3)}
+  #syncMgr .img-btn{font-size:12px;padding:7px 13px}
+
+  /* ===== 首页下拉刷新指示胶囊 ===== */
+  .ptr-pill{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 12px);
+    transform:translate(-50%,-56px);background:rgba(30,30,36,.85);color:#fff;font-size:12px;
+    padding:7px 15px;border-radius:20px;transition:transform .25s ease,opacity .25s ease;
+    opacity:0;z-index:9;pointer-events:none;white-space:nowrap}
+  .ptr-pill.show{transform:translate(-50%,0);opacity:1}
+
+  /* ===== 详情页：本人 / 相关账号 锚点吸顶导航 ===== */
+  .sec-nav{position:sticky;top:62px;z-index:3;display:flex;gap:8px;margin:10px 0 2px;
+    background:rgba(246,245,242,.92);backdrop-filter:blur(10px);padding:7px 2px;border-radius:14px}
+  .sec-nav .snav{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--ink2);
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:7px 0;cursor:pointer;
+    transition:all .15s;user-select:none}
+  .sec-nav .snav:active{transform:scale(.97)}
+  .sec-nav .snav.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -295,6 +323,7 @@
 
   <!-- ===================== 首页 ===================== -->
   <section class="view view-root active" id="view-home">
+    <div class="ptr-pill" id="ptrPill"><span id="ptrTxt">下拉刷新</span></div>
     <div class="home-head">
       <h1>星汇</h1>
       <p>多平台明星动态，一处看全</p>
@@ -1230,15 +1259,20 @@ function renderDetail(){
       : '未连接采集服务 · 当前为内置数据'}</span>
     <button class="live-btn" onclick="refreshNow()">立即刷新</button>
   </div>`;
+  const secNav = `<div class="sec-nav">
+    <div class="snav" id="snav-own" onclick="jumpSec('own')">本人账号</div>
+    <div class="snav" id="snav-rel" onclick="jumpSec('rel')">相关账号</div>
+  </div>`;
   document.getElementById('dBody').innerHTML = `
     ${liveBar}
     <div class="acct-strip">${acctStrip}</div>
+    ${secNav}
     ${todaySum ? `<div class="sec-label"><div class="bar" style="background:var(--wb)"></div>
       <h2>今日更新</h2><span>${todaySum} 条新动态</span></div>` : ''}
-    <div class="sec-label"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 小红书 / 抖音 统一展示</span></div>
+    <div class="sec-label" id="sec-own"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 小红书 / 抖音 统一展示</span></div>
     ${ownPfRow}
     ${ownBlock}
-    <div class="sec-label" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
+    <div class="sec-label" id="sec-rel" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
       <h2>相关账号动态</h2><span>工作室 / 粉丝站 / 剪辑号 / 播报员</span></div>
     ${relPfRow}
     ${relAcctRow}
@@ -1415,6 +1449,78 @@ renderSyncBox();
 window.addEventListener('starhub:refresh', ()=>{ loadLive(true); toast('已同步，正在刷新动态…'); });
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
+/* ===== 首页下拉刷新（顶部下拉 → 触发 loadLive + renderHome） ===== */
+function initPTR(){
+  const view = document.getElementById('view-home');
+  const pill = document.getElementById('ptrPill');
+  const txt  = document.getElementById('ptrTxt');
+  if(!view || view.__ptrInit) return;
+  view.__ptrInit = true;
+  let sy = 0, pulling = false, armed = false, dist = 0;
+  const TH = 70;
+  view.addEventListener('touchstart', function(e){
+    if(view.scrollTop <= 0){ sy = e.touches[0].clientY; pulling = true; armed = false; dist = 0; }
+    else { pulling = false; }
+  }, {passive:true});
+  view.addEventListener('touchmove', function(e){
+    if(!pulling) return;
+    dist = e.touches[0].clientY - sy;
+    if(dist > 0 && view.scrollTop <= 0){
+      e.preventDefault();
+      armed = dist >= TH;
+      txt.textContent = armed ? '松手立即刷新' : '下拉刷新';
+      pill.classList.add('show');
+    } else if(dist <= 0){
+      pill.classList.remove('show');
+    }
+  }, {passive:false});
+  view.addEventListener('touchend', function(){
+    if(pulling && armed){
+      txt.textContent = '正在刷新…';
+      pill.classList.add('show');
+      Promise.resolve(loadLive(false)).then(function(){
+        renderHome();
+        toast('已刷新到最新动态');
+      }).catch(function(){ toast('刷新失败，请检查网络'); }).finally(function(){
+        setTimeout(function(){ pill.classList.remove('show'); }, 600);
+      });
+    } else {
+      pill.classList.remove('show');
+    }
+    pulling = false; armed = false; dist = 0;
+  });
+}
+initPTR();
+
+/* ===== 详情页：本人 / 相关账号 锚点导航（点击平滑滚动 + 滚动高亮） ===== */
+function setSnav(w){
+  const a = document.getElementById('snav-own'), b = document.getElementById('snav-rel');
+  if(a) a.classList.toggle('on', w === 'own');
+  if(b) b.classList.toggle('on', w === 'rel');
+}
+function jumpSec(w){
+  const el = document.getElementById(w === 'own' ? 'sec-own' : 'sec-rel');
+  const view = document.getElementById('view-star');
+  if(!el || !view) return;
+  view.scrollTo({ top: Math.max(el.offsetTop - 70, 0), behavior: 'smooth' });
+  setSnav(w);
+}
+(function initSecSpy(){
+  const view = document.getElementById('view-star');
+  if(!view || view.__spyInit) return;
+  view.__spyInit = true;
+  let raf = null;
+  view.addEventListener('scroll', function(){
+    if(raf) return;
+    raf = requestAnimationFrame(function(){
+      raf = null;
+      const o = document.getElementById('sec-own'), r = document.getElementById('sec-rel');
+      if(!o || !r) return;
+      setSnav(view.scrollTop + 90 >= r.offsetTop ? 'rel' : 'own');
+    });
+  }, {passive:true});
+})();
+
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
 
