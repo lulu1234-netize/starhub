@@ -91,7 +91,7 @@
   .back svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .d-title{font-size:17px;font-weight:700}
   .d-sub{font-size:11px;color:var(--ink2);margin-top:1px}
-  .d-body{padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px;min-width:0;max-width:100%}
+  .d-body{padding:12px 16px 40px;display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%}
 
   /* 实时数据状态条 */
   .live-bar{display:flex;align-items:center;gap:7px;padding:9px 12px;margin-bottom:10px;
@@ -103,7 +103,7 @@
   .live-btn{border:none;background:var(--accent);color:#fff;font-size:11px;padding:5px 11px;
     border-radius:14px;cursor:pointer;font-family:inherit;flex-shrink:0}
   .live-btn:active{transform:scale(.94)}
-  .acct-strip{display:flex;gap:8px;margin:0 16px 2px}
+  .acct-strip{display:flex;gap:8px;margin:0 16px 0}
   .sync-note{font-size:12px;line-height:1.6;color:var(--sub,#777);margin:0 0 10px}
   .sync-btns{display:flex;gap:8px;margin-bottom:10px}
   .sync-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
@@ -112,17 +112,20 @@
   .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
     border-radius:8px;background:#fff;color:#2c2c2a}
   .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:8px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
+    padding:6px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
   .acct-item:active{transform:scale(.95)}
   .acct-item:hover{box-shadow:0 4px 12px rgba(30,35,60,.08)}
   .acct-item .a-p{font-size:11px;font-weight:600}
   .acct-item .a-id{font-size:10.5px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .acct-item .a-open{font-size:9.5px;color:var(--accent);margin-top:2px;font-weight:500}
+  .acct-item .a-open{font-size:9.5px;color:var(--accent);margin-top:1px;font-weight:500}
   .acct-item{text-decoration:none}
   .p-weibo{color:var(--wb)} .p-xhs{color:var(--xhs)} .p-dy{color:var(--dy)}
 
   /* 筛选区：主行 = 平台；从属行 = 该平台下的账号筛选 */
   .filter-tabs{display:flex;gap:8px;padding:0 2px;flex-wrap:wrap}
+  /* 平台筛选行：固定单行（全部/微博/小红书/抖音 排一行） */
+  .pf-row .filter-tabs{flex-wrap:nowrap;flex:1;min-width:0}
+  .pf-row .ftab{flex:0 0 auto;padding:6px 12px}
   /* 平台行（主筛选）：带左侧标签，视觉权重最高 */
   .pf-row{display:flex;align-items:center;gap:9px;margin:2px 2px 0}
   .pf-row-label{font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.06em;
@@ -134,8 +137,8 @@
     flex-shrink:0;padding:3px 0;white-space:nowrap}
   .acct-row .acct-tabs{gap:7px}
   .acct-row .ftab{padding:5px 12px;font-size:12px;border-radius:14px}
-  .ftab{padding:6px 14px;border-radius:16px;background:#fff;border:1px solid var(--line);
-    font-size:12.5px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:all .15s}
+  .ftab{padding:6px 13px;border-radius:16px;background:#fff;border:1px solid var(--line);
+    font-size:12.5px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
   .ftab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .p-main{display:flex;gap:10px;align-items:flex-start}
   .p-body{flex:1;min-width:0}
@@ -152,7 +155,7 @@
   .empty-sm{padding:18px;text-align:center;color:var(--ink3);font-size:12px;
     background:#fbfbfa;border:1px dashed rgba(0,0,0,.1);border-radius:12px}
 
-  .sec-label{display:flex;align-items:center;gap:8px;padding:2px 2px 0}
+  .sec-label{display:flex;align-items:center;gap:8px;padding:0 2px}
   .sec-label .bar{width:4px;height:16px;border-radius:3px;background:var(--accent)}
   .sec-label h2{font-size:15.5px;font-weight:700}
   .sec-label span{font-size:11.5px;color:var(--ink3)}
@@ -309,10 +312,10 @@
   .ptr-pill.show{transform:translate(-50%,0);opacity:1}
 
   /* ===== 详情页：本人 / 相关账号 锚点吸顶导航 ===== */
-  .sec-nav{position:sticky;top:62px;z-index:3;display:flex;gap:8px;margin:10px 0 2px;
-    background:rgba(246,245,242,.92);backdrop-filter:blur(10px);padding:7px 2px;border-radius:14px}
+  .sec-nav{position:sticky;top:62px;z-index:3;display:flex;gap:8px;margin:2px 0 0;
+    background:rgba(246,245,242,.92);backdrop-filter:blur(10px);padding:5px 2px;border-radius:14px}
   .sec-nav .snav{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--ink2);
-    background:#fff;border:1px solid var(--line);border-radius:16px;padding:7px 0;cursor:pointer;
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 0;cursor:pointer;
     transition:all .15s;user-select:none}
   .sec-nav .snav:active{transform:scale(.97)}
   .sec-nav .snav.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -346,8 +349,6 @@
       <h2>追星人</h2>
       <p>星汇 M1 测试版 · 数据仅存本机</p>
     </div>
-    <div class="sec-title">数据同步</div>
-    <div id="syncMgr"></div>
     <div class="sec-title">图片管理</div>
     <div id="imgMgr"></div>
     <input type="file" id="imgInput" accept="image/*" hidden>
@@ -370,6 +371,8 @@
         关于星汇 <span class="sub">v0.1</span>
       </div>
     </div>
+    <div class="sec-title" style="margin-top:10px">数据同步</div>
+    <div id="syncMgr"></div>
     <p class="mine-note">本应用为个人自用工具，仅聚合公开动态并跳转至原平台查看，<br>不在应用内存储或转发任何受版权保护的内容。</p>
     <nav class="tabbar">
       <div class="tab" data-tab="home">
@@ -832,7 +835,7 @@ function renderHome(){
      · 相关账号区：curRelPf（平台） + curRelFilter（该平台下的账号）
    即：两个板块各自持有筛选状态，某板块的筛选只作用于该板块自身的列表。 */
 let curStar = null;
-const FILTERS = [['all','全部'],['weibo','仅微博'],['xhs','仅小红书'],['douyin','仅抖音']];
+const FILTERS = [['all','全部'],['weibo','微博'],['xhs','小红书'],['douyin','抖音']];
 
 /* —— 本人区筛选（独立） —— */
 let curOwnPf = 'all';            /* all | weibo | xhs | douyin */
@@ -1230,7 +1233,7 @@ function renderDetail(){
   if (curRelPf !== 'all'){
     const pfRelated = d.related.filter(p => p.platform === curRelPf);
     const relAccounts = (STAR_REL[curStar] || []).filter(a => pfRelated.some(p => p.account === a));
-    const tabsA = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部账号</button>`]
+    const tabsA = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
       .concat(relAccounts.map(a =>
         `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
     relAcctRow = `<div class="acct-row">
