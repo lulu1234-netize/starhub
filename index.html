@@ -122,6 +122,12 @@
   /* 平台筛选 */
   .filter-tabs{display:flex;gap:8px;padding:0 2px;flex-wrap:wrap}
   .rel-tabs{margin:8px 2px 2px}
+  /* 相关账号区内的平台筛选行：紧贴账号筛选下方，视觉上从属一级 */
+  .rel-pf-tabs{margin:6px 2px 2px}
+  .rel-pf-tabs .pf-tab{padding:4px 11px;font-size:11.5px;border-radius:13px;
+    background:#fafaf9;color:var(--ink3)}
+  .rel-pf-tabs .pf-tab.on{background:rgba(58,74,140,.14);color:var(--accent);
+    border-color:rgba(58,74,140,.35);font-weight:600}
   .ftab{padding:6px 14px;border-radius:16px;background:#fff;border:1px solid var(--line);
     font-size:12.5px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:all .15s}
   .ftab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
@@ -795,6 +801,8 @@ const FILTERS = [['all','全部'],['weibo','仅微博'],['xhs','仅小红书'],[
 function setFilter(k){ curFilter = k; renderDetail(); }
 let curRelFilter = 'all';        /* all | 相关账号 account 名（按账号筛选各自内容） */
 function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDetail(); }
+let curRelPlatform = 'all';      /* all | weibo | xhs | douyin（相关账号区的平台筛选，与账号筛选叠加） */
+function setRelPlatform(k){ curRelPlatform = k; revealed.rel = new Set(); renderDetail(); }
 
 /* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
    ① 采到的真实多图 → 真图；② 单张封面（cover）→ 真图 + 角标；
@@ -1158,12 +1166,18 @@ function renderDetail(){
     ? (() => {
         /* 固定 4 个微博相关账号筛选，不动态生成多余筛选项 */
         const REL_ACCOUNTS = STAR_REL[curStar] || [];
-        const relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
+        /* 账号筛选 × 平台筛选叠加：先按账号过滤，再按平台过滤 */
+        let relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
+        if (curRelPlatform !== 'all') relList = relList.filter(p => p.platform === curRelPlatform);
         const relTabs = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
           .concat(REL_ACCOUNTS.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
+        /* 平台筛选：位于账号筛选下方，仅作用于相关账号区；风格/交互与其它筛选一致 */
+        const relPfTabs = FILTERS.map(([k,l]) =>
+          `<button class="ftab pf-tab ${curRelPlatform===k?'on':''}" onclick="setRelPlatform('${k}')">${l.replace('仅','')}</button>`).join('');
         return `<div class="rel-box">
           <div class="rel-head"><div class="mini-av">${(DATA.stars.find(x=>x.id===curStar)||{}).name.charAt(0)}</div><b>${(DATA.stars.find(x=>x.id===curStar)||{}).name} · 相关账号</b><span>显示 ${relList.length} 条</span></div>
           <div class="filter-tabs rel-tabs">${relTabs.join('')}</div>
+          <div class="filter-tabs rel-tabs rel-pf-tabs">${relPfTabs}</div>
           ${sectionRender(relList, 'rel')}</div>`;
       })()
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
@@ -1191,6 +1205,9 @@ function renderDetail(){
 }
 
 function openStar(id){
+  curRelFilter = 'all';
+  curRelPlatform = 'all';
+  revealed.rel = new Set();
   navigate('star', { star:id });
 }
 
