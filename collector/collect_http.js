@@ -269,11 +269,31 @@ async function localizeImages(posts) {
     }
     all.posts = all.posts.filter(p => { const k = bare(p.id); return best.get(k) === p; });
   }
+  /* 时间窗口：写入前剔除超过 180 天的动态（与前端 index.html 的 withinWindow 规则一致），
+     避免过期数据持续堆积在数据文件里。
+     · 时间缺失（0）→ 保留（无法判定为过期，例如小红书不返回发布时间）；
+     · 未来时间（时区/服务端误差）→ 保留，避免误删。 */
+  {
+    const MAX_AGE_MS = 180 * 86400e3;
+    const withinWindow = p => {
+      const t = Number(p && p.time) || 0;
+      if (!t) return true;
+      const nowMs = Date.now();
+      if (t > nowMs + 86400e3) return true;
+      return nowMs - t <= MAX_AGE_MS;
+    };
+    const beforeWin = all.posts.length;
+    all.posts = all.posts.filter(withinWindow);
+    const dropWin = beforeWin - all.posts.length;
+    if (dropWin > 0) console.log(`[时间窗口] 已剔除 ${dropWin} 条超过 180 天的动态（剩 ${all.posts.length} 条）`);
+    /* 只有「本来就没数据」才算采集失败；全部被时间窗口过滤掉属于正常的空结果，照常写入 */
+    globalThis.__HAD_POSTS = beforeWin > 0;
+  }
   all.posts.sort((a, b) => b.time - a.time);
   /* 统一补上标准日期时间串 YYYY-MM-DD HH:mm:ss（北京时间） */
   all.posts.forEach(p => { p.timeStr = fmtShanghai(p.time); });
   await localizeImages(all.posts);
-  if (!all.posts.length) {
+  if (!all.posts.length && !globalThis.__HAD_POSTS) {
     console.log('未取到微博数据（Cookie 可能过期），且没有外部平台数据');
     process.exit(5);
   }
