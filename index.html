@@ -456,8 +456,9 @@ function renderSyncBox(){
       首次使用需在弹出的页面里登录一次，之后免登。采集完成后会自动写入仓库，
       约 10 分钟内出现在对应明星的详情页。</div>
     <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
-      在窗口里点开该明星的主页，等作品列表加载出来，左上角会显示已抓到的条数，
-      然后点右上角「完成并上传」。</div>
+      小红书会自动从搜索页进入 TA 的主页（未跳转可手动点开），等作品列表加载出来，
+      左上角会显示已抓到的条数，然后点右上角「完成并上传」。
+      小红书接口不返回发布时间，这类笔记会显示「时间未知」并排在列表末尾。</div>
     ${SYNC_PLATFORMS.map((p, pi) => `
       <div class="sync-row">
         <span class="sync-tag">${p.label}</span>
