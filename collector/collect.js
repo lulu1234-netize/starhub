@@ -24,7 +24,13 @@ const TARGETS = [
   { star: 'hmh', name: '侯明昊全球后援会', uid: '5702872851', kind: 'related', tag: '全球后援会' },
   { star: 'hmh', name: '侯明昊的桃园杂货铺', uid: '7821215116', kind: 'related', tag: '桃园杂货铺' },
   { star: 'hmh', name: '侯会有期-昊友汇', uid: '2125740311', kind: 'related', tag: '昊友汇' },
-  { star: 'hmh', name: '桃圈播报员', uid: '7845560949', kind: 'related', tag: '桃圈' }
+  { star: 'hmh', name: '桃圈播报员', uid: '7845560949', kind: 'related', tag: '桃圈' },
+  { star: 'lyx', name: '卢昱晓', uid: '5503575607', kind: 'own', tag: '本人' },
+  { star: 'lyx', name: '卢昱晓工作室', uid: '7879051570', kind: 'related', tag: '工作室' },
+  { star: 'lyx', name: '卢昱晓官方粉丝后援会', uid: '7339071023', kind: 'related', tag: '后援会' },
+  { star: 'lyx', name: '噜噜哈嘿', uid: '7876084880', kind: 'related', tag: '粉丝号' },
+  { star: 'lyx', name: '鲈鱼烧小卖部', uid: '7962719462', kind: 'related', tag: '小卖部' },
+  { star: 'lyx', name: '小雨露传声筒', uid: '7793868987', kind: 'related', tag: '传声筒' }
 ];
 
 const log = [];
