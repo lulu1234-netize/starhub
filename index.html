@@ -104,6 +104,8 @@
   .acct-strip{display:flex;gap:8px;margin:0 16px 2px}
   .sync-note{font-size:12px;line-height:1.6;color:var(--sub,#777);margin:0 0 10px}
   .sync-btns{display:flex;gap:8px;margin-bottom:10px}
+  .sync-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .sync-tag{font-size:12px;color:#5f5e5a;min-width:44px}
   .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
     border-radius:8px;background:#fff;color:#2c2c2a}
@@ -384,8 +386,8 @@ const DOUYIN_IDS = { hmh:'390049435', lyx:'1109107012' };
    因此改为在星汇 App 内用手机网络 + 真实浏览器内核采集（原生桥 StarHubNative）。
    网页只负责：保存令牌、发指令、提示状态。 */
 const SYNC_PLATFORMS = [
-  { key:'douyin', label:'抖音',   url:'https://www.douyin.com/' },
-  { key:'xhs',    label:'小红书', url:'https://www.xiaohongshu.com/explore' }
+  { key:'douyin', label:'抖音',   search:'https://www.douyin.com/search/' },
+  { key:'xhs',    label:'小红书', search:'https://www.xiaohongshu.com/search_result?keyword=' }
 ];
 
 /* 采集时交给原生的昵称表：用于把抓到的内容归到对应明星（与采集器按昵称匹配一致） */
@@ -393,10 +395,13 @@ function syncTargetsJson(){
   return JSON.stringify((DATA.stars || []).map(s => ({ star:s.id, name:s.name })));
 }
 function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.startCollect); }
-function syncStart(p){
+function syncStart(p, starId){
   if (!nativeHas()){ toast('同步功能需要在星汇 App 内使用（当前是浏览器环境）'); return; }
   if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
-  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), p.url); }
+  /* 直接打开该明星的搜索结果页：点一下明星 → 选搜索结果里的 TA 本人 → 作品列表自动加载并被抓取 */
+  const s = (DATA.stars || []).find(x=>x.id===starId) || { name:'' };
+  const url = p.search + encodeURIComponent(s.name || '');
+  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url); }
   catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
 }
 function renderSyncBox(){
@@ -408,9 +413,14 @@ function renderSyncBox(){
     <div class="sync-note">抖音 / 小红书的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
       首次使用需在弹出的页面里登录一次，之后免登。采集完成后会自动写入仓库，
       约 10 分钟内出现在对应明星的详情页。</div>
-    <div class="sync-btns">
-      ${SYNC_PLATFORMS.map(p => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${SYNC_PLATFORMS.indexOf(p)}])">同步${p.label}</button>`).join('')}
-    </div>
+    <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
+      在窗口里点开该明星的主页，等作品列表加载出来，左上角会显示已抓到的条数，
+      然后点右上角「完成并上传」。</div>
+    ${SYNC_PLATFORMS.map((p, pi) => `
+      <div class="sync-row">
+        <span class="sync-tag">${p.label}</span>
+        ${(DATA.stars||[]).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
+      </div>`).join('')}
     <div class="sync-tk">
       <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
       <button class="img-btn" onclick="saveTokenNow()">保存令牌</button>
