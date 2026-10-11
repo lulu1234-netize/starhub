@@ -102,6 +102,11 @@
     border-radius:14px;cursor:pointer;font-family:inherit;flex-shrink:0}
   .live-btn:active{transform:scale(.94)}
   .acct-strip{display:flex;gap:8px;margin:0 16px 2px}
+  .sync-note{font-size:12px;line-height:1.6;color:var(--sub,#777);margin:0 0 10px}
+  .sync-btns{display:flex;gap:8px;margin-bottom:10px}
+  .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
+    border-radius:8px;background:#fff;color:#2c2c2a}
   .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:8px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
   .acct-item:active{transform:scale(.95)}
@@ -300,6 +305,8 @@
       <h2>追星人</h2>
       <p>星汇 M1 测试版 · 数据仅存本机</p>
     </div>
+    <div class="sec-title">数据同步</div>
+    <div id="syncMgr"></div>
     <div class="sec-title">图片管理</div>
     <div id="imgMgr"></div>
     <input type="file" id="imgInput" accept="image/*" hidden>
@@ -355,9 +362,8 @@ const ACCOUNTS = {
                     'sinaweibo://userinfo?uid=1831550987'],
            url:'https://m.weibo.cn/u/1831550987' },
   xhs:   { id:'155624915',  label:'小红书',
-           /* profileId：小红书主页需 user_id（网页端登录后才可见，搜索引擎也查不到）。
-              获取方法：小红书 App 打开侯明昊主页 → 右上角分享 → 复制链接，
-              链接里 /user/profile/xxxxx 那串就是 user_id，填到下面即自动升级为主页直达 */
+           /* profileId：小红书主页需 user_id。两位明星的 user_id 存在下方 XHS_IDS，
+              由 openHome 按当前明星取；取不到时回退搜索页。 */
            profileId:'',
            schemes:['xhsdiscover://search/result?keyword=155624915',
                     'xhsdiscover://home'],
@@ -368,6 +374,65 @@ const ACCOUNTS = {
                     'snssdk1128://search/trending?keyword=390049435'],
            url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
 };
+
+/* 各明星的小红书 user_id / 抖音号（详情页「前往主页」按明星取，缺省回退 ACCOUNTS 里的默认值） */
+const XHS_IDS    = { hmh:'155624915', lyx:'277466513' };
+const DOUYIN_IDS = { hmh:'390049435', lyx:'1109107012' };
+
+/* ================= 数据同步（抖音 / 小红书） =================
+   这两个平台的接口签名由平台自己的网页 JS 计算，服务器 IP 会被地域风控，
+   因此改为在星汇 App 内用手机网络 + 真实浏览器内核采集（原生桥 StarHubNative）。
+   网页只负责：保存令牌、发指令、提示状态。 */
+const SYNC_PLATFORMS = [
+  { key:'douyin', label:'抖音',   url:'https://www.douyin.com/' },
+  { key:'xhs',    label:'小红书', url:'https://www.xiaohongshu.com/explore' }
+];
+
+/* 采集时交给原生的昵称表：用于把抓到的内容归到对应明星（与采集器按昵称匹配一致） */
+function syncTargetsJson(){
+  return JSON.stringify((DATA.stars || []).map(s => ({ star:s.id, name:s.name })));
+}
+function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.startCollect); }
+function syncStart(p){
+  if (!nativeHas()){ toast('同步功能需要在星汇 App 内使用（当前是浏览器环境）'); return; }
+  if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
+  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), p.url); }
+  catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
+}
+function renderSyncBox(){
+  const box = document.getElementById('syncMgr');
+  if (!box) return;
+  const inApp = nativeHas();
+  const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
+  box.innerHTML = `
+    <div class="sync-note">抖音 / 小红书的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
+      首次使用需在弹出的页面里登录一次，之后免登。采集完成后会自动写入仓库，
+      约 10 分钟内出现在对应明星的详情页。</div>
+    <div class="sync-btns">
+      ${SYNC_PLATFORMS.map(p => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${SYNC_PLATFORMS.indexOf(p)}])">同步${p.label}</button>`).join('')}
+    </div>
+    <div class="sync-tk">
+      <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
+      <button class="img-btn" onclick="saveTokenNow()">保存令牌</button>
+      ${saved ? '<button class="img-btn ghost" onclick="clearTokenNow()">清除</button>' : ''}
+    </div>
+    <div class="img-status" style="margin-top:6px">${inApp
+      ? (saved ? '令牌已保存（仅存本机）' : '尚未保存令牌')
+      : '当前是浏览器环境，无法保存令牌，请在星汇 App 内操作'}</div>`;
+}
+function saveTokenNow(){
+  if (!nativeHas()){ toast('请在星汇 App 内保存令牌'); return; }
+  const v = document.getElementById('tkInput').value.trim();
+  if (!v){ toast('请先粘贴令牌'); return; }
+  window.StarHubNative.saveToken(v);
+  document.getElementById('tkInput').value = '';
+  renderSyncBox();
+}
+function clearTokenNow(){
+  if (!nativeHas()) return;
+  window.StarHubNative.clearToken();
+  renderSyncBox();
+}
 
 /* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖）。
    一律使用各平台**移动端**搜索页（桌面版网页在手机上观感/可用性都更差）。 */
@@ -424,7 +489,7 @@ const DATA = {
     { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:true, online:true,
       img:'img/lyx.jpg',
       platforms:['微博','小红书','抖音'],
-      acct:{ weibo:'5503575607' },
+      acct:{ weibo:'5503575607', xhs:'277466513', douyin:'1109107012' },
       latest:null }
   ],
   hmh: {
@@ -661,6 +726,7 @@ function showView(view, extra){
     renderDetail();
     go('star');
   } else if (view === 'mine'){
+    renderSyncBox();
     go('mine');
   } else {
     go('home');
@@ -916,10 +982,22 @@ function openHome(key, uid, e){
        故降为后备。两者都失败则走网页兜底 m.weibo.cn/u/<uid>（已验证有效） */
     schemes = [`sinaweibo://userinfo?uid=${id}`, `sinaweibo://cardlist?containerid=100505${id}`];
     url = `https://m.weibo.cn/u/${id}`;
-  } else if (a.profileId && key === 'xhs'){
-    schemes = ['xhsdiscover://user/profile/' + a.profileId,
-               'xiaohongshu://user/profile/' + a.profileId].concat(schemes);
-    url = 'https://www.xiaohongshu.com/user/profile/' + a.profileId;
+  } else if (key === 'xhs'){
+    /* 小红书主页需该明星自己的 user_id；缺省回退到 ACCOUNTS 的默认值，都取不到则走搜索页 */
+    const pid = XHS_IDS[curStar] || a.profileId || id;
+    schemes = ['xhsdiscover://user/profile/' + pid,
+               'xiaohongshu://user/profile/' + pid].concat(schemes);
+    url = pid ? 'https://www.xiaohongshu.com/user/profile/' + pid
+              : 'https://www.xiaohongshu.com/search_result?keyword=' + pid;
+  } else if (key === 'douyin'){
+    /* 抖音网页主页用 sec_uid；未取到时回退到数字号的搜索页 */
+    const did = DOUYIN_IDS[curStar] || a.id;
+    if (a.secUid && curStar === 'hmh'){
+      schemes = [a.schemes[0]].concat(schemes);
+      url = a.url;
+    } else {
+      url = 'https://www.douyin.com/search/' + did;
+    }
   }
   return openExternal({ platform:key, kind:'home', label:a.label, schemes:schemes, web:url }, e);
 }
@@ -1232,6 +1310,9 @@ window.addEventListener('error', e=>{
 });
 renderHome();
 renderMineImg();
+renderSyncBox();
+/* 原生采集上传成功后派发的starhub:refresh 事件 → 立刻重拉一次线上数据 */
+window.addEventListener('starhub:refresh', ()=>{ loadLive(true); toast('已同步，正在刷新动态…'); });
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 loadLive(true);
