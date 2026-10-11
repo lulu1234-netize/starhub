@@ -488,7 +488,10 @@ const DATA = {
         time:TS('2026-09-21T22:00:00+08:00') },
       { platform:'douyin', account:'侯明昊影综剪辑', tag:'剪辑号 · 示例',
         text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
-        pics:['ph-1'], time:TS('2026-09-17T20:00:00+08:00') }
+        pics:['ph-1'], time:TS('2026-09-17T20:00:00+08:00') },
+      { platform:'weibo', account:'桃圈播报员', tag:'桃圈 · 示例',
+        text:'【示例占位】演示用内容，接入真实采集后替换。',
+        pics:[], time:TS('2026-09-16T10:30:00+08:00') }
     ]
   }
 };
@@ -1155,7 +1158,7 @@ function renderDetail(){
   const relBlock = relAll.length
     ? (() => {
         /* 固定 4 个微博相关账号筛选，不动态生成多余筛选项 */
-        const REL_ACCOUNTS = ['侯明昊工作室','侯明昊全球后援会','侯明昊的桃园杂货铺','侯会有期-昊友汇'];
+        const REL_ACCOUNTS = ['侯明昊工作室','侯明昊全球后援会','侯明昊的桃园杂货铺','侯会有期-昊友汇','桃圈播报员'];
         const relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
         const relTabs = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
           .concat(REL_ACCOUNTS.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
@@ -1183,7 +1186,7 @@ function renderDetail(){
     <div class="sec-label"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 小红书 / 抖音 统一展示</span></div>
     ${ownBlock}
     <div class="sec-label" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
-      <h2>相关账号动态</h2><span>工作室 / 粉丝站 / 剪辑号</span></div>
+      <h2>相关账号动态</h2><span>工作室 / 粉丝站 / 剪辑号 / 播报员</span></div>
     ${relBlock}`;
   viewEl.scrollTop = sv;
 }
