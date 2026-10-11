@@ -738,7 +738,7 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
 function showView(view, extra){
   if (view === 'star'){
     const id = (extra && extra.star) || curStar;
-    curStar = id; curFilter = 'all'; curRelFilter = 'all';
+    curStar = id; curOwnPf = 'all'; curRelPf = 'all'; curRelFilter = 'all';
     revealed = { own:new Set(), rel:new Set() };
     const s = DATA.stars.find(x=>x.id===id) || { name:'星汇' };
     document.getElementById('dName').textContent = s.name;
@@ -797,18 +797,22 @@ function renderHome(){
     </div>`).join('');
 }
 
-/* ================= 详情页渲染（三平台统一 · 时间倒序 · 平台筛选 · 已读清理） ================= */
-let curFilter = 'all';           /* all | weibo | xhs | douyin */
+/* ================= 详情页渲染（三平台统一 · 时间倒序 · 平台筛选 · 已读清理） =================
+   筛选设计：本人区 与 相关账号区 **各自独立**，互不联动、互不影响。
+     · 本人区：   curOwnPf（平台）
+     · 相关账号区：curRelPf（平台） + curRelFilter（该平台下的账号）
+   即：两个板块各自持有筛选状态，某板块的筛选只作用于该板块自身的列表。 */
 let curStar = null;
 const FILTERS = [['all','全部'],['weibo','仅微博'],['xhs','仅小红书'],['douyin','仅抖音']];
 
-/* 主筛选 = 平台。切换平台时同步重置「账号筛选」（账号筛选从属于平台，切平台即回「全部账号」） */
-function setFilter(k){
-  if (k !== curFilter){ curRelFilter = 'all'; revealed.rel = new Set(); }
-  curFilter = k;
-  renderDetail();
-}
-let curRelFilter = 'all';        /* all | 相关账号 account 名（各平台筛选区内的账号筛选，从属于平台） */
+/* —— 本人区筛选（独立） —— */
+let curOwnPf = 'all';            /* all | weibo | xhs | douyin */
+function setOwnPf(k){ curOwnPf = k; revealed.own = new Set(); renderDetail(); }
+
+/* —— 相关账号区筛选（独立） —— */
+let curRelPf = 'all';            /* all | weibo | xhs | douyin */
+function setRelPf(k){ curRelPf = k; curRelFilter = 'all'; revealed.rel = new Set(); renderDetail(); }
+let curRelFilter = 'all';        /* all | 相关账号 account 名（在当前所选平台内生效） */
 function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDetail(); }
 
 /* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
@@ -1082,11 +1086,16 @@ function postCard(p){
 /* 取某分区当前应展示的帖（供展开/收起与渲染共用，保证两边口径一致） */
 function curList(key){
   const d = DATA[curStar];
-  let list = (key === 'own') ? d.own.slice() : d.related.slice();
-  /* 主筛选：平台（全部 / 微博 / 小红书 / 抖音） */
-  if (curFilter !== 'all') list = list.filter(p => p.platform === curFilter);
-  /* 从属筛选：账号（仅相关账号区 + 已选定具体平台时生效） */
-  if (key === 'rel' && curRelFilter !== 'all') list = list.filter(p => p.account === curRelFilter);
+  if (key === 'own'){
+    /* 本人区：只应用「本人区」自己的平台筛选，不看相关账号区 */
+    let list = d.own.slice();
+    if (curOwnPf !== 'all') list = list.filter(p => p.platform === curOwnPf);
+    return list;
+  }
+  /* 相关账号区：应用「相关账号区」自己的平台筛选 + 账号筛选，与本人区完全隔离 */
+  let list = d.related.slice();
+  if (curRelPf !== 'all') list = list.filter(p => p.platform === curRelPf);
+  if (curRelFilter !== 'all') list = list.filter(p => p.account === curRelFilter);
   return list;
 }
 
@@ -1169,38 +1178,39 @@ function renderDetail(){
       <div class="a-open">前往主页 ›</div>
     </a>`;
   }).join('');
-  /* ===== 筛选区（新结构）：平台为主筛选行；账号筛选作为其下方从属筛选 =====
-     ① 主行 [全部 | 微博 | 小红书 | 抖音] —— 控制「本人区 + 相关账号区」的平台范围；
-     ② 选中某具体平台时，其下方展开「账号筛选」行（全部 + 该平台下真实存在的相关账号），
-        账号筛选随之成为该平台筛选区的一部分，并在本平台内生效；
-     ③ 选「全部」平台时，账号筛选不作为独立维度展示（避免跨平台账号混杂），
-        仍可通过各平台内的账号筛选精确过滤。 */
+  /* ===== 两个板块各自独立筛选（互不联动） =====
+     ① 本人区：自带「平台」筛选行（curOwnPf），只作用于本人区；
+     ② 相关账号区：自带「平台」筛选行（curRelPf）+ 其下方「账号」筛选行（curRelFilter，从属于所选平台），
+        只作用于相关账号区。两个板块的状态互不影响。 */
   const PF_LABEL = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
-  const tabs = FILTERS.map(([k,l]) =>
-    `<button class="ftab ${curFilter===k ? 'on' : ''}" onclick="setFilter('${k}')">${l}</button>`).join('');
+  const tabsOf = (cur, fn) => FILTERS.map(([k,l]) =>
+    `<button class="ftab ${cur===k ? 'on' : ''}" onclick="${fn}('${k}')">${l}</button>`).join('');
 
-  /* 平台筛选行（含标题，明确它是主筛选） */
-  const pfRow = `<div class="pf-row">
+  /* 本人区筛选行（独立） */
+  const ownPfRow = `<div class="pf-row">
       <span class="pf-row-label">平台</span>
-      <div class="filter-tabs">${tabs}</div>
+      <div class="filter-tabs">${tabsOf(curOwnPf, 'setOwnPf')}</div>
     </div>`;
 
-  /* 账号筛选行：仅当主筛选选中具体平台时出现，只列出「该平台下确实有内容」的相关账号 */
-  let acctRow = '';
-  if (curFilter !== 'all'){
-    const pfRelated = d.related.filter(p => p.platform === curFilter);
+  /* 相关账号区筛选行（独立）：平台行 + 其下账号行（仅选中具体平台时出现，只列该平台下有内容的账号） */
+  const relPfRow = `<div class="pf-row">
+      <span class="pf-row-label">平台</span>
+      <div class="filter-tabs">${tabsOf(curRelPf, 'setRelPf')}</div>
+    </div>`;
+  let relAcctRow = '';
+  if (curRelPf !== 'all'){
+    const pfRelated = d.related.filter(p => p.platform === curRelPf);
     const relAccounts = (STAR_REL[curStar] || []).filter(a => pfRelated.some(p => p.account === a));
-    /* 若该平台下命中任何账号，则给出「全部 + 命中账号」，仅一个账号时也保留「全部」以便一键回退 */
     const tabsA = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部账号</button>`]
       .concat(relAccounts.map(a =>
         `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
-    acctRow = `<div class="acct-row">
-        <span class="acct-row-label">${PF_LABEL[curFilter]}账号</span>
+    relAcctRow = `<div class="acct-row">
+        <span class="acct-row-label">${PF_LABEL[curRelPf]}账号</span>
         <div class="filter-tabs acct-tabs">${tabsA.join('')}</div>
       </div>`;
   }
 
-  /* 本人区 / 相关账号区（列表由 curList 按平台 + 账号统一派生） */
+  /* 本人区 / 相关账号区（列表由 curList 按各自板块的筛选派生） */
   const ownList = curList('own');
   const relListFinal = curList('rel');
   const ownBlock = ownList.length
@@ -1223,22 +1233,25 @@ function renderDetail(){
   document.getElementById('dBody').innerHTML = `
     ${liveBar}
     <div class="acct-strip">${acctStrip}</div>
-    ${pfRow}
-    ${acctRow}
     ${todaySum ? `<div class="sec-label"><div class="bar" style="background:var(--wb)"></div>
       <h2>今日更新</h2><span>${todaySum} 条新动态</span></div>` : ''}
     <div class="sec-label"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 小红书 / 抖音 统一展示</span></div>
+    ${ownPfRow}
     ${ownBlock}
     <div class="sec-label" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
       <h2>相关账号动态</h2><span>工作室 / 粉丝站 / 剪辑号 / 播报员</span></div>
+    ${relPfRow}
+    ${relAcctRow}
     ${relBlock}`;
   viewEl.scrollTop = sv;
 }
 
 function openStar(id){
-  /* 进入明星详情：重置筛选到「全部平台 / 全部账号」，避免沿用上一明星的筛选条件 */
-  curFilter = 'all';
+  /* 进入明星详情：两个板块的筛选各自重置为「全部」，避免沿用上一明星的条件 */
+  curOwnPf = 'all';
+  curRelPf = 'all';
   curRelFilter = 'all';
+  revealed.own = new Set();
   revealed.rel = new Set();
   navigate('star', { star:id });
 }
