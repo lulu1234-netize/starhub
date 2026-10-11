@@ -427,10 +427,12 @@ const DATA = {
     { id:'hmh', name:'侯明昊', en:'Hou Minghao', implemented:true, online:true,
       img:'img/hmh.jpg',
       platforms:['微博','小红书','抖音'],
+      acct:{ weibo:'1831550987', xhs:'155624915', douyin:'390049435' },
       latest:'藏锋入局，扭转乾坤。前路险峻，杨无间与你们共进退！' },
-    { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:false, online:true,
+    { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:true, online:true,
       img:'img/lyx.jpg',
       platforms:['微博','小红书','抖音'],
+      acct:{ weibo:'5503575607' },
       latest:null }
   ],
   hmh: {
@@ -493,6 +495,16 @@ const DATA = {
         text:'【示例占位】演示用内容，接入真实采集后替换。',
         pics:[], time:TS('2026-09-16T10:30:00+08:00') }
     ]
+  },
+  lyx: {
+    own: [
+      /* 卢昱晓本人微博由云端采集器（collect_http.js，uid 5503575607）定时写入 data/posts.json，
+         真实数据到达后由 applyLive 自动替换本平台示例 */
+    ],
+    related: [
+      /* 相关账号（uid 见 collect_http.js TARGETS）：工作室 / 后援会 / 噜噜哈嘿 / 鲈鱼烧小卖部 / 小雨露传声筒，
+         同样由采集器实时拉取，真实数据到达后替换本占位 */
+    ]
   }
 };
 
@@ -505,6 +517,12 @@ Object.keys(DATA).forEach(k=>{
     d.related.forEach((p,i)=>{ p._uid = k + '_rel_' + i; if (!p.link) p.link = contentLink(p.platform, p.text); });
   }
 });
+
+/* 各明星的相关账号筛选 tab（与采集器 TARGETS 的 name 精确对应，account 匹配） */
+const STAR_REL = {
+  hmh: ['侯明昊工作室','侯明昊全球后援会','侯明昊的桃园杂货铺','侯会有期-昊友汇','桃圈播报员'],
+  lyx: ['卢昱晓工作室','卢昱晓官方粉丝后援会','噜噜哈嘿','鲈鱼烧小卖部','小雨露传声筒']
+};
 
 /* ================= 工具 ================= */
 const SRC = {
@@ -570,8 +588,11 @@ let revealed = { own:new Set(), rel:new Set() };   /* 折叠区里被「展开 N
 let STARTUP_UIDS = new Set();                       /* 启动时就存在的帖子，已标为已读 */
 let startupDone = (store.getItem(SNAP_KEY) === '1'); /* 启动快照只捕获一次（持久化，仅针对真实数据） */
 function ensureStartupSnap(){
-  const d = DATA.hmh;
-  const hasReal = !!(d && (d.own.concat(d.related).some(p => p._uid && String(p._uid).indexOf('demo_') !== 0)));
+  let hasReal = false;
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id];
+    if (d && (d.own.concat(d.related).some(p => p._uid && String(p._uid).indexOf('demo_') !== 0))) hasReal = true;
+  });
   /* 真实数据快照已完成 → 锁定：之后轮询新抓到的帖保持未读（默认不折叠） */
   if (startupDone && hasReal) return;
   (DATA.stars || []).forEach(s=>{
@@ -796,7 +817,7 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
 function renderHome(){
   const list = document.getElementById('starList');
   list.innerHTML = DATA.stars.map(s=>`
-    <div class="star-card" onclick="${s.implemented ? `openStar('${s.id}')` : `toast('卢昱晓模块即将上线，当前为占位卡片')`}">
+    <div class="star-card" onclick="${s.implemented ? `openStar('${s.id}')` : `toast('该明星模块即将上线，当前为占位卡片')`}">
       ${s.online ? '<div class="dot-badge"></div>' : ''}
       <div class="avatar ${s.id==='hmh'?'avatar-hmh':'avatar-lyx'}"><img src="${getStarImg(s)}" alt="${s.name}" referrerpolicy="no-referrer"></div>
       <div class="star-info">
@@ -1005,11 +1026,15 @@ function openExternal(o, e){
 
 /* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。
    小红书拿到 user_id 后填入 ACCOUNTS.xhs.profileId，即自动升级为「主页直达」 */
-function openHome(key, e){
+function openHome(key, uid, e){
   const a = ACCOUNTS[key];
   if (!a) return false;
+  const id = uid || a.id;
   let schemes = a.schemes.slice(), url = a.url;
-  if (a.profileId && key === 'xhs'){
+  if (key === 'weibo'){
+    schemes = [`sinaweibo://cardlist?containerid=100505${id}`, `sinaweibo://userinfo?uid=${id}`];
+    url = `https://m.weibo.cn/u/${id}`;
+  } else if (a.profileId && key === 'xhs'){
     schemes = ['xhsdiscover://user/profile/' + a.profileId,
                'xiaohongshu://user/profile/' + a.profileId].concat(schemes);
     url = 'https://www.xiaohongshu.com/user/profile/' + a.profileId;
@@ -1141,12 +1166,16 @@ function renderDetail(){
   const relAll = curFilter === 'all' ? d.related : d.related.filter(p => p.platform === curFilter);
   const todaySum = d.own.concat(d.related).filter(p => isNew(p.time)).length;
   const acctCls = { weibo:'p-weibo', xhs:'p-xhs', douyin:'p-dy' };
+  const starAcct = (DATA.stars.find(s=>s.id===curStar)||{}).acct || {};
   const acctStrip = ['weibo','xhs','douyin'].map(k=>{
     const a = ACCOUNTS[k];
-    return `<a class="acct-item" href="${a.url}" onclick="return openHome('${k}',event)"
+    const id = starAcct[k] || (k === 'weibo' ? a.id : '');
+    if (!id) return '';
+    const url = k === 'weibo' ? `https://m.weibo.cn/u/${id}` : a.url;
+    return `<a class="acct-item" href="${url}" onclick="return openHome('${k}','${id}',event)"
       title="点击唤起${a.label}App，未安装则打开网页版">
       <div class="a-p ${acctCls[k]}">${a.label}</div>
-      <div class="a-id">${a.label === '微博' ? 'UID ' : a.label + '号 '}${a.id}</div>
+      <div class="a-id">${a.label === '微博' ? 'UID ' : a.label + '号 '}${id}</div>
       <div class="a-open">前往主页 ›</div>
     </a>`;
   }).join('');
@@ -1158,12 +1187,12 @@ function renderDetail(){
   const relBlock = relAll.length
     ? (() => {
         /* 固定 4 个微博相关账号筛选，不动态生成多余筛选项 */
-        const REL_ACCOUNTS = ['侯明昊工作室','侯明昊全球后援会','侯明昊的桃园杂货铺','侯会有期-昊友汇','桃圈播报员'];
+        const REL_ACCOUNTS = STAR_REL[curStar] || [];
         const relList = curRelFilter === 'all' ? relAll : relAll.filter(p => p.account === curRelFilter);
         const relTabs = [`<button class="ftab ${curRelFilter==='all'?'on':''}" onclick="setRelFilter('all')">全部</button>`]
           .concat(REL_ACCOUNTS.map(a => `<button class="ftab ${curRelFilter===a?'on':''}" onclick='setRelFilter(${JSON.stringify(a)})'>${a}</button>`));
         return `<div class="rel-box">
-          <div class="rel-head"><div class="mini-av">工</div><b>侯明昊 · 相关账号</b><span>显示 ${relList.length} 条</span></div>
+          <div class="rel-head"><div class="mini-av">${(DATA.stars.find(x=>x.id===curStar)||{}).name.charAt(0)}</div><b>${(DATA.stars.find(x=>x.id===curStar)||{}).name} · 相关账号</b><span>显示 ${relList.length} 条</span></div>
           <div class="filter-tabs rel-tabs">${relTabs.join('')}</div>
           ${sectionRender(relList, 'rel')}</div>`;
       })()
@@ -1173,7 +1202,7 @@ function renderDetail(){
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
     <span class="live-txt">${LIVE.ok
-      ? `${pfList.join(' / ') || '微博'}真实数据 · ${LIVE.count} 条 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 10 分钟）`
+      ? `${(d.own.length + d.related.length)} 条 · ${pfList.join(' / ') || '微博'}真实数据 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 10 分钟）`
       : '未连接采集服务 · 当前为内置数据'}</span>
     <button class="live-btn" onclick="refreshNow()">立即刷新</button>
   </div>`;
@@ -1194,7 +1223,8 @@ function renderDetail(){
 function openStar(id){
   curStar = id; curFilter = 'all'; curRelFilter = 'all';
   revealed = { own:new Set(), rel:new Set() };
-  document.getElementById('dName').textContent = '侯明昊';
+  const s = DATA.stars.find(x=>x.id===id) || { name:'星汇' };
+  document.getElementById('dName').textContent = s.name;
   document.getElementById('dSub').textContent = '三平台统一时间线 · 已读帖自动折叠 · 可标记已读收纳';
   renderDetail();
   go('star');
@@ -1246,7 +1276,7 @@ function toLivePost(p, i){
   const prefix = pf === 'douyin' ? 'dy_' : (pf === 'xhs' ? 'xhs_' : 'wb_');
   return {
     _uid: prefix + (p.id || p.link || i),
-    platform:pf, account:p.account || '侯明昊', tag:p.tag || '本人',
+    platform:pf, account:p.account || '', tag:p.tag || '本人',
     text:p.text || '', time:p.time || 0, link:p.link || '',
     pics:[], imgs:(p.imgs || p.pics || []).slice(0,4),
     title:p.title || '',
@@ -1255,30 +1285,35 @@ function toLivePost(p, i){
   };
 }
 function reuid(){
-  const d = DATA.hmh;
-  /* 只给内置示例补编号；真实采集数据保留 wb_/dy_/xhs_ 前缀的真实 _uid */
-  d.own.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_own_' + i; });
-  d.related.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_rel_' + i; });
+  /* 真实采集数据保留 wb_/dy_/xhs_ 前缀的真实 _uid；内置示例按「明星_own/rel_序号」补编号，保证跨明星唯一 */
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id]; if (!d) return;
+    d.own.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_' + s.id + '_own_' + i; });
+    d.related.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_' + s.id + '_rel_' + i; });
+  });
 }
 function applyLive(posts, updatedAt){
-  const d = DATA.hmh;
-  const ownReal = posts.filter(p => p.kind !== 'related').map(toLivePost);
-  const relReal = posts.filter(p => p.kind === 'related').map(toLivePost);
-  /* 按平台合并：哪个平台采集到了真实数据，就替换掉该平台的占位示例；
-     尚未接入的平台仍保留示例内容，界面不会出现空页 */
+  /* 按 star 分流：每条帖自带 star 字段（采集器写入），分桶后逐明星合并 */
+  const byStar = {};
+  posts.forEach(p => { const s = p.star || 'hmh'; (byStar[s] = byStar[s] || []).push(p); });
+  /* 全局真实平台集合：任一明星某平台有真实数据，则该平台占位示例被替换（避免重复） */
   const realPlats = new Set(posts.map(p => p.platform || 'weibo'));
-  d.own     = ownReal.concat(d.own.filter(p => !realPlats.has(p.platform)));
-  d.related = relReal.concat(d.related.filter(p => !realPlats.has(p.platform)));
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id]; if (!d) return;
+    const sp = byStar[s.id] || [];
+    const ownReal = sp.filter(p => p.kind !== 'related').map(toLivePost);
+    const relReal = sp.filter(p => p.kind === 'related').map(toLivePost);
+    d.own     = ownReal.concat(d.own.filter(p => !realPlats.has(p.platform)));
+    d.related = relReal.concat(d.related.filter(p => !realPlats.has(p.platform)));
+    /* 首页预览取该明星全部平台里最新的一条 */
+    const newest = d.own.slice().sort((a,b)=>b.time-a.time)[0]
+                || d.related.slice().sort((a,b)=>b.time-a.time)[0];
+    if (newest) s.latest = newest.text.replace(/\s+/g,' ').slice(0, 34);
+  });
   reuid();
-  LIVE.ok = true; LIVE.updatedAt = updatedAt || Date.now(); LIVE.count = ownReal.length + relReal.length;
+  LIVE.ok = true; LIVE.updatedAt = updatedAt || Date.now();
+  LIVE.count = (DATA[curStar] ? (DATA[curStar].own.length + DATA[curStar].related.length) : posts.length);
   LIVE.ids = new Set(posts.map(p => p.id));
-  /* 首页预览取全部平台里最新的一条（不再固定为微博） */
-  const newest = d.own.slice().sort((a,b)=>b.time-a.time)[0]
-              || d.related.slice().sort((a,b)=>b.time-a.time)[0];
-  if (newest){
-    const s = DATA.stars.find(x => x.id === 'hmh');
-    s.latest = newest.text.replace(/\s+/g,' ').slice(0, 34);
-  }
 }
 async function loadLive(silent){
   let data = null;
