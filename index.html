@@ -38,15 +38,7 @@
   .view.active{transform:translateX(0);opacity:1;pointer-events:auto;z-index:2}
   .view.under{transform:translateX(-18%);opacity:.4;z-index:1}
   .view-root{transform:translateX(0);opacity:1;pointer-events:auto}
-  /* 边缘滑动返回指示箭头（跟随进度出现在左侧） */
-  .edge-back{position:fixed;left:30px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;
-    background:rgba(20,20,28,.34);color:#fff;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:opacity .15s ease;z-index:200;pointer-events:none}
-  .edge-back svg{width:22px;height:22px}
-  .edge-back.show{opacity:1}
-  /* 左边缘常驻提示条：告诉用户这里可以右滑返回，长按也不干扰 */
-  .edge-hint{position:fixed;left:0;top:50%;transform:translateY(-50%);width:3px;height:56px;
-    background:var(--brand,#e0796a);opacity:.16;border-radius:0 3px 3px 0;z-index:199;pointer-events:none}
+  /* 系统返回交由手机原生导航手势 / 返回键处理，不再有自定义边缘箭头与提示条 */
 
   /* ---------- home ---------- */
   .home-head{padding:34px 22px 14px}
@@ -344,7 +336,7 @@
   <!-- ===================== 明星详情 ===================== -->
   <section class="view" id="view-star">
     <div class="d-head">
-      <div class="back" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <div class="back" onclick="appBack()"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
       <div><div class="d-title" id="dName"></div><div class="d-sub" id="dSub"></div></div>
     </div>
     <div class="d-body" id="dBody"></div>
@@ -640,178 +632,66 @@ function go(name){
   });
 }
 document.querySelectorAll('.tabbar .tab').forEach(t=>{
-  t.addEventListener('click', ()=>go(t.dataset.tab));
+  t.addEventListener('click', ()=>{
+    const tab = t.dataset.tab;
+    const cur = document.querySelector('.view.active');
+    if (cur && cur.id === 'view-' + tab) return;        // 已在当前页
+    if (tab === 'home'){ appBack(); }                    // 回首页：走历史后退，与系统返回一致
+    else { navigate(tab); }                               // 'mine'：进入并压入历史
+  });
 });
 
-/* ================= 边缘滑动手势导航 =================
-   从屏幕左侧窄边(EDGE)向右滑动：
-     · 子页面(明星详情 / 我的) → 返回首页；
-     · 首页 → 退出应用程序（经原生桥 StarHubNative.exitApp）。
-   仅左侧边缘触发，且需明显「右向横滑」才提交，纵向滚动交给原生( touch-action:pan-y )，互不干扰。
-   桌面预览可用鼠标从左边拖动演示（App 内仅触摸生效）。 */
-(function(){
-  /* 触发区宽度：26px 太窄（约5mm），手指腹按下时中心就飘出去了，手势永远启动不了。
-     放宽到 76px —— 仍占屏幕宽度约 20%，不会误触页面内容。 */
-  const EDGE = 76;
-  const THRESHOLD = 64;                    // 提交所需最小位移(px)
-  const ALLOW_MOUSE = !isPhone();        // App 内(手机)只用触摸；桌面预览允许鼠标演示
-  let sw = null;                         // 当前手势状态
-  let animating = false;                 // 提交/回弹动画进行中，避免叠加
+/* ================= 系统级返回（接入手机原生导航手势 / 返回键） =================
+   不再自行实现 App 内右滑手势，改为由设备系统负责返回：
+     · 进入子页面（明星详情 / 我的）时 push 一条 History 状态，WebView 历史栈随之增长；
+     · 系统返回（Android 返回键或边缘手势、iOS 右滑边缘返回）触发 WebView.goBack()
+       → 浏览器 popstate → 此处按状态还原上一页，与系统行为完全一致；
+     · 已在首页时 WebView 无历史，原生直接 finish() 退出 App。
+   本方案不使用任何自定义触摸 / 指针监听，绝不与系统手势争抢，也不会出现“假返回”。 */
 
-  function activeView(){
-    return document.querySelector('.view.active') || document.getElementById('view-home');
+/* 按状态切换视图（被 navigate 与 popstate 共用） */
+function showView(view, extra){
+  if (view === 'star'){
+    const id = (extra && extra.star) || curStar;
+    curStar = id; curFilter = 'all'; curRelFilter = 'all';
+    revealed = { own:new Set(), rel:new Set() };
+    const s = DATA.stars.find(x=>x.id===id) || { name:'星汇' };
+    document.getElementById('dName').textContent = s.name;
+    document.getElementById('dSub').textContent = '三平台统一时间线 · 已读帖自动折叠 · 可标记已读收纳';
+    renderDetail();
+    go('star');
+  } else if (view === 'mine'){
+    go('mine');
+  } else {
+    go('home');
   }
-  function makeArrow(){
-    let el = document.getElementById('edgeBack');
-    if (!el){
-      el = document.createElement('div');
-      el.id = 'edgeBack';
-      el.className = 'edge-back';
-      el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      document.body.appendChild(el);
-    }
-    return el;
-  }
-  function showArrow(p){ const a = makeArrow(); a.classList.add('show'); a.style.opacity = String(Math.min(1, 0.25 + p * 0.75)); }
-  function hideArrow(){ const a = document.getElementById('edgeBack'); if (a) a.classList.remove('show'); }
+}
 
-  /* 左边缘常驻提示条：初始化时插一条，让用户知道边缘可滑动 */
-  function mountHint(){
-    if (document.getElementById('edgeHint')) return;
-    const h = document.createElement('div');
-    h.id = 'edgeHint'; h.className = 'edge-hint';
-    document.body.appendChild(h);
-  }
+/* 进入子页面：压入一条 History 状态（不刷新页面），用于系统返回时还原 */
+function navigate(view, extra){
+  history.pushState(Object.assign({ view:view }, extra || {}), '', location.pathname + location.search);
+  showView(view, extra);
+}
 
-  /* 把 pointer 事件与 touch 事件归一化成同一种参数对象。
-     部分安卓 WebView 在整页可拖动时会把 pointer 事件吞掉，只绑 pointer 会导致手势永不触发，
-     所以两条通道都监听，同一次手势只会命中先到的那条（sw 非空时后到的直接忽略）。 */
-  function normPointer(e){
-    return { x:e.clientX, y:e.clientY, cancelable:e.cancelable, type:e.pointerType, primary:e.isPrimary, button:e.button, src:e };
+/* 应用内“返回”：优先浏览器历史后退（与系统返回无缝衔接），首页兜底回首页 */
+function appBack(){
+  if (history.state && history.state.view && history.state.view !== 'home'){
+    history.back();
+  } else {
+    go('home');
   }
-  function normTouch(e){
-    const t = e.touches && e.touches.length ? e.touches[0]
-            : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : null);
-    if (!t) return null;
-    return { x:t.clientX, y:t.clientY, cancelable:e.cancelable, type:'touch', primary:true, button:0, src:e };
-  }
+}
 
-  function onDown(p){
-    if (sw || animating) return;
-    if (!p.primary) return;
-    if (p.type === 'mouse' && !ALLOW_MOUSE) return;
-    if (p.type === 'mouse' && p.button !== 0) return;
-    /* 触点在左边缘内：起点略微放宽余量，因为手指落点比感知点更靠左 */
-    if (p.x > EDGE) return;
-    sw = { x0:p.x, y0:p.y, locked:false, view:null, under:null, isHome:false };
-  }
-  function onMove(p){
-    if (!sw) return;
-    const dx = p.x - sw.x0;
-    const dy = p.y - sw.y0;
-    if (!sw.locked){
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;          // 等待方向明确
-      if (Math.abs(dy) > Math.abs(dx)){ sw = null; return; }      // 纵向滑动→放弃，交回原生滚动
-      if (dx <= 0){ sw = null; return; }                          // 向左滑→放弃
-      sw.locked = true;                                           // 锁定为右向横滑
-      const v = activeView();
-      sw.view = v;
-      sw.isHome = (v.id === 'view-home');
-      sw.under = document.querySelector('.view.under') || (sw.isHome ? null : document.getElementById('view-home'));
-      v.style.transition = 'none';
-      if (sw.under && sw.under !== v) sw.under.style.transition = 'none';
-    }
-    if (p.cancelable){ try { p.src.preventDefault(); } catch(_){} }
-    const dist = Math.max(0, dx);
-    const w = window.innerWidth || document.documentElement.clientWidth;
-    const prog = Math.min(1, dist / (w * 0.55));
-    sw.view.style.transform = 'translateX(' + dist + 'px)';
-    sw.view.style.opacity = sw.isHome ? String(1 - prog * 0.35) : '1';
-    if (sw.under && sw.under !== sw.view){
-      const off = -18 * (1 - prog);                               // 下层页随进度从 -18% 回到 0（视差）
-      sw.under.style.transform = 'translateX(' + off + '%)';
-      sw.under.style.opacity = String(0.4 + 0.6 * prog);
-    }
-    showArrow(prog);
-  }
-  function onUp(p){
-    if (!sw) return;
-    const s = sw; sw = null;
-    if (!s.locked) return;
-    const dx = (p.x != null ? p.x : s.x0) - s.x0;
-    const w = window.innerWidth || document.documentElement.clientWidth;
-    const commit = (dx >= THRESHOLD) || (dx >= w * 0.30);
-    const v = s.view, u = s.under;
-    const ease = 'transform .3s cubic-bezier(.3,.8,.3,1), opacity .3s ease';
-    v.style.transition = ease;
-    if (u && u !== v) u.style.transition = ease;
-    hideArrow();
-    animating = true;
-    const done = () => { animating = false; };
-    if (commit){
-      if (s.isHome){
-        v.style.transform = 'translateX(100%)';
-        v.style.opacity = '0';
-        const fin = () => { nativeExit(); done(); };
-        v.addEventListener('transitionend', fin, { once:true });
-        setTimeout(fin, 380);
-      } else {
-        v.style.transform = 'translateX(100%)';
-        if (u){ u.style.transform = 'translateX(0)'; u.style.opacity = '1'; }
-        const fin = () => {
-          if (document.body.contains(v)){ go('home'); clearInline(v); if (u) clearInline(u); }
-          done();
-        };
-        v.addEventListener('transitionend', fin, { once:true });
-        setTimeout(fin, 380);
-      }
-    } else {
-      v.style.transform = 'translateX(0)';
-      v.style.opacity = '1';
-      if (u){ u.style.transform = 'translateX(-18%)'; u.style.opacity = '0.4'; }
-      setTimeout(() => { clearInline(v); if (u) clearInline(u); done(); }, 320);
-    }
-  }
-  function clearInline(el){ if (!el) return; el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; }
+/* 系统 / 浏览器 popstate：由 WebView.goBack() 触发，按状态还原视图 */
+window.addEventListener('popstate', function(e){
+  const st = (e.state && e.state.view) ? e.state : { view:'home' };
+  showView(st.view, st);
+});
 
-  /* 退出应用：优先走原生桥；非 App 环境(桌面预览)降级为回首页，避免"卡住"。
-     必须经window.StarHubNative 取桥，不能裸写StarHubNative ——
-     原生桥是异步注入的，页面脚本先于注入执行时裸引用会抛 ReferenceError。 */
-  function nativeExit(){
-    try {
-      var bridge = window.StarHubNative;
-      if (bridge && typeof bridge.exitApp === 'function'){ bridge.exitApp(); return; }
-    } catch(_) {}
-    try { go('home'); } catch(_) {}
-  }
-  /* 硬件返回键与滑动手势保持一致：子页面回首页、首页退出 */
-  window.__starhubBack = function(){
-    const v = document.querySelector('.view.active') || document.getElementById('view-home');
-    if (!v || v.id === 'view-home'){ nativeExit(); return 'exit'; }
-    go('home'); return 'home';
-  };
+/* 初始：把首页标记为历史基线，避免在首页时系统返回直接退出
+   （应退出时由原生 finish() 处理） */
+history.replaceState({ view:'home' }, '', location.pathname + location.search);
 
-  mountHint();
-  /* touch 通道优先（安卓 WebView 上最可靠），pointer 通道兜底桌面鼠标。
-     两条通道共用同一份状态，sw 非空时后到的事件被 onDown 挡掉，不会重复触发。 */
-  document.addEventListener('touchstart', function(e){
-    const p = normTouch(e); if (p) onDown(p);
-  }, { passive:true });
-  document.addEventListener('touchmove', function(e){
-    const p = normTouch(e); if (p) onMove(p);
-  }, { passive:false });
-  document.addEventListener('touchend', function(e){
-    const p = normTouch(e); if (p) onUp(p);
-  }, { passive:true });
-  document.addEventListener('touchcancel', function(e){
-    const p = normTouch(e); if (p) onUp(p);
-  }, { passive:true });
-
-  document.addEventListener('pointerdown', function(e){ onDown(normPointer(e)); }, { passive:true });
-  document.addEventListener('pointermove', function(e){ onMove(normPointer(e)); }, { passive:false });
-  document.addEventListener('pointerup', function(e){ onUp(normPointer(e)); }, { passive:true });
-  document.addEventListener('pointercancel', function(e){ onUp(normPointer(e)); }, { passive:true });
-})();
 
 /* ================= 首页渲染 ================= */
 function renderHome(){
@@ -1223,13 +1103,7 @@ function renderDetail(){
 }
 
 function openStar(id){
-  curStar = id; curFilter = 'all'; curRelFilter = 'all';
-  revealed = { own:new Set(), rel:new Set() };
-  const s = DATA.stars.find(x=>x.id===id) || { name:'星汇' };
-  document.getElementById('dName').textContent = s.name;
-  document.getElementById('dSub').textContent = '三平台统一时间线 · 已读帖自动折叠 · 可标记已读收纳';
-  renderDetail();
-  go('star');
+  navigate('star', { star:id });
 }
 
 /* ================= 我的页 · 图片管理渲染 ================= */
