@@ -560,6 +560,23 @@ function toMobile(u){
 const H = 3600e3, NOW = Date.now(), T0 = new Date(); T0.setHours(0,0,0,0); const TODAY0 = T0.getTime();
 const isNew = t => t >= TODAY0;
 
+/* ===== 时间窗口：只展示近半年（180 天）内的动态 =====
+   唯一判定入口，前端与采集器（collect_http.js）保持同一规则：
+   · 时间缺失（0，如小红书接口不返回发布时间）→ 无法判定为过期，保留；
+   · 未来时间（跨端时区/服务端误差）→ 保留，避免误删；
+   · 其余：now - time <= 180 天才保留。
+   比较基于毫秒时间戳，与时区无关。 */
+const MAX_AGE_DAYS = 180;
+const MAX_AGE_MS = MAX_AGE_DAYS * 86400e3;
+function withinWindow(p){
+  const t = Number(p && p.time) || 0;
+  if (!t) return true;                          /* 时间未知：保留（小红书等平台接口不返回时间） */
+  const now = Date.now();
+  if (t > now + 86400e3) return true;           /* 未来时间：时区/服务端误差，保留 */
+  return now - t <= MAX_AGE_MS;
+}
+function freshOnly(list){ return (list || []).filter(withinWindow); }
+
 /* 绝对时间戳（真实采集到的发布时间，不用相对偏移，保证与真实时间一致） */
 const TS = s => new Date(s).getTime();
 
@@ -1294,6 +1311,8 @@ function renderDetail(){
   /* 本人区 / 相关账号区（列表由 curList 按各自板块的筛选派生） */
   const ownList = curList('own');
   const relListFinal = curList('rel');
+  const allEmpty = (ownList.length + relListFinal.length) === 0 && (d.own.length + d.related.length) === 0;
+  const winNote = allEmpty ? `<div class="empty-sm">近 ${MAX_AGE_DAYS} 天内暂无动态（已自动隐藏更早的内容）</div>` : '';
   const ownBlock = ownList.length
     ? `<div class="own-box">${sectionRender(ownList, 'own')}</div>`
     : `<div class="empty-sm">当前筛选下暂无本人动态</div>`;
@@ -1317,6 +1336,7 @@ function renderDetail(){
   </div>`;
   document.getElementById('dBody').innerHTML = `
     ${liveBar}
+    ${winNote}
     <div class="acct-strip">${acctStrip}</div>
     ${secNav}
     ${todaySum ? `<div class="sec-label"><div class="bar" style="background:var(--wb)"></div>
@@ -1432,6 +1452,9 @@ function fixAccountKind(p){
   }
 }
 function applyLive(posts, updatedAt){
+  /* 时间窗口过滤（统一入口）：超过 180 天的动态在此一次性剔除，
+     下游首页预览 / 详情页列表 / 筛选 / 统计全部基于过滤后的 DATA，行为天然一致 */
+  posts = freshOnly(posts);
   /* 按 star 分流：每条帖自带 star 字段（采集器写入），分桶后逐明星合并 */
   posts.forEach(fixAccountKind);
   const byStar = {};
@@ -1443,12 +1466,13 @@ function applyLive(posts, updatedAt){
     const sp = byStar[s.id] || [];
     const ownReal = sp.filter(p => p.kind !== 'related').map(toLivePost);
     const relReal = sp.filter(p => p.kind === 'related').map(toLivePost);
-    d.own     = ownReal.concat(d.own.filter(p => !realPlats.has(p.platform)));
-    d.related = relReal.concat(d.related.filter(p => !realPlats.has(p.platform)));
+    d.own     = freshOnly(ownReal.concat(d.own.filter(p => !realPlats.has(p.platform))));
+    d.related = freshOnly(relReal.concat(d.related.filter(p => !realPlats.has(p.platform))));
     /* 首页预览取该明星全部平台里最新的一条 */
     const newest = d.own.slice().sort((a,b)=>b.time-a.time)[0]
                 || d.related.slice().sort((a,b)=>b.time-a.time)[0];
     if (newest) s.latest = newest.text.replace(/\s+/g,' ').slice(0, 34);
+    else if (sp.length) s.latest = '';   /* 有数据但全被时间窗口过滤掉 → 清空预览文案 */
   });
   reuid();
   LIVE.ok = true; LIVE.updatedAt = updatedAt || Date.now();
@@ -1470,7 +1494,7 @@ async function loadLive(silent){
     if (curStar) renderDetail();
     return false;
   }
-  const isNew = data.posts.some(p => !LIVE.ids.has(p.id));
+  const isNew = freshOnly(data.posts).some(p => !LIVE.ids.has(p.id));
   applyLive(data.posts, data.updatedAt);
   ensureStartupSnap();                   /* 首次加载成功：把当时全部帖子纳入启动快照 → 默认已读折叠 */
   renderHome();
