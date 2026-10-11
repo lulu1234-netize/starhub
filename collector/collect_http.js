@@ -237,15 +237,38 @@ async function localizeImages(posts) {
   try {
     const ext = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'posts_ext.json'), 'utf8'));
     if (ext && ext.posts && ext.posts.length) {
-      const have = new Set(all.posts.map(p => p.id));
-      const add = ext.posts.filter(p => !have.has(p.id));
+      /* 按「归一化 aweme/笔记 id」判重：同一作品可能因采集来源不同而带 dy_ / douyin_ 等不同前缀，
+         只比较裸 id 才能识别为同一条。同 id 冲突时保留字段更全的一份（ext 采集通常 imgs/text 更完整）。 */
+      const bare = id => String(id || '').replace(/^(dy_|douyin_|xhs_)/, '');
+      const fullness = p => (p.text ? 2 : 0) + ((p.imgs && p.imgs.length) ? 2 : 0) + (p.cover ? 1 : 0) + (p.time ? 1 : 0);
+      const byBare = new Map(all.posts.map(p => [bare(p.id), p]));
+      const add = [];
+      for (const p of ext.posts){
+        const k = bare(p.id), cur = byBare.get(k);
+        if (!cur){ add.push(p); byBare.set(k, p); continue; }
+        if (fullness(p) > fullness(cur)){
+          /* ext 版更全 → 原位替换，保持时间线位置不变 */
+          const i = all.posts.indexOf(cur);
+          if (i > -1) all.posts[i] = p;
+          byBare.set(k, p);
+        }
+      }
       all.posts = all.posts.concat(add);
       const ago = Math.round((Date.now() - (ext.updatedAt || 0)) / 60000);
-      console.log(`[合并] 抖音/小红书 ${add.length} 条（${ago} 分钟前采集）`);
+      console.log(`[合并] 抖音/小红书 新增 ${add.length} 条（${ago} 分钟前采集）`);
     }
   } catch (e) { /* 外部采集未跑过，忽略 */ }
-  const seen = new Set();
-  all.posts = all.posts.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
+  /* 最终兜底：按归一化裸 id 去重（同前缀的完全相同 id 也在此清除） */
+  {
+    const bare = id => String(id || '').replace(/^(dy_|douyin_|xhs_)/, '');
+    const fullness = p => (p.text ? 2 : 0) + ((p.imgs && p.imgs.length) ? 2 : 0) + (p.cover ? 1 : 0) + (p.time ? 1 : 0);
+    const best = new Map();
+    for (const p of all.posts){
+      const k = bare(p.id), cur = best.get(k);
+      if (!cur || fullness(p) > fullness(cur)) best.set(k, p);
+    }
+    all.posts = all.posts.filter(p => { const k = bare(p.id); return best.get(k) === p; });
+  }
   all.posts.sort((a, b) => b.time - a.time);
   /* 统一补上标准日期时间串 YYYY-MM-DD HH:mm:ss（北京时间） */
   all.posts.forEach(p => { p.timeStr = fmtShanghai(p.time); });
