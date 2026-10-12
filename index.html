@@ -111,6 +111,16 @@
   .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
     border-radius:8px;background:#fff;color:#2c2c2a}
+  /* 每日自动采集（仅 App 内） */
+  .sync-auto{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line,#e5e3df)}
+  .sync-auto-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .sync-auto-head .sync-tag{font-weight:600;color:#2c2c2a;min-width:0}
+  .sync-auto-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+  .sync-auto-row>label{font-size:12px;color:#5f5e5a;min-width:56px}
+  .sync-auto-row input[type=time]{font-size:12px;padding:6px 8px;border:1px solid #ddd;
+    border-radius:8px;background:#fff;color:#2c2c2a}
+  .sync-auto-radio{display:flex;gap:10px;font-size:12px;color:#2c2c2a;align-items:center}
+  .sync-auto-radio label{display:flex;align-items:center;gap:4px;min-width:0}
 
   .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:6px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
@@ -446,10 +456,10 @@ function renderSyncBox(){
   if (!box) return;
   const inApp = nativeHas();
   const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
+  const auto = inApp ? autoState() : null;
   box.innerHTML = `
     <div class="sync-note">抖音的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
-      首次使用需在弹出的页面里登录一次，之后免登。采集完成后会自动写入仓库，
-      约 10 分钟内出现在对应明星的详情页。</div>
+      首次使用需在弹出的页面里登录一次，之后免登。采集完成后约 1 分钟，下拉刷新即可看到。</div>
     <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
       页面会自动进入 TA 的主页并加载作品列表，左上角会显示已抓到的条数，然后点右上角「完成并上传」。</div>
     ${SYNC_PLATFORMS.map((p, pi) => `
@@ -464,7 +474,71 @@ function renderSyncBox(){
     </div>
     <div class="img-status" style="margin-top:6px">${inApp
       ? (saved ? '令牌已保存（仅存本机）' : '尚未保存令牌')
-      : '当前是浏览器环境，无法保存令牌，请在星汇 App 内操作'}</div>`;
+      : '当前是浏览器环境，无法保存令牌，请在星汇 App 内操作'}</div>
+    ${inApp ? renderAutoBlock(auto, saved) : ''}`;
+}
+/* 每日自动采集面板（仅 App 内显示）：到点后台自动抓取 + 上传 + 通知 */
+function renderAutoBlock(auto, hasToken){
+  const on = !!(auto && auto.enabled);
+  const star = (auto && auto.star) || 'hmh';
+  const time = (auto && auto.time) || '08:00';
+  const stars = (DATA.stars||[]);
+  const lastTxt = (auto && auto.lastAt)
+    ? ('上次 ' + fmtAutoTime(auto.lastAt) + (auto.lastOk
+        ? (' 成功 ' + (auto.lastN || 0) + ' 条')
+        : (' 失败：' + (auto.lastMsg || ''))))
+    : '还没有自动采集记录';
+  return `
+    <div class="sync-auto">
+      <div class="sync-auto-head">
+        <span class="sync-tag">每日自动采集</span>
+        <button class="img-btn${on ? ' ghost' : ''}" onclick="toggleAutoCollect()">${on ? '已开启（点此关闭）' : '开启'}</button>
+        <span class="img-status" style="margin:0">${on ? (auto.describe || '') : '到点自动抓取并写回仓库'}</span>
+      </div>
+      <div class="sync-auto-row">
+        <label>采集对象</label>
+        <span class="sync-auto-radio">
+          ${stars.map(s => `<label><input type="radio" name="autoStar" value="${s.id}"${s.id === star ? ' checked' : ''}>${s.name}</label>`).join('')}
+        </span>
+      </div>
+      <div class="sync-auto-row">
+        <label>每天时间</label>
+        <input type="time" id="autoTime" value="${time}">
+      </div>
+      <div class="sync-note" style="margin:2px 0 6px">到点 App 会自己在后台打开抖音、抓取主页作品并写回仓库，完成后发通知。
+        需要：已保存令牌、抖音登录态有效（首次手动同步一次即登录）、别手动杀掉 App
+        —— 建议点下面按钮允许后台常驻。</div>
+      <div class="sync-auto-row">
+        <button class="img-btn ghost" onclick="askBattery()">允许后台常驻</button>
+        <span class="img-status" style="margin:0">${lastTxt}</span>
+      </div>
+      ${hasToken ? '' : '<div class="sync-note" style="color:#c0392b;margin:2px 0 0">还没保存令牌，开了也不会执行</div>'}
+    </div>`;
+}
+function autoState(){
+  if (!nativeHas()) return null;
+  try { return JSON.parse(window.StarHubNative.getAutoCollect() || '{}'); } catch(e){ return null; }
+}
+function toggleAutoCollect(){
+  if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
+  const st = autoState() || {};
+  if (!window.StarHubNative.getToken()){ toast('请先保存 GitHub 令牌'); return; }
+  const on = !st.enabled;
+  const t = document.getElementById('autoTime');
+  const time = (t && /^\d{1,2}:\d{2}$/.test(t.value)) ? t.value : '08:00';
+  const r = document.querySelector('input[name=autoStar]:checked');
+  const star = r ? r.value : 'hmh';
+  const nm = (DATA.stars || []).find(s => s.id === star);
+  window.StarHubNative.setAutoCollect(on ? '1' : '0', time, star, nm ? nm.name : '');
+  setTimeout(renderSyncBox, 150);
+}
+function askBattery(){
+  if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
+  window.StarHubNative.askIgnoreBattery();
+}
+function fmtAutoTime(ms){
+  const d = new Date(ms), p = n => (n < 10 ? '0' : '') + n;
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 function saveTokenNow(){
   if (!nativeHas()){ toast('请在星汇 App 内保存令牌'); return; }
