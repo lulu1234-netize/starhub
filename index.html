@@ -400,7 +400,10 @@
 <script>
 /* ================= 官方账号配置（核对后统一引用，须在数据层之前声明） ================= */
 /* schemes 为「依次尝试」的候选列表：不同机型/App 版本支持的 Scheme 不同，多试几个成功率更高；
-   全部失败后回退到 url（网页版）。抖音主页需要 sec_uid（已从抖音主页链接取得），微博用 uid 容器页。 */
+   全部失败后回退到 url（网页版）。
+   ⚠ 抖音不要用 snssdk1128://user/profile/<sec_uid>：真机能唤起抖音但落在空白个人页，
+   且"页面被切后台"会被判定成成功、后续候选不再执行（2026-10-12 实测），
+   故抖音统一走 snssdk1128://search?keyword=<昵称>（搜索结果首位即官方账号，有画面）。 */
 const ACCOUNTS = {
   weibo: { id:'1831550987', label:'微博',
            schemes:['sinaweibo://cardlist?containerid=1005051831550987',
@@ -408,8 +411,7 @@ const ACCOUNTS = {
            url:'https://m.weibo.cn/u/1831550987' },
   douyin:{ id:'390049435',  label:'抖音',
            secUid:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
-           schemes:['snssdk1128://user/profile/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
-                    'snssdk1128://search/trending?keyword=390049435'],
+           schemes:['snssdk1128://search?keyword=侯明昊'],
            url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
 };
 
@@ -1046,7 +1048,7 @@ function openExternal(o, e){
 }
 
 /* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。
-   抖音用 sec_uid 直达主页，没有 sec_uid 的明星按昵称走搜索页兜底。 */
+   抖音走「昵称搜索页」而非 sec_uid 直达，原因见下方 douyin 分支注释（真机实测）。 */
 function openHome(key, uid, e){
   const a = ACCOUNTS[key];
   if (!a) return false;
@@ -1058,17 +1060,21 @@ function openHome(key, uid, e){
     schemes = [`sinaweibo://userinfo?uid=${id}`, `sinaweibo://cardlist?containerid=100505${id}`];
     url = `https://m.weibo.cn/u/${id}`;
   } else if (key === 'douyin'){
-    /* 抖音主页用 sec_uid 直达；本机已内置侯明昊的 sec_uid，
-       没拿到 sec_uid 的明星（如卢昱晓）按昵称走搜索页兜底 */
-    const sec = DOUYIN_SECUID[curStar] || '';
+    /* 抖音「前往主页」真机实测结论（2026-10-12）：
+       · snssdk1128://user/profile/<sec_uid> 确实能唤起抖音 App，但落在「空白个人页」
+         （默认灰头像、无昵称、获赞/关注/粉丝全空）——sec_uid 本身没错（网页版
+         douyin.com/user/<sec_uid> 打开就是侯明昊主页），是 App 对该 scheme 的落地页有问题。
+         且页面被切后台会被 openExternal 判定为"已成功"，后面的候选永远不会执行，
+         所以这个 scheme 不能再放进候选链，否则用户每次点都看到空白。
+       · snssdk1128://search?keyword=<昵称> 有画面：搜索结果首位即明星官方账号卡片
+         （头像/粉丝数/最新作品），侯明昊/卢昱晓两位都已验证可用。
+       · 搜索也没唤起 App 时，回退网页版个人主页（有 sec_uid 用 /user/<sec_uid>，
+         否则 /search/<昵称>）。 */
     const nm  = (DATA.stars.find(s=>s.id===curStar) || {}).name || (DOUYIN_IDS[curStar] || a.id);
-    if (sec){
-      schemes = ['snssdk1128://user/profile/' + sec];
-      url = 'https://www.douyin.com/user/' + sec;
-    } else {
-      schemes = ['snssdk1128://search?keyword=' + safeEncode(nm)];
-      url = 'https://www.douyin.com/search/' + safeEncode(nm);
-    }
+    const sec = DOUYIN_SECUID[curStar] || '';
+    schemes = ['snssdk1128://search?keyword=' + safeEncode(nm)];
+    url = sec ? ('https://www.douyin.com/user/' + sec)
+              : ('https://www.douyin.com/search/' + safeEncode(nm));
   }
   return openExternal({ platform:key, kind:'home', label:a.label, schemes:schemes, web:url }, e);
 }
