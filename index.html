@@ -481,7 +481,8 @@ function renderSyncBox(){
 function renderAutoBlock(auto, hasToken){
   const on = !!(auto && auto.enabled);
   const star = (auto && auto.star) || 'hmh';
-  const time = (auto && auto.time) || '08:00';
+  const time = (auto && auto.time) || '16:00';
+  const time2 = (auto && auto.time2) || '23:00';
   const stars = (DATA.stars||[]);
   const lastTxt = (auto && auto.lastAt)
     ? ('上次 ' + fmtAutoTime(auto.lastAt) + (auto.lastOk
@@ -502,10 +503,14 @@ function renderAutoBlock(auto, hasToken){
         </span>
       </div>
       <div class="sync-auto-row">
-        <label>每天时间</label>
-        <input type="time" id="autoTime" value="${time}">
+        <label>第一次</label>
+        <input type="time" id="autoTime" value="${time}" onchange="saveAutoTimes()">
       </div>
-      <div class="sync-note" style="margin:2px 0 6px">到点 App 会自己在后台打开抖音、抓取主页作品并写回仓库，完成后发通知。
+      <div class="sync-auto-row">
+        <label>第二次</label>
+        <input type="time" id="autoTime2" value="${time2}" onchange="saveAutoTimes()">
+      </div>
+      <div class="sync-note" style="margin:2px 0 6px">每天到这两个点，App 会自己在后台打开抖音、抓取主页作品并写回仓库，完成后发通知。
         需要：已保存令牌、抖音登录态有效（首次手动同步一次即登录）、别手动杀掉 App
         —— 建议点下面按钮允许后台常驻。</div>
       <div class="sync-auto-row">
@@ -519,17 +524,34 @@ function autoState(){
   if (!nativeHas()) return null;
   try { return JSON.parse(window.StarHubNative.getAutoCollect() || '{}'); } catch(e){ return null; }
 }
+function autoTimes(){
+  const a = document.getElementById('autoTime');
+  const b = document.getElementById('autoTime2');
+  const t1 = (a && /^\d{1,2}:\d{2}$/.test(a.value)) ? a.value : '16:00';
+  const t2 = (b && /^\d{1,2}:\d{2}$/.test(b.value)) ? b.value : '23:00';
+  return [t1, t2];
+}
+/* 改时间即存：保持当前开关状态，只更新时间（关着也存，下次开启生效） */
+function saveAutoTimes(){
+  if (!nativeHas()) return;
+  const st = autoState() || {};
+  const on = !!st.enabled;
+  const star = st.star || 'hmh';
+  const nm = (DATA.stars || []).find(s => s.id === star);
+  const times = autoTimes();
+  window.StarHubNative.setAutoCollect(on ? '1' : '0', times[0], times[1], star, nm ? nm.name : '');
+  setTimeout(renderSyncBox, 150);
+}
 function toggleAutoCollect(){
   if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
   const st = autoState() || {};
   if (!window.StarHubNative.getToken()){ toast('请先保存 GitHub 令牌'); return; }
   const on = !st.enabled;
-  const t = document.getElementById('autoTime');
-  const time = (t && /^\d{1,2}:\d{2}$/.test(t.value)) ? t.value : '08:00';
+  const times = autoTimes();
   const r = document.querySelector('input[name=autoStar]:checked');
   const star = r ? r.value : 'hmh';
   const nm = (DATA.stars || []).find(s => s.id === star);
-  window.StarHubNative.setAutoCollect(on ? '1' : '0', time, star, nm ? nm.name : '');
+  window.StarHubNative.setAutoCollect(on ? '1' : '0', times[0], times[1], star, nm ? nm.name : '');
   setTimeout(renderSyncBox, 150);
 }
 function askBattery(){
