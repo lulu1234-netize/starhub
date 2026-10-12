@@ -13,7 +13,7 @@
   :root{
     --bg:#f6f5f2; --card:#ffffff; --ink:#26262a; --ink2:#7c7c85; --ink3:#a9a9b2;
     --line:rgba(0,0,0,.07); --accent:#3a4a8c;
-    --wb:#e6162d; --xhs:#ff2442; --dy:#161823;
+    --wb:#e6162d; --dy:#161823;
     --radius:18px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -111,8 +111,7 @@
   .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
     border-radius:8px;background:#fff;color:#2c2c2a}
-  .xhs-url{flex:1 1 140px;min-width:0;font-size:11.5px;padding:7px 9px;border:1px solid #ddd;
-    border-radius:8px;background:#fff;color:#2c2c2a}
+
   .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:6px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
   .acct-item:active{transform:scale(.95)}
@@ -121,11 +120,11 @@
   .acct-item .a-id{font-size:10.5px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .acct-item .a-open{font-size:9.5px;color:var(--accent);margin-top:1px;font-weight:500}
   .acct-item{text-decoration:none}
-  .p-weibo{color:var(--wb)} .p-xhs{color:var(--xhs)} .p-dy{color:var(--dy)}
+  .p-weibo{color:var(--wb)} .p-dy{color:var(--dy)}
 
   /* 筛选区：主行 = 平台；从属行 = 该平台下的账号筛选 */
   .filter-tabs{display:flex;gap:8px;padding:0 2px;flex-wrap:wrap}
-  /* 平台筛选行：固定单行（全部/微博/小红书/抖音 排一行） */
+  /* 平台筛选行：固定单行（全部/微博/抖音 排一行） */
   .pf-row .filter-tabs{flex-wrap:nowrap;flex:1;min-width:0}
   .pf-row .ftab{flex:0 0 auto;padding:6px 12px}
   /* 平台行（主筛选）：带左侧标签，视觉权重最高 */
@@ -175,7 +174,7 @@
   .p-account{font-size:13px;font-weight:600}
   .p-tag{font-size:10px;color:var(--ink2);background:rgba(0,0,0,.05);padding:1.5px 6px;border-radius:12px}
   .p-src{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px;color:#fff}
-  .src-weibo{background:var(--wb)} .src-xhs{background:var(--xhs)} .src-dy{background:var(--dy)}
+  .src-weibo{background:var(--wb)} .src-dy{background:var(--dy)}
   .p-src svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .p-text{font-size:14px;line-height:1.62;color:#333338;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word}
   .p-pics{display:flex;gap:6px;margin-top:9px}
@@ -191,7 +190,7 @@
   .ph-real{background:linear-gradient(135deg,#eef0f5,#dfe3ec)}
   /* 封面占位：按平台品牌色区分，保证三平台卡片的信息密度与观感一致 */
   .ph-weibo{background:linear-gradient(135deg,#f4d6d8,#cf9097)}
-  .ph-xhs{background:linear-gradient(135deg,#ffd9de,#ef9fae)}
+
   .ph-dy{background:linear-gradient(135deg,#4a5068,#20242f)}
   .ph-tip{position:absolute;left:7px;top:7px;font-size:9.5px;color:#fff;background:rgba(0,0,0,.3);
     padding:1.5px 6px;border-radius:10px;letter-spacing:.3px}
@@ -199,7 +198,7 @@
   .p-av{width:26px;height:26px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;
     justify-content:center;color:#fff;font-size:12.5px;font-weight:700}
   .av-weibo{background:linear-gradient(135deg,#f4595b,#c2141f)}
-  .av-xhs{background:linear-gradient(135deg,#ff5c72,#e3163c)}
+
   .av-dy{background:linear-gradient(135deg,#4a5062,#161823)}
   .p-title{font-size:14.5px;font-weight:600;line-height:1.5;margin-bottom:3px;
     overflow-wrap:anywhere;word-break:break-word}
@@ -407,13 +406,6 @@ const ACCOUNTS = {
            schemes:['sinaweibo://cardlist?containerid=1005051831550987',
                     'sinaweibo://userinfo?uid=1831550987'],
            url:'https://m.weibo.cn/u/1831550987' },
-  xhs:   { id:'155624915',  label:'小红书',
-           /* profileId：小红书主页需 user_id。两位明星的 user_id 存在下方 XHS_IDS，
-              由 openHome 按当前明星取；取不到时回退搜索页。 */
-           profileId:'',
-           schemes:['xhsdiscover://search/result?keyword=155624915',
-                    'xhsdiscover://home'],
-           url:'https://www.xiaohongshu.com/search_result?keyword=155624915' },
   douyin:{ id:'390049435',  label:'抖音',
            secUid:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
            schemes:['snssdk1128://user/profile/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
@@ -421,17 +413,16 @@ const ACCOUNTS = {
            url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
 };
 
-/* 各明星的小红书 user_id / 抖音号（详情页「前往主页」按明星取，缺省回退 ACCOUNTS 里的默认值） */
-const XHS_IDS    = { hmh:'155624915', lyx:'277466513' };
-const DOUYIN_IDS = { hmh:'390049435', lyx:'1109107012' };
+/* 各明星的抖音号 / sec_uid（详情页「前往主页」按明星取，缺省回退 ACCOUNTS 里的默认值） */
+const DOUYIN_IDS   = { hmh:'390049435', lyx:'1109107012' };
+const DOUYIN_SECUID = { hmh:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' };
 
-/* ================= 数据同步（抖音 / 小红书） =================
-   这两个平台的接口签名由平台自己的网页 JS 计算，服务器 IP 会被地域风控，
+/* ================= 数据同步（抖音） =================
+   抖音的接口签名由平台自己的网页 JS 计算，服务器 IP 会被地域风控，
    因此改为在星汇 App 内用手机网络 + 真实浏览器内核采集（原生桥 StarHubNative）。
    网页只负责：保存令牌、发指令、提示状态。 */
 const SYNC_PLATFORMS = [
-  { key:'douyin', label:'抖音',   search:'https://www.douyin.com/search/' },
-  { key:'xhs',    label:'小红书', search:'https://www.xiaohongshu.com/search_result?keyword=' }
+  { key:'douyin', label:'抖音',   search:'https://www.douyin.com/search/' }
 ];
 
 /* 采集时交给原生的昵称表：用于把抓到的内容归到对应明星（与采集器按昵称匹配一致） */
@@ -439,38 +430,12 @@ function syncTargetsJson(){
   return JSON.stringify((DATA.stars || []).map(s => ({ star:s.id, name:s.name })));
 }
 function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.startCollect); }
-/* 小红书起始页：优先用保存过的「TA 的主页链接」（公开页，无需登录、无需搜索），
-   没有才回退到搜索页。链接后统一补 keyword=明星名，供原生侧做归属兜底。 */
-function xhsStartUrl(starId){
-  const s = (DATA.stars || []).find(x=>x.id===starId) || { name:'' };
-  const kw = 'keyword=' + encodeURIComponent(s.name || '');
-  const saved = store.getItem('starhub_xhs_url_' + starId) || '';
-  if (saved && /xiaohongshu\.com|xhslink\.com/.test(saved)){
-    return saved + (saved.indexOf('?') >= 0 ? '&' : '?') + kw;
-  }
-  return p_search() + encodeURIComponent(s.name || '');
-}
-function p_search(){ return (SYNC_PLATFORMS.find(x=>x.key==='xhs')||{}).search || ''; }
-/* 小红书只有「侯明昊本人账号」有内容，相关账号为空、不采集 → 同步按钮只给侯明昊 */
-function syncStars(p){
-  return (p && p.key === 'xhs') ? (DATA.stars || []).filter(s => s.id === 'hmh') : (DATA.stars || []);
-}
-function saveXhsUrls(){
-  (DATA.stars || []).forEach(s=>{
-    const el = document.getElementById('xhsUrl_' + s.id);
-    if (!el) return;
-    const v = (el.value || '').trim();
-    if (v) store.setItem('starhub_xhs_url_' + s.id, v);
-    else store.removeItem('starhub_xhs_url_' + s.id);
-  });
-  toast('小红书主页链接已保存（仅存本机）');
-  renderSyncBox();
-}
+/* 抖音采集：用搜索页 + 明星名起手，App 内会自动进主页并抓取。 */
+
 function syncStart(p, starId){
   if (!nativeHas()){ toast('同步功能需要在星汇 App 内使用（当前是浏览器环境）'); return; }
   if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
-  /* 小红书走「主页直达」（已保存链接）或搜索页（自动点进 TA 主页） */
-  const url = (p.key === 'xhs') ? xhsStartUrl(starId) : p.search + encodeURIComponent(((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '');
+  const url = p.search + encodeURIComponent(((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '');
   try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url); }
   catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
 }
@@ -480,26 +445,16 @@ function renderSyncBox(){
   const inApp = nativeHas();
   const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
   box.innerHTML = `
-    <div class="sync-note">抖音 / 小红书的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
+    <div class="sync-note">抖音的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
       首次使用需在弹出的页面里登录一次，之后免登。采集完成后会自动写入仓库，
       约 10 分钟内出现在对应明星的详情页。</div>
     <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
-      小红书会自动从搜索页进入 TA 的主页（未跳转可手动点开），等作品列表加载出来，
-      左上角会显示已抓到的条数，然后点右上角「完成并上传」。
-      小红书接口不返回发布时间，这类笔记会显示「时间未知」并排在列表末尾。</div>
-    <div class="sync-note" style="margin-top:4px">小红书目前只有<b>侯明昊本人账号</b>有内容，
-      相关账号（粉丝站等）在小红书上为空、不采集，搜索结果里的粉丝/路人笔记会自动跳过。</div>
+      页面会自动进入 TA 的主页并加载作品列表，左上角会显示已抓到的条数，然后点右上角「完成并上传」。</div>
     ${SYNC_PLATFORMS.map((p, pi) => `
       <div class="sync-row">
         <span class="sync-tag">${p.label}</span>
-        ${syncStars(p).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
+        ${(DATA.stars||[]).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
       </div>`).join('')}
-    <div class="sync-row" style="gap:6px;margin-top:6px">
-      <input id="xhsUrl_hmh" class="xhs-url" placeholder="侯明昊 小红书主页链接（可选）" value="${(store.getItem('starhub_xhs_url_hmh')||'').replace(/"/g,'&quot;')}">
-      <button class="img-btn ghost" onclick="saveXhsUrls()">保存链接</button>
-    </div>
-    <div class="sync-note" style="margin:2px 0 8px">小红书 App → TA 的主页 → 右上角分享 → 复制链接，粘到上面保存，
-      同步时会直接打开主页（公开页、无需登录），比搜索页稳得多。</div>
     <div class="sync-tk">
       <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
       <button class="img-btn" onclick="saveTokenNow()">保存令牌</button>
@@ -546,7 +501,7 @@ function contentLink(platform, text){
   const q = safeEncode(key);
   if (platform === 'weibo')  return 'https://m.weibo.cn/search?containerid=100103type%3D1%26q%3D' + q;
   if (platform === 'douyin') return 'https://www.douyin.com/search/' + q;
-  return 'https://www.xiaohongshu.com/search_result?keyword=' + q;
+  return 'https://www.douyin.com/search/' + q;
 }
 /* 兜底规范：任何 PC 链接都要先转成对应的手机版页，保证手机上打开的是移动页面 */
 function toMobile(u){
@@ -567,7 +522,7 @@ const isNew = t => t >= TODAY0;
 
 /* ===== 时间窗口：只展示近半年（180 天）内的动态 =====
    唯一判定入口，前端与采集器（collect_http.js）保持同一规则：
-   · 时间缺失（0，如小红书接口不返回发布时间）→ 无法判定为过期，保留；
+   · 时间缺失（0，如个别平台接口不返回发布时间）→ 无法判定为过期，保留；
    · 未来时间（跨端时区/服务端误差）→ 保留，避免误删；
    · 其余：now - time <= 180 天才保留。
    比较基于毫秒时间戳，与时区无关。 */
@@ -575,7 +530,7 @@ const MAX_AGE_DAYS = 180;
 const MAX_AGE_MS = MAX_AGE_DAYS * 86400e3;
 function withinWindow(p){
   const t = Number(p && p.time) || 0;
-  if (!t) return true;                          /* 时间未知：保留（小红书等平台接口不返回时间） */
+  if (!t) return true;                          /* 时间未知：保留（个别平台接口不返回时间） */
   const now = Date.now();
   if (t > now + 86400e3) return true;           /* 未来时间：时区/服务端误差，保留 */
   return now - t <= MAX_AGE_MS;
@@ -589,10 +544,10 @@ const DATA = {
   stars: [
     { id:'hmh', name:'侯明昊', en:'Hou Minghao', implemented:true, online:true,
       img:'img/hmh.jpg',
-      platforms:['微博','小红书','抖音'],
-      acct:{ weibo:'1831550987', xhs:'155624915', douyin:'390049435' },
+      platforms:['微博','抖音'],
+      acct:{ weibo:'1831550987', douyin:'390049435' },
       latest:'藏锋入局，扭转乾坤。前路险峻，杨无间与你们共进退！' },
-    /* 小红书暂无本人内容（相关账号也为空）→ 不展示小红书入口、不采集 */
+    /* 卢昱晓：微博 + 抖音 */
     { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:true, online:true,
       img:'img/lyx.jpg',
       platforms:['微博','抖音'],
@@ -615,17 +570,12 @@ const DATA = {
         pics:[],
         time:TS('2026-09-17T19:07:00+08:00'),
         link:'https://weibo.com/1831550987/5344211604866386' },
-      /* ↓↓↓ 小红书 / 抖音：暂无可核实的本人真实内容，保留示例占位（tag 标注「示例」），
-         用于演示三平台统一展示；拿到真实链接或 M2 采集上线后替换为真实动态 */
+      /* ↓↓↓ 抖音：暂无可核实的本人真实内容，保留示例占位（tag 标注「示例」），
+         用于演示平台统一展示；拿到真实链接或 M2 采集上线后替换为真实动态 */
       { platform:'douyin', account:'侯明昊', tag:'本人 · 示例',
         text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
         video:true, vlabel:'▶ 视频', pics:['ph-1'],
-        time:TS('2026-09-20T18:30:00+08:00') },
-      { platform:'xhs', account:'侯明昊', tag:'本人 · 示例',
-        text:'【示例占位】演示用内容，接入小红书真实采集后替换。',
-        pics:['ph-4','ph-2'],
-        time:TS('2026-09-19T16:20:00+08:00') }
-    ],
+        time:TS('2026-09-20T18:30:00+08:00') }    ],
     related: [
       /* ↓ 真实采集：2026-09-23 10:15 碧血蝉官博 发布殊途同归版预告（即本人转发的原视频） */
       { platform:'weibo', account:'碧血蝉官博', tag:'剧方官博',
@@ -641,13 +591,7 @@ const DATA = {
       { platform:'weibo', account:'侯明昊工作室', tag:'工作室 · 示例',
         text:'【示例占位】演示用内容，接入真实采集后替换。',
         pics:['ph-3'], time:TS('2026-09-21T11:00:00+08:00') },
-      { platform:'xhs', account:'侯明昊粉丝站', tag:'粉丝站 · 示例',
-        text:'【示例占位】演示用内容，接入小红书真实采集后替换。',
-        pics:['ph-1','ph-3'],
-        time:TS('2026-09-20T20:00:00+08:00') },
-      { platform:'xhs', account:'侯明昊粉丝站', tag:'粉丝站 · 示例',
-        text:'【示例占位】演示用内容，接入小红书真实采集后替换。',
-        pics:['ph-2','ph-4'], time:TS('2026-09-18T21:00:00+08:00') },
+
       { platform:'douyin', account:'侯明昊影综剪辑', tag:'剪辑号 · 示例',
         text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
         pics:['ph-3','ph-1'],
@@ -691,7 +635,7 @@ const STAR_REL = {
 /* ================= 工具 ================= */
 const SRC = {
   weibo:{label:'微博', cls:'src-weibo'},
-  xhs:{label:'小红书', cls:'src-xhs'},
+
   douyin:{label:'抖音', cls:'src-dy'}
 };
 /* 完整标准时间 YYYY-MM-DD HH:mm:ss（北京时间），用于长按/详情页查看 */
@@ -907,14 +851,14 @@ function renderHome(){
      · 相关账号区：curRelPf（平台） + curRelFilter（该平台下的账号）
    即：两个板块各自持有筛选状态，某板块的筛选只作用于该板块自身的列表。 */
 let curStar = null;
-const FILTERS = [['all','全部'],['weibo','微博'],['xhs','小红书'],['douyin','抖音']];
+const FILTERS = [['all','全部'],['weibo','微博'],['douyin','抖音']];
 
 /* —— 本人区筛选（独立） —— */
-let curOwnPf = 'all';            /* all | weibo | xhs | douyin */
+let curOwnPf = 'all';            /* all | weibo | douyin */
 function setOwnPf(k){ curOwnPf = k; revealed.own = new Set(); renderDetail(); }
 
 /* —— 相关账号区筛选（独立） —— */
-let curRelPf = 'all';            /* all | weibo | xhs | douyin */
+let curRelPf = 'all';            /* all | weibo | douyin */
 function setRelPf(k){ curRelPf = k; curRelFilter = 'all'; revealed.rel = new Set(); renderDetail(); }
 let curRelFilter = 'all';        /* all | 相关账号 account 名（在当前所选平台内生效） */
 function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDetail(); }
@@ -922,7 +866,7 @@ function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDeta
 /* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
    ① 采到的真实多图 → 真图；② 单张封面（cover）→ 真图 + 角标；
    ③ 都没有 → 按平台配色的统一占位块（带「封面待采集」提示，不再出现随机色块） */
-const PH_CLS = { weibo:'ph-weibo', xhs:'ph-xhs', douyin:'ph-dy' };
+const PH_CLS = { weibo:'ph-weibo', douyin:'ph-dy' };
 function mediaBlock(p){
   const badge = p.video ? `<span class="vbadge">${p.vlabel || '▶ 视频'}</span>` : '';
   const play  = p.video ? `<span class="vplay"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>` : '';
@@ -955,7 +899,7 @@ function mediaBlock(p){
 const STATS_SPEC = {
   weibo:  [['repost','转发'],['comment','评论'],['like','点赞']],
   douyin: [['like','点赞'],['comment','评论'],['collect','收藏']],
-  xhs:    [['like','点赞'],['collect','收藏'],['comment','评论']]
+
 };
 const I_HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20z"/></svg>';
 const I_COMMENT = '<svg viewBox="0 0 24 24"><path d="M20 14a2 2 0 0 1-2 2H8l-4 4v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>';
@@ -985,8 +929,6 @@ function postId(p){
   m = l.match(/weibo\.com\/\d+\/([A-Za-z0-9]+)/);                       if (m) return m[1];
   m = l.match(/m\.weibo\.cn\/(?:detail|status)\/([A-Za-z0-9]+)/);       if (m) return m[1];
   m = l.match(/douyin\.com\/(?:video|note|slides)\/([0-9]+)/);          if (m) return m[1];
-  m = l.match(/xiaohongshu\.com\/(?:explore|discovery\/item)\/([A-Za-z0-9]+)/); if (m) return m[1];
-  m = l.match(/xhslink\.com\/[A-Za-z0-9]+\/([A-Za-z0-9]+)/);           if (m) return m[1];
   return '';
 }
 
@@ -995,14 +937,14 @@ function searchScheme(p){
   const q = safeEncode((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
   if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
   if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
-  return 'xhsdiscover://search/result?keyword=' + q;
+  return 'snssdk1128://search?keyword=' + q;
 }
 /* 直达该条帖子的原生 App Scheme；拿不到帖子 ID 时退化为按内容搜索 */
 function deepLink(p){
   const id = postId(p);
   if (p.platform === 'weibo')  return id ? 'sinaweibo://detail?mblogid=' + id : searchScheme(p);
   if (p.platform === 'douyin') return id ? 'snssdk1128://aweme/detail/' + id : searchScheme(p);
-  return id ? 'xhsdiscover://item/' + id : searchScheme(p);
+  return searchScheme(p);
 }
 
 /* 回退用的手机网页版地址（一律移动端，与 PC 页面无关） */
@@ -1010,7 +952,7 @@ function webFallback(p){
   const id = postId(p);
   if (p.platform === 'weibo' && id)  return 'https://m.weibo.cn/detail/' + id;
   if (p.platform === 'douyin' && id) return 'https://www.douyin.com/video/' + id;
-  if (p.platform === 'xhs' && id)    return 'https://www.xiaohongshu.com/explore/' + id;
+
   const link = toMobile(p.link);
   return link || contentLink(p.platform, p.text || '');
 }
@@ -1036,7 +978,7 @@ function isPhone(){
   return /Android|iPhone|iPad|iPod|Windows Phone|HarmonyOS|Mobile/i.test(navigator.userAgent || '');
 }
 
-/* 统一埋点：微博 / 抖音 / 小红书 共用同一份记录，便于核对跳转成功率 */
+/* 统一埋点：微博 / 抖音 共用同一份记录，便于核对跳转成功率 */
 function trackJump(platform, kind, target, result){
   try {
     const log = JSON.parse(store.getItem('starhub_jump_log') || '[]');
@@ -1048,7 +990,7 @@ function trackJump(platform, kind, target, result){
 }
 
 /* 网页版回退：App 内经原生桥交给系统浏览器打开（WebView 自带的渲染器
-   加载抖音/小红书网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
+   加载抖音等网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
 function gotoWeb(web){
   if (nativeOpen(web)) return;
   const w = window.open(web, '_blank', 'noopener');
@@ -1056,7 +998,7 @@ function gotoWeb(web){
 }
 
 /* ============ 统一跳转引擎 ============
-   微博 / 抖音 / 小红书、主页 / 帖子 全部走这一个函数，行为与提示完全一致：
+   微博 / 抖音、主页 / 帖子 全部走这一个函数，行为与提示完全一致：
      ① 桌面端不跳转、不展示外链内容，只提示用手机；
      ② 手机端先依次尝试 App 的 scheme/deeplink（1.1s 一个，页面切后台即判定成功）；
      ③ 全部没唤起成功 → 打开该平台手机网页版，并给出与微博相同的兜底提示；
@@ -1104,7 +1046,7 @@ function openExternal(o, e){
 }
 
 /* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。
-   小红书拿到 user_id 后填入 ACCOUNTS.xhs.profileId，即自动升级为「主页直达」 */
+   抖音用 sec_uid 直达主页，没有 sec_uid 的明星按昵称走搜索页兜底。 */
 function openHome(key, uid, e){
   const a = ACCOUNTS[key];
   if (!a) return false;
@@ -1115,21 +1057,17 @@ function openHome(key, uid, e){
        故降为后备。两者都失败则走网页兜底 m.weibo.cn/u/<uid>（已验证有效） */
     schemes = [`sinaweibo://userinfo?uid=${id}`, `sinaweibo://cardlist?containerid=100505${id}`];
     url = `https://m.weibo.cn/u/${id}`;
-  } else if (key === 'xhs'){
-    /* 小红书主页需该明星自己的 user_id；缺省回退到 ACCOUNTS 的默认值，都取不到则走搜索页 */
-    const pid = XHS_IDS[curStar] || a.profileId || id;
-    schemes = ['xhsdiscover://user/profile/' + pid,
-               'xiaohongshu://user/profile/' + pid].concat(schemes);
-    url = pid ? 'https://www.xiaohongshu.com/user/profile/' + pid
-              : 'https://www.xiaohongshu.com/search_result?keyword=' + pid;
   } else if (key === 'douyin'){
-    /* 抖音网页主页用 sec_uid；未取到时回退到数字号的搜索页 */
-    const did = DOUYIN_IDS[curStar] || a.id;
-    if (a.secUid && curStar === 'hmh'){
-      schemes = [a.schemes[0]].concat(schemes);
-      url = a.url;
+    /* 抖音主页用 sec_uid 直达；本机已内置侯明昊的 sec_uid，
+       没拿到 sec_uid 的明星（如卢昱晓）按昵称走搜索页兜底 */
+    const sec = DOUYIN_SECUID[curStar] || '';
+    const nm  = (DATA.stars.find(s=>s.id===curStar) || {}).name || (DOUYIN_IDS[curStar] || a.id);
+    if (sec){
+      schemes = ['snssdk1128://user/profile/' + sec];
+      url = 'https://www.douyin.com/user/' + sec;
     } else {
-      url = 'https://www.douyin.com/search/' + did;
+      schemes = ['snssdk1128://search?keyword=' + safeEncode(nm)];
+      url = 'https://www.douyin.com/search/' + safeEncode(nm);
     }
   }
   return openExternal({ platform:key, kind:'home', label:a.label, schemes:schemes, web:url }, e);
@@ -1157,7 +1095,7 @@ function jumpA(p, label){
 
 /* 统一动态卡片：三个平台共用同一结构（头像/作者/平台 → 标题 → 正文 → 封面 → 互动数据 → 时间+跳转），
    内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
-const AV_CLS = { weibo:'av-weibo', xhs:'av-xhs', douyin:'av-dy' };
+const AV_CLS = { weibo:'av-weibo', douyin:'av-dy' };
 function postCard(p){
   const s = SRC[p.platform], today = isNew(p.time), read = readSet.has(p._uid);
   const av = String(p.account || '？').trim().charAt(0) || '？';
@@ -1268,9 +1206,9 @@ function renderDetail(){
   const viewEl = document.getElementById('view-star');
   const sv = viewEl.scrollTop;   /* 重渲染后保持滚动位置，避免折叠/筛选时跳动 */
   const todaySum = d.own.concat(d.related).filter(p => isNew(p.time)).length;
-  const acctCls = { weibo:'p-weibo', xhs:'p-xhs', douyin:'p-dy' };
+  const acctCls = { weibo:'p-weibo', douyin:'p-dy' };
   const starAcct = (DATA.stars.find(s=>s.id===curStar)||{}).acct || {};
-  const acctStrip = ['weibo','xhs','douyin'].map(k=>{
+  const acctStrip = ['weibo','douyin'].map(k=>{
     const a = ACCOUNTS[k];
     const id = starAcct[k] || (k === 'weibo' ? a.id : '');
     if (!id) return '';
@@ -1286,7 +1224,7 @@ function renderDetail(){
      ① 本人区：自带「平台」筛选行（curOwnPf），只作用于本人区；
      ② 相关账号区：自带「平台」筛选行（curRelPf）+ 其下方「账号」筛选行（curRelFilter，从属于所选平台），
         只作用于相关账号区。两个板块的状态互不影响。 */
-  const PF_LABEL = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
+  const PF_LABEL = { weibo:'微博', douyin:'抖音' };
   const tabsOf = (cur, fn) => FILTERS.map(([k,l]) =>
     `<button class="ftab ${cur===k ? 'on' : ''}" onclick="${fn}('${k}')">${l}</button>`).join('');
 
@@ -1327,7 +1265,7 @@ function renderDetail(){
           <div class="rel-head"><div class="mini-av">${(DATA.stars.find(x=>x.id===curStar)||{}).name.charAt(0)}</div><b>${(DATA.stars.find(x=>x.id===curStar)||{}).name} · 相关账号</b><span>显示 ${relListFinal.length} 条</span></div>
           ${sectionRender(relListFinal, 'rel')}</div>`
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
-  const PF_NAME = { weibo:'微博', xhs:'小红书', douyin:'抖音' };
+  const PF_NAME = { weibo:'微博', douyin:'抖音' };
   const pfList = [...new Set(d.own.concat(d.related).map(p=>p.platform))].map(k=>PF_NAME[k] || k);
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
@@ -1347,7 +1285,7 @@ function renderDetail(){
     ${secNav}
     ${todaySum ? `<div class="sec-label"><div class="bar" style="background:var(--wb)"></div>
       <h2>今日更新</h2><span>${todaySum} 条新动态</span></div>` : ''}
-    <div class="sec-label" id="sec-own"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 小红书 / 抖音 统一展示</span></div>
+    <div class="sec-label" id="sec-own"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 抖音 统一展示</span></div>
     ${ownPfRow}
     ${ownBlock}
     <div class="sec-label" id="sec-rel" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
@@ -1409,9 +1347,9 @@ const LIVE = { ok:false, updatedAt:0, count:0, ids:new Set() };
 const IS_CLOUD = /github\.io$|netlify\.app$|vercel\.app$|pages\.dev$/.test(location.hostname);
 
 function toLivePost(p, i){
-  /* 平台由数据自身决定（微博 / 抖音 / 小红书 共用同一套渲染与跳转逻辑） */
+  /* 平台由数据自身决定（微博 / 抖音 共用同一套渲染与跳转逻辑） */
   const pf = p.platform || 'weibo';
-  const prefix = pf === 'douyin' ? 'dy_' : (pf === 'xhs' ? 'xhs_' : 'wb_');
+  const prefix = pf === 'douyin' ? 'dy_' : 'wb_';
   return {
     _uid: prefix + (p.id || p.link || i),
     platform:pf, account:p.account || '', tag:p.tag || '本人',
@@ -1423,7 +1361,7 @@ function toLivePost(p, i){
   };
 }
 function reuid(){
-  /* 真实采集数据保留 wb_/dy_/xhs_ 前缀的真实 _uid；内置示例按「明星_own/rel_序号」补编号，保证跨明星唯一 */
+  /* 真实采集数据保留 wb_/dy_ 前缀的真实 _uid；内置示例按「明星_own/rel_序号」补编号，保证跨明星唯一 */
   (DATA.stars || []).forEach(s=>{
     const d = DATA[s.id]; if (!d) return;
     d.own.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_' + s.id + '_own_' + i; });
