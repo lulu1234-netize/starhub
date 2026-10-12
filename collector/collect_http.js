@@ -217,7 +217,7 @@ async function localizeImages(posts) {
 
 (async () => {
   let cookie = getCookie();
-  if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音/小红书数据');
+  if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音数据');
   /* 读取上一次的数据，用于识别"新帖" */
   let oldIds = new Set();
   try { JSON.parse(fs.readFileSync(OUT_FILE, 'utf8')).posts.forEach(p => oldIds.add(p.id)); } catch (e) {}
@@ -232,14 +232,14 @@ async function localizeImages(posts) {
       console.log(`[${t.name}] 失败：${e.message}`);
     }
   }
-  /* 合并抖音 / 小红书采集结果（由 collect_headless.js 生成 posts_ext.json）。
+  /* 合并抖音采集结果（由手机端采集生成 posts_ext.json）。
      两个采集器互不依赖：外部平台没跑或失败，微博数据照常写入，不受影响。 */
   try {
     const ext = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'posts_ext.json'), 'utf8'));
     if (ext && ext.posts && ext.posts.length) {
       /* 按「归一化 aweme/笔记 id」判重：同一作品可能因采集来源不同而带 dy_ / douyin_ 等不同前缀，
          只比较裸 id 才能识别为同一条。同 id 冲突时保留字段更全的一份（ext 采集通常 imgs/text 更完整）。 */
-      const bare = id => String(id || '').replace(/^(dy_|douyin_|xhs_)/, '');
+      const bare = id => String(id || '').replace(/^(dy_|douyin_)/, '');
       const fullness = p => (p.text ? 2 : 0) + ((p.imgs && p.imgs.length) ? 2 : 0) + (p.cover ? 1 : 0) + (p.time ? 1 : 0);
       const byBare = new Map(all.posts.map(p => [bare(p.id), p]));
       const add = [];
@@ -260,7 +260,7 @@ async function localizeImages(posts) {
   } catch (e) { /* 外部采集未跑过，忽略 */ }
   /* 最终兜底：按归一化裸 id 去重（同前缀的完全相同 id 也在此清除） */
   {
-    const bare = id => String(id || '').replace(/^(dy_|douyin_|xhs_)/, '');
+    const bare = id => String(id || '').replace(/^(dy_|douyin_)/, '');
     const fullness = p => (p.text ? 2 : 0) + ((p.imgs && p.imgs.length) ? 2 : 0) + (p.cover ? 1 : 0) + (p.time ? 1 : 0);
     const best = new Map();
     for (const p of all.posts){
