@@ -579,89 +579,13 @@ async function enrichDouyinTime(ctx, posts) {
   return got;
 }
 
-/* ---------------- 小红书 ---------------- */
-async function fetchXhs(ctx, t, cookie) {
-  if (!t.xhsUserId) {
-    console.log('  [小红书] 跳过：未配置 XHS_USER_ID');
-    console.log('           获取方式：小红书 App 打开侯明昊主页 → 右上角分享 → 复制链接，');
-    console.log('           链接 /user/profile/ 后那串即 user_id，填入仓库 Secrets 的 XHS_USER_ID。');
-    return [];
-  }
-  if (!cookie) {
-    console.log('  [小红书] 跳过：未配置 XHS_COOKIE（未登录会被登录墙拦截，取不到笔记）');
-    console.log('           获取方式：电脑浏览器登录 www.xiaohongshu.com → F12 → Network →');
-    console.log('           任选一个请求的 Cookie 全量复制，填入仓库 Secrets 的 XHS_COOKIE。');
-    return [];
-  }
-  const page = await newPage(ctx);
-  try {
-    await page.setExtraHTTPHeaders({ Cookie: cookie, 'Accept-Language': 'zh-CN,zh;q=0.9' });
-    const url = 'https://www.xiaohongshu.com/user/profile/' + t.xhsUserId;
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await sleep(8000);
-    await page.evaluate(() => window.scrollBy(0, 1000)).catch(() => {});
-    await sleep(2500);
-    const items = await page.evaluate(() => {
-      const out = [];
-      const seen = new Set();
-      /* 笔记链接在两种形态里出现：/explore/<id> 或 /discovery/item/<id> */
-      document.querySelectorAll('a[href*="/explore/"], a[href*="/discovery/item/"]').forEach(a => {
-        const href = a.getAttribute('href') || '';
-        const m = href.match(/\/explore\/([0-9a-fA-F]{16,32})/) || href.match(/\/discovery\/item\/([0-9a-fA-F]{16,32})/);
-        if (!m) return;
-        const id = m[1];
-        if (seen.has(id)) return;
-        seen.add(id);
-        /* 卡片本体：优先整个 note-item，否则回退到 <a> 自身 */
-        const card = a.closest('.note-item') || a.closest('section') || a;
-        const img = card.querySelector('img');
-        const lines = (card.innerText || '').split('\n').map(s => s.trim()).filter(Boolean);
-        out.push({
-          id,
-          cover: img ? (img.src || '') : '',
-          lines,
-          html: (card.innerHTML || '').slice(0, 1200)
-        });
-      });
-      return out;
-    });
-    return items.map(it => {
-      let like = null, text = '';
-      for (const ln of it.lines) {
-        if (like === null && /^[\d.]+(万|亿)?$/.test(ln)) { like = parseCount(ln); continue; }
-        if (!/^[\d.]+(万|亿)?$/.test(ln) && ln.length > text.length) text = ln;
-      }
-      /* 小红书卡片上常见「3小时前」「昨天」「05-21」这类时间文案 */
-      const raw = (it.lines || []).find(l =>
-        /刚刚|\d+\s*(?:秒|分钟|小时|天|周|个月)前|昨天|前天|今天|\d{4}\s*[-年/.]\s*\d{1,2}\s*[-月/.]\s*\d{1,2}|^\d{1,2}\s*[-月/]\s*\d{1,2}\s*日?$/.test(l)
-      ) || '';
-      return {
-        id: 'xhs_' + it.id,
-        platform: 'xhs',
-        account: t.name, tag: t.tag, kind: t.kind, star: t.star,
-        text: (text || '').slice(0, 200), title: '',
-        time: toTimestamp(raw), timeRaw: raw,
-        link: 'https://www.xiaohongshu.com/explore/' + it.id,
-        pics: [], imgs: it.cover ? [it.cover] : [],
-        video: /<video|xg-video/i.test(it.html), cover: it.cover || '',
-        stats: { like: like, comment: null, collect: null }
-      };
-    });
-  } catch (e) {
-    console.log('  [小红书] 抓取失败：' + e.message);
-    return [];
-  } finally {
-    await page.close().catch(() => {});
-  }
-}
-
 /* ---------------- 主流程 ---------------- */
 /* 旧版本曾用 now - i*60000 伪造过一批占位时间，它们没有 timeRaw 佐证。
    判定"可信时间"必须同时有时间戳和来源文案，否则本轮重新采集。 */
 function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
 
 (async () => {
-  console.log('===== 星汇 · 抖音/小红书采集 =====');
+  console.log('===== 星汇 · 抖音采集 =====');
   /* 读取上一次的结果：用于继承已抓到的发布时间，避免重复进详情页 */
   const oldMap = {};
   try {
@@ -670,7 +594,7 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
   let cur = {};
   try {
     const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'posts.json'), 'utf8'));
-    (j.posts || []).forEach(p => { if (p.platform === 'douyin' || p.platform === 'xhs') cur[p.id] = p; });
+    (j.posts || []).forEach(p => { if (p.platform === 'douyin') cur[p.id] = p; });
   } catch (e) {}
   const timeIdx = Object.assign({}, cur, oldMap);
 
@@ -706,16 +630,6 @@ function trustedTime(o) { return o && o.time && o.timeRaw ? o.time : 0; }
       const got = await enrichDouyinTime(ctx, dy);
       console.log('  [抖音] 详情页补时间 ' + got + ' 条（仍需补 ' + dy.filter(p => !p.time).length + ' 条）');
       all.push(...dy);
-
-      const xhs = await fetchXhs(ctx, t, process.env.XHS_COOKIE || '');
-      if (xhs.length) console.log('  [小红书] ' + xhs.length + ' 条');
-      xhs.forEach(p => {
-        if (!p.time) {
-          const o = trustedTime(timeIdx[p.id]);
-          if (o) { p.time = o; p.timeRaw = timeIdx[p.id].timeRaw || ''; }
-        }
-      });
-      all.push(...xhs);
     }
   } finally {
     await ctx.b.close().catch(() => {});
