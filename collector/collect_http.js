@@ -218,18 +218,57 @@ async function localizeImages(posts) {
 (async () => {
   let cookie = getCookie();
   if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音数据');
-  /* 读取上一次的数据，用于识别"新帖" */
-  let oldIds = new Set();
-  try { JSON.parse(fs.readFileSync(OUT_FILE, 'utf8')).posts.forEach(p => oldIds.add(p.id)); } catch (e) {}
+  /* 读取上一次的数据：既用于识别"新帖"，也在微博取空时兜底保留旧动态 */
+  let oldPosts = [];
+  try {
+    const prev = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
+    if (prev && Array.isArray(prev.posts)) oldPosts = prev.posts;
+  } catch (e) {}
+  let oldIds = new Set(oldPosts.map(p => p.id));
   const all = { updatedAt: Date.now(), posts: [] };
+  const emptyTargets = [];              /* 本次没取到任何数据的账号 */
   for (const t of TARGETS) {
-    if (!t.uid || !cookie) continue;
+    if (!t.uid || !cookie) { emptyTargets.push(t); continue; }
     try {
       const list = await fetchOne(t, cookie, 1);
       console.log(`[${t.name}] 取到 ${list.length} 条`);
-      all.posts = all.posts.concat(list);
+      if (list.length) all.posts = all.posts.concat(list); else emptyTargets.push(t);
     } catch (e) {
       console.log(`[${t.name}] 失败：${e.message}`);
+      emptyTargets.push(t);
+    }
+  }
+  /* 微博兜底（2026-10-14 新增，教训来自真实事故）：
+     Cookie 失效/缺失时，微博接口返回的是登录页 HTML，fetchOne 抛"非 JSON 响应"，
+     每个目标都取到 0 条；而旧逻辑是"全量重写 posts.json"——一次失效就把几百条
+     历史微博动态全部抹掉（2026-10 实际发生：Cookie 过期数天无人察觉，
+     posts.json 里 200+ 条微博被清成 0，只剩抖音）。
+     现在双保险：
+     ① 没取到数据的账号，其旧微博动态整段保留；
+     ② 无论成功与否，旧微博动态都按 id 回填（mymblog 每页只返回最新若干条，
+         不回填的话老帖子会被新帖慢慢挤出去，历史越来越短）。
+     回填仍受后面 180 天窗口约束，过期条目会被自然淘汰。 */
+  if (emptyTargets.length) {
+    if (emptyTargets.length >= TARGETS.length) {
+      console.log(`⚠️ 微博全部 ${TARGETS.length} 个目标均未取到数据（Cookie 可能已失效或未配置 WEIBO_COOKIE）—— 已保留旧微博动态，请尽快更新 Cookie`);
+    } else {
+      console.log(`⚠️ ${emptyTargets.length} 个微博目标未取到数据（${emptyTargets.map(t => t.name).join('、')}），已保留其旧动态`);
+    }
+  }
+  {
+    const oldWb = oldPosts.filter(p => p.platform === 'weibo');
+    if (oldWb.length) {
+      const bare = id => String(id || '').replace(/^(dy_|douyin_)/, '');
+      const owned = p => TARGETS.some(t => p.account === t.name ||
+        (p.star === t.star && p.kind === t.kind && p.tag === t.tag));
+      const has = new Set(all.posts.map(p => bare(p.id)));
+      let back = 0;
+      for (const p of oldWb) {
+        const k = bare(p.id);
+        if (has.has(k) || !owned(p)) continue;
+        all.posts.push(p); has.add(k); back++;
+      }
+      if (back) console.log(`[微博兜底] 回填旧微博动态 ${back} 条`);
     }
   }
   /* 合并抖音采集结果（由手机端采集生成 posts_ext.json）。
