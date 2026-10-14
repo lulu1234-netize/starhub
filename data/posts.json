@@ -1,6 +1,101 @@
 {
-  "updatedAt": 1791978716705,
+  "updatedAt": 1791982929687,
   "posts": [
+    {
+      "id": "5354015338792139",
+      "platform": "weibo",
+      "account": "侯明昊工作室",
+      "tag": "工作室",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话 光年失效之前，心跳先认清了归途。距离新歌还有1️⃣天！@侯明昊 #侯明昊新歌迢迢星河# #七号打歌中心#\n\n转发 @侯明昊：距离《Galaxy Far Far Away》上线还有🥝 天\n10月15日 20:03，敬请期待！#七号打歌中心#\n\n【Q音】网页链接\n【酷狗】网页链接\n【酷我】网页链接 侯明昊的微博视频 ​​​",
+      "time": 1791980191000,
+      "timeRaw": "Wed Oct 14 20:16:31 +0800 2026",
+      "link": "https://weibo.com/5763552342/RmFbvATeH",
+      "pics": [],
+      "imgs": [
+        "data/img/f5124bb9af6a66dd.jpg"
+      ],
+      "video": true,
+      "cover": "data/img/f5124bb9af6a66dd.jpg",
+      "timeStr": "2026-10-14 20:16:31"
+    },
+    {
+      "id": "5354014866932853",
+      "platform": "weibo",
+      "account": "侯明昊全球后援会",
+      "tag": "全球后援会",
+      "kind": "related",
+      "star": "hmh",
+      "text": "尽管在时光的尽头，我们始终爱你❤️#侯明昊新歌迢迢星河# 期待新歌上线，倒计时1️⃣天！1️⃣天！\n\n转发 @侯明昊：无法寄出的字句，散落成了银河坐标\n所谓遥远，不过是另一种咫尺\n10月15日 20:03⏰敬请期待\n#侯明昊新歌迢迢星河##七号打歌中心#\n\n【Q音】网页链接\n【酷狗】网页链接\n【酷我】网页链接 ​​​",
+      "time": 1791980079000,
+      "timeRaw": "Wed Oct 14 20:14:39 +0800 2026",
+      "link": "https://weibo.com/5702872851/RmFaKt5yd",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-14 20:14:39"
+    },
+    {
+      "id": "5354012657589547",
+      "platform": "weibo",
+      "account": "侯明昊全球后援会",
+      "tag": "全球后援会",
+      "kind": "related",
+      "star": "hmh",
+      "text": "倒计时1️⃣天，一起来听Galaxy Far Far Away！#侯明昊新歌迢迢星河#\n\n转发 @侯明昊：距离《Galaxy Far Far Away》上线还有🥝 天\n10月15日 20:03，敬请期待！#七号打歌中心#\n\n【Q音】网页链接\n【酷狗】网页链接\n【酷我】网页链接 侯明昊的微博视频 ​​​",
+      "time": 1791979553000,
+      "timeRaw": "Wed Oct 14 20:05:53 +0800 2026",
+      "link": "https://weibo.com/5702872851/RmF7bvQo3",
+      "pics": [],
+      "imgs": [
+        "data/img/f5124bb9af6a66dd.jpg"
+      ],
+      "video": true,
+      "cover": "data/img/f5124bb9af6a66dd.jpg",
+      "timeStr": "2026-10-14 20:05:53"
+    },
+    {
+      "id": "5354012611969980",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "无法寄出的字句，散落成了银河坐标\n所谓遥远，不过是另一种咫尺\n10月15日 20:03⏰敬请期待\n#侯明昊新歌迢迢星河##七号打歌中心#\n\n【Q音】网页链接\n【酷狗】网页链接\n【酷我】网页链接 ​​​",
+      "time": 1791979542000,
+      "timeRaw": "Wed Oct 14 20:05:42 +0800 2026",
+      "link": "https://weibo.com/1831550987/RmF778gtS",
+      "pics": [
+        "data/img/acb43d0010fc170f.jpg"
+      ],
+      "imgs": [
+        "data/img/acb43d0010fc170f.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/acb43d0010fc170f.jpg",
+      "timeStr": "2026-10-14 20:05:42"
+    },
+    {
+      "id": "5354012111275309",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "距离《Galaxy Far Far Away》上线还有🥝 天\n10月15日 20:03，敬请期待！#七号打歌中心#\n\n【Q音】网页链接\n【酷狗】网页链接\n【酷我】网页链接 侯明昊的微博视频 ​​​",
+      "time": 1791979423000,
+      "timeRaw": "Wed Oct 14 20:03:43 +0800 2026",
+      "link": "https://weibo.com/1831550987/RmF6j5lLv",
+      "pics": [],
+      "imgs": [
+        "data/img/f5124bb9af6a66dd.jpg"
+      ],
+      "video": true,
+      "cover": "data/img/f5124bb9af6a66dd.jpg",
+      "timeStr": "2026-10-14 20:03:43"
+    },
     {
       "id": "5353947940520055",
       "platform": "weibo",
@@ -3301,10 +3396,10 @@
       "link": "https://weibo.com/1831550987/RjLaIqsFY",
       "pics": [],
       "imgs": [
-        "data/img/1f2d1a8a8af238dd.jpg"
+        "data/img/450a6c06748d2513.jpg"
       ],
       "video": false,
-      "cover": "data/img/1f2d1a8a8af238dd.jpg",
+      "cover": "data/img/450a6c06748d2513.jpg",
       "timeStr": "2026-09-25 18:00:09"
     },
     {
@@ -3364,10 +3459,10 @@
       "link": "https://weibo.com/5503575607/RjJcUgvfW",
       "pics": [],
       "imgs": [
-        "data/img/1ac91f4243c0e8d6.jpg"
+        "data/img/b43fdb02ff18668f.jpg"
       ],
       "video": false,
-      "cover": "data/img/1ac91f4243c0e8d6.jpg",
+      "cover": "data/img/b43fdb02ff18668f.jpg",
       "timeStr": "2026-09-25 13:00:03"
     },
     {
