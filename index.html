@@ -851,7 +851,9 @@ function ensureStartupSnap(){
    · 离开首页（进「我的」或明星详情）、App 切后台/关闭 → hbSeen 刷新为当下时刻；
    · 回到首页时：若存在发布时间 > hbSeen 的帖 → 右上角显示小红点；
    · 人正停留在首页时刷新到的新帖（本来就会看到）→ 同步刷新 hbSeen，不弹点；
-   · 点小红点 → 跳到最新一条新帖所在的明星时间线，同时 hbSeen 刷新为当下 → 红点立即消失。 */
+   · 点小红点 → 跳到最新一条新帖所在的明星时间线，同时 hbSeen 刷新为当下 → 红点立即消失。
+   明星卡右上角小圆点（.dot-badge）同用这套逻辑：该明星在 hbSeen 后有新帖才显示，
+   进入该明星时间线（离开首页即 hbTouch）后回来自动熄灭——不再是旧的「已上线」常亮标记。 */
 const HB_KEY = SHARE_MODE ? 'starhub_hb_seen_share' : 'starhub_hb_seen';
 let hbSeen = (()=>{ try{ const v = Number(store.getItem(HB_KEY)); return v > 0 ? v : Date.now(); }catch(e){ return Date.now(); } })();
 function hbTouch(){
@@ -870,9 +872,15 @@ function hbNewest(){
   });
   return best;
 }
+function hbStarHasNew(id){
+  /* 某明星在 hbSeen 之后是否有新帖（驱动明星卡右上角的小圆点） */
+  const d = DATA[id]; if (!d) return false;
+  return d.own.concat(d.related).some(p => (Number(p.time) || 0) > hbSeen);
+}
 function hbDotUpdate(){
   const el = document.getElementById('hbDot');
   if (el) el.hidden = !hbNewest();          /* hidden=true 即隐藏，属性驱动不依赖渲染时机 */
+  renderHome();                             /* 同步每张明星卡的「有新动态」小圆点（同一套 hbSeen 逻辑） */
 }
 function hbDotClick(){
   const best = hbNewest();
@@ -1000,7 +1008,7 @@ function renderHome(){
   const list = document.getElementById('starList');
   list.innerHTML = DATA.stars.map(s=>`
     <div class="star-card" onclick="${s.implemented ? `openStar('${s.id}')` : `toast('该明星模块即将上线，当前为占位卡片')`}">
-      ${s.online ? '<div class="dot-badge"></div>' : ''}
+      ${(s.implemented && hbStarHasNew(s.id)) ? '<div class="dot-badge" title="有新动态"></div>' : ''}
       <div class="avatar ${s.id==='hmh'?'avatar-hmh':'avatar-lyx'}"><img src="${getStarImg(s)}" alt="${s.name}" referrerpolicy="no-referrer"></div>
       <div class="star-info">
         <div class="star-name">${s.name}
