@@ -804,6 +804,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
+const APP_VER = '20261014c';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -1682,6 +1683,7 @@ function initPTR(){
       pill.classList.add('show');
       Promise.resolve(loadLive(false)).then(function(){
         renderHome();
+        checkSelfUpdate();   /* 下拉刷新时也顺带检查前端版本，有新代码立即重载 */
         toast('已刷新到最新动态');
       }).catch(function(){ toast('刷新失败，请检查网络'); }).finally(function(){
         setTimeout(function(){ pill.classList.remove('show'); }, 600);
@@ -1725,6 +1727,16 @@ function jumpSec(w){
 
 loadLive(true);
 setInterval(()=>loadLive(true), 60000);
+
+/* 自检更新：对比线上 meta.json 的版本号，发现前端有新版就自动重载（解决 WebView 缓存旧 index.html 的问题） */
+function checkSelfUpdate(){
+  fetch('meta.json?_=' + Date.now(), {cache:'no-store'})
+    .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(j=>{ if(j && j.ver && j.ver !== APP_VER){ location.reload(true); } })
+    .catch(()=>{});
+}
+checkSelfUpdate();
+setInterval(checkSelfUpdate, 60000);
 
 /* 整页横向拖拽兜底已移除：它与边缘右滑手势争抢同一条touchmove 通道，
    会在手势锁定前抢先preventDefault，导致边缘返回永远触发不了。
