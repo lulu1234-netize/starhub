@@ -115,7 +115,7 @@
   .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
     border-radius:8px;background:#fff;color:#2c2c2a}
-  /* 每日自动采集（仅 App 内） */
+  /* 每小时自动检测（仅 App 内） */
   .sync-auto{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line,#e5e3df)}
   .sync-auto-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
   .sync-auto-head .sync-tag{font-weight:600;color:#2c2c2a;min-width:0}
@@ -460,7 +460,7 @@ function renderSyncBox(){
   if (!box) return;
   const inApp = nativeHas();
   const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
-  const auto = inApp ? autoState() : null;
+  const auto = inApp ? detectState() : null;
   box.innerHTML = `
     <div class="sync-note">抖音的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
       首次使用需在弹出的页面里登录一次，之后免登。采集完成后约 1 分钟，下拉刷新即可看到。</div>
@@ -479,127 +479,75 @@ function renderSyncBox(){
     <div class="img-status" style="margin-top:6px">${inApp
       ? (saved ? '令牌已保存（仅存本机）' : '尚未保存令牌')
       : '当前是浏览器环境，无法保存令牌，请在星汇 App 内操作'}</div>
-    ${inApp ? renderAutoBlock(auto, saved) : ''}`;
+    ${inApp ? renderDetectBlock(auto) : ''}`;
 }
-/* 每日自动采集面板（仅 App 内显示）：到点后台自动抓取 + 上传 + 通知 */
-function renderAutoBlock(auto, hasToken){
+/* 每小时自动检测面板（仅 App 内显示）：到点后台自动查看 4 个抖音账号主页有无新视频，有新就通知 */
+function renderDetectBlock(auto){
   const on = !!(auto && auto.enabled);
-  const star = (auto && auto.star) || 'hmh';
-  const time = (auto && auto.time) || '16:00';
-  const time2 = (auto && auto.time2) || '23:00';
   const studios = auto ? (auto.studios !== false) : true;
-  const stars = (DATA.stars||[]);
   const lastTxt = (auto && auto.lastAt)
-    ? ('上次 ' + fmtAutoTime(auto.lastAt) + (auto.lastOk
-        ? (' 成功 ' + (auto.lastN || 0) + ' 条')
-        : (' 失败：' + (auto.lastMsg || ''))))
-    : '还没有自动采集记录';
-  const missed = autoMissed(auto);
-  const missedRow = missed
-    ? ('<div class="sync-auto-row"><button class="img-btn" onclick="runAutoCatchUp()">立即补采</button>'
-       + '<span class="img-status" style="margin:0;color:#c0392b">今天 ' + missed
-       + ' 的自动采集没执行（多半被系统后台策略挡住），点此立即补采</span></div>')
-    : '';
+    ? ('上次检测 ' + fmtAutoTime(auto.lastAt) + (auto.lastOk ? ' 正常' : (' 异常：' + (auto.lastMsg || ''))))
+    : '还没有检测记录';
+  const acc = (auto && auto.accounts) || {};
+  const accHtml = Object.keys(acc).map(k => {
+    const a = acc[k] || {};
+    const t = a.time ? fmtAutoTime(a.time) : '—';
+    const tag = a.fail ? '<span style="color:#c0392b">未检查到</span>'
+                : (a.time ? '已检查' : '待首次检测');
+    return `<div class="sync-auto-row"><label>${k}</label>`
+         + `<span class="img-status" style="margin:0">${t} · ${tag}</span></div>`;
+  }).join('');
   return `
     <div class="sync-auto">
       <div class="sync-auto-head">
-        <span class="sync-tag">每日自动采集</span>
-        <button class="img-btn${on ? ' ghost' : ''}" onclick="toggleAutoCollect()">${on ? '已开启（点此关闭）' : '开启'}</button>
-        <span class="img-status" style="margin:0">${on ? (auto.describe || '') : '到点自动抓取并写回仓库'}</span>
+        <span class="sync-tag">自动检测抖音更新</span>
+        <button class="img-btn${on ? ' ghost' : ''}" onclick="toggleDetect()">${on ? '已开启（点此关闭）' : '开启'}</button>
+        <span class="img-status" style="margin:0">${on ? (auto.describe || '') : '每小时自动查看 4 个账号，有新视频就通知'}</span>
       </div>
       <div class="sync-auto-row">
-        <label>采集对象</label>
+        <label>检测对象</label>
+        <span class="img-status" style="margin:0">侯明昊 / 卢昱晓 本人${studios ? ' + 工作室' : ''}</span>
+      </div>
+      ${accHtml}
+      <div class="sync-auto-row">
+        <label>附带检测</label>
         <span class="sync-auto-radio">
-          ${stars.map(s => `<label><input type="radio" name="autoStar" value="${s.id}"${s.id === star ? ' checked' : ''}>${s.name}</label>`).join('')}
+          <label><input type="checkbox" id="detectStudios"${studios ? ' checked' : ''} onchange="saveDetectStudios()">工作室账号</label>
         </span>
       </div>
-      <div class="sync-auto-row">
-        <label>第一次</label>
-        <input type="time" id="autoTime" value="${time}" onchange="saveAutoTimes()">
-      </div>
-      <div class="sync-auto-row">
-        <label>第二次</label>
-        <input type="time" id="autoTime2" value="${time2}" onchange="saveAutoTimes()">
-      </div>
-      <div class="sync-auto-row">
-        <label>附带采集</label>
-        <span class="sync-auto-radio">
-          <label><input type="checkbox" id="autoStudios"${studios ? ' checked' : ''} onchange="saveAutoStudios()">TA 的工作室账号（内容进「相关账号」区）</label>
-        </span>
-      </div>
-      <div class="sync-note" style="margin:2px 0 6px">每天到这两个点，App 会自己在后台打开抖音，依次抓取本人主页${studios ? '和工作室主页' : ''}的作品并写回仓库，完成后发通知。
-        需要：已保存令牌、抖音登录态有效（首次手动同步一次即登录）、别手动杀掉 App
+      <div class="sync-note" style="margin:2px 0 6px">每小时 App 会在后台打开抖音，依次查看侯明昊 / 卢昱晓 本人与工作室主页有没有发新视频；有新的会弹通知，没新的不打扰。
+        需要：抖音登录态有效（首次手动同步一次即登录）、别手动杀掉 App
         —— 建议点下面按钮允许后台常驻。</div>
       <div class="sync-auto-row">
+        <button class="img-btn" onclick="runDetectNow()">立即检测</button>
         <button class="img-btn ghost" onclick="askBattery()">允许后台常驻</button>
         <span class="img-status" style="margin:0">${lastTxt}</span>
       </div>
-      ${missedRow}
-      ${hasToken ? '' : '<div class="sync-note" style="color:#c0392b;margin:2px 0 0">还没保存令牌，开了也不会执行</div>'}
     </div>`;
 }
-/* 某个今天的采集点已过、但自动采集从未执行过 → 返回该时刻串（如 "16:00"），否则 null。
-   被系统后台策略挡住时用户打开 App 就能看到，并可一键补采。 */
-function autoMissed(auto){
-  if (!auto || !auto.enabled) return null;
-  const last = Number(auto.lastAt) || 0;
-  const now = new Date();
-  const slots = [auto.time || '16:00', auto.time2 || '23:00'];
-  for (const s of slots){
-    const m = /^(\d{1,2}):(\d{2})$/.exec(String(s));
-    if (!m) continue;
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), (+m[1]) % 24, +m[2], 0, 0);
-    if (d.getTime() <= now.getTime() && last < d.getTime()) return s;
-  }
-  return null;
-}
-function runAutoCatchUp(){
-  if (!nativeHas()) return;
-  if (typeof window.StarHubNative.runAutoCollectNow === 'function'){
-    window.StarHubNative.runAutoCollectNow();
-  } else {
-    toast('当前 App 版本不支持补采，请更新到最新版');
-  }
-}
-function autoState(){
+function detectState(){
   if (!nativeHas()) return null;
-  try { return JSON.parse(window.StarHubNative.getAutoCollect() || '{}'); } catch(e){ return null; }
+  try { return JSON.parse(window.StarHubNative.getDetect() || '{}'); } catch(e){ return null; }
 }
-function autoTimes(){
-  const a = document.getElementById('autoTime');
-  const b = document.getElementById('autoTime2');
-  const t1 = (a && /^\d{1,2}:\d{2}$/.test(a.value)) ? a.value : '16:00';
-  const t2 = (b && /^\d{1,2}:\d{2}$/.test(b.value)) ? b.value : '23:00';
-  return [t1, t2];
-}
-/* 改时间即存：保持当前开关状态，只更新时间（关着也存，下次开启生效） */
-function saveAutoTimes(){
-  if (!nativeHas()) return;
-  const st = autoState() || {};
-  const on = !!st.enabled;
-  const star = st.star || 'hmh';
-  const nm = (DATA.stars || []).find(s => s.id === star);
-  const times = autoTimes();
-  window.StarHubNative.setAutoCollect(on ? '1' : '0', times[0], times[1], star, nm ? nm.name : '');
-  setTimeout(renderSyncBox, 150);
-}
-/* 「附带采集工作室」开关即存：与总开关独立，勾选状态决定采集队列是否含工作室账号 */
-function saveAutoStudios(){
-  if (!nativeHas()) return;
-  const cb = document.getElementById('autoStudios');
-  window.StarHubNative.setAutoStudios(cb && cb.checked ? '1' : '0');
-}
-function toggleAutoCollect(){
+function toggleDetect(){
   if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
-  const st = autoState() || {};
-  if (!window.StarHubNative.getToken()){ toast('请先保存 GitHub 令牌'); return; }
+  const st = detectState() || {};
   const on = !st.enabled;
-  const times = autoTimes();
-  const r = document.querySelector('input[name=autoStar]:checked');
-  const star = r ? r.value : 'hmh';
-  const nm = (DATA.stars || []).find(s => s.id === star);
-  window.StarHubNative.setAutoCollect(on ? '1' : '0', times[0], times[1], star, nm ? nm.name : '');
+  window.StarHubNative.setDetect(on ? '1' : '0');
   setTimeout(renderSyncBox, 150);
+}
+function saveDetectStudios(){
+  if (!nativeHas()) return;
+  const cb = document.getElementById('detectStudios');
+  window.StarHubNative.setDetectStudios(cb && cb.checked ? '1' : '0');
+}
+function runDetectNow(){
+  if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
+  if (typeof window.StarHubNative.runDetectNow === 'function'){
+    window.StarHubNative.runDetectNow();
+  } else {
+    toast('当前 App 版本不支持立即检测，请更新到最新版');
+  }
 }
 function askBattery(){
   if (!nativeHas()){ toast('请在星汇 App 内使用'); return; }
@@ -834,7 +782,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261014d';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261014e';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
