@@ -2,7 +2,8 @@ name: 星汇定时采集
 
 on:
   schedule:
-    - cron: '*/10 * * * *'      # 每 10 分钟跑一次（GitHub 有时会延迟几分钟，属正常）
+    - cron: '17 * * * *'       # 每小时第 17 分跑一次（原为 */10：机房 IP 请求过密被微博风控，
+                               # 表现为全部账号返回空列表、Cookie 十几小时就失效，故降频）
   workflow_dispatch:            # 允许在网页上手动点「Run workflow」立刻采集一次
 
 jobs:
