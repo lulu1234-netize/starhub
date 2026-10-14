@@ -227,14 +227,17 @@ async function localizeImages(posts) {
   let oldIds = new Set(oldPosts.map(p => p.id));
   const all = { updatedAt: Date.now(), posts: [] };
   const emptyTargets = [];              /* 本次没取到任何数据的账号 */
+  const targetStats = [];               /* 采集健康报告：每个账号的实时结果 */
   for (const t of TARGETS) {
-    if (!t.uid || !cookie) { emptyTargets.push(t); continue; }
+    if (!t.uid || !cookie) { emptyTargets.push(t); targetStats.push({ name: t.name, count: 0, err: cookie ? '无 uid' : '无 Cookie' }); continue; }
     try {
       const list = await fetchOne(t, cookie, 1);
       console.log(`[${t.name}] 取到 ${list.length} 条`);
+      targetStats.push({ name: t.name, count: list.length, err: '' });
       if (list.length) all.posts = all.posts.concat(list); else emptyTargets.push(t);
     } catch (e) {
       console.log(`[${t.name}] 失败：${e.message}`);
+      targetStats.push({ name: t.name, count: 0, err: e.message });
       emptyTargets.push(t);
     }
   }
@@ -340,6 +343,24 @@ async function localizeImages(posts) {
   fs.writeFileSync(OUT_FILE, JSON.stringify(all, null, 2), 'utf8');
   const dist = all.posts.reduce((a, p) => { a[p.platform] = (a[p.platform] || 0) + 1; return a; }, {});
   console.log('已写入 ' + OUT_FILE + '，共 ' + all.posts.length + ' 条  ' + JSON.stringify(dist));
+  /* 采集健康报告（2026-10-14 新增）：把每个账号的实时采集结果落库，
+     网页/App 随时可查，不用再翻 Actions 日志判断"是没发新微博还是采不到" */
+  try {
+    const status = {
+      at: Date.now(),
+      atStr: fmtShanghai(Date.now()),
+      cookie: !!cookie,
+      weibo: {
+        ok: targetStats.filter(t => t.count > 0).map(t => ({ name: t.name, count: t.count })),
+        empty: targetStats.filter(t => t.count === 0 && !t.err).map(t => t.name),
+        fail: targetStats.filter(t => t.err).map(t => ({ name: t.name, err: t.err })),
+      },
+      total: all.posts.length,
+      dist: dist,
+    };
+    fs.writeFileSync(path.join(ROOT, 'data', 'collect_status.json'), JSON.stringify(status, null, 2), 'utf8');
+    console.log('[健康报告] 已写入 data/collect_status.json（微博成功 ' + status.weibo.ok.length + '/' + TARGETS.length + '）');
+  } catch (e) { console.log('[健康报告] 写入失败：' + e.message); }
   const fresh = oldIds.size ? all.posts.filter(p => !oldIds.has(p.id)) : [];
   if (fresh.length) console.log('发现新帖 ' + fresh.length + ' 条');
   await pushNew(fresh);
