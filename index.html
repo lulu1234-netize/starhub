@@ -181,9 +181,9 @@
   .rdot{width:8px;height:8px;border-radius:50%;background:var(--wb);flex-shrink:0;
     animation:pulse 1.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(230,22,45,.35)}50%{box-shadow:0 0 0 4px rgba(230,22,45,0)}}
-  .p-account{font-size:13px;font-weight:600}
-  .p-tag{font-size:10px;color:var(--ink2);background:rgba(0,0,0,.05);padding:1.5px 6px;border-radius:12px}
-  .p-src{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px;color:#fff}
+  .p-account{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .p-tag{font-size:10px;color:var(--ink2);background:rgba(0,0,0,.05);padding:1.5px 6px;border-radius:12px;white-space:nowrap;flex-shrink:0}
+  .p-src{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px;color:#fff;white-space:nowrap;flex-shrink:0}
   .src-weibo{background:var(--wb)} .src-dy{background:var(--dy)}
   .p-src svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .p-text{font-size:14px;line-height:1.62;color:#333338;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word}
