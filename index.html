@@ -41,7 +41,11 @@
   /* 系统返回交由手机原生导航手势 / 返回键处理，不再有自定义边缘箭头与提示条 */
 
   /* ---------- home ---------- */
-  .home-head{padding:34px 22px 14px}
+  .home-head{position:relative;padding:34px 22px 14px}
+  /* 首页右上角小红点：离开期间有新动态时出现，点一下看新帖即消失 */
+  .hb-dot{position:absolute;top:40px;right:22px;width:10px;height:10px;padding:0;border:0;
+    border-radius:50%;background:var(--wb);cursor:pointer;animation:pulse 1.6s ease-in-out infinite}
+  .hb-dot[hidden]{display:none}
   .home-head h1{font-size:28px;font-weight:800;letter-spacing:1px;display:inline-block;
     background:linear-gradient(120deg,#3a4a8c,#7a5cc9 55%,#c05a8e);
     -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -178,8 +182,6 @@
   .post:active{background:#f4f4f6}
   .post + .post{border-top:1px solid var(--line)}
   .p-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .rdot{width:8px;height:8px;border-radius:50%;background:var(--wb);flex-shrink:0;
-    animation:pulse 1.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(230,22,45,.35)}50%{box-shadow:0 0 0 4px rgba(230,22,45,0)}}
   .p-account{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .p-tag{font-size:10px;color:var(--ink2);background:rgba(0,0,0,.05);padding:1.5px 6px;border-radius:12px;white-space:nowrap;flex-shrink:0}
@@ -339,6 +341,8 @@
   <section class="view view-root active" id="view-home">
     <div class="ptr-pill" id="ptrPill"><span id="ptrTxt">下拉刷新</span></div>
     <div class="home-head">
+      <button class="hb-dot" id="hbDot" hidden onclick="hbDotClick()"
+        title="离开期间有新的动态，点击查看"></button>
       <h1>星汇</h1>
       <p>多平台明星动态，一处看全</p>
     </div>
@@ -841,6 +845,48 @@ function ensureStartupSnap(){
   /* 仅当当前数据已是真实数据时才落下锁定标记；demo 占位阶段不锁定，等真实数据到达后重做 */
   if (hasReal){ startupDone = true; try{ store.setItem(SNAP_KEY, '1'); }catch(e){} }
 }
+/* ================= 首页右上角小红点（离开期间有新动态） =================
+   规则（与已读/折叠状态完全独立，纯按发布时间判定，逐条标已读不影响它）：
+   · hbSeen = 用户上次「身处首页 / 离开 App」的时刻（localStorage 持久化，跨重启保留）；
+   · 离开首页（进「我的」或明星详情）、App 切后台/关闭 → hbSeen 刷新为当下时刻；
+   · 回到首页时：若存在发布时间 > hbSeen 的帖 → 右上角显示小红点；
+   · 人正停留在首页时刷新到的新帖（本来就会看到）→ 同步刷新 hbSeen，不弹点；
+   · 点小红点 → 跳到最新一条新帖所在的明星时间线，同时 hbSeen 刷新为当下 → 红点立即消失。 */
+const HB_KEY = SHARE_MODE ? 'starhub_hb_seen_share' : 'starhub_hb_seen';
+let hbSeen = (()=>{ try{ const v = Number(store.getItem(HB_KEY)); return v > 0 ? v : Date.now(); }catch(e){ return Date.now(); } })();
+function hbTouch(){
+  hbSeen = Date.now();
+  try{ store.setItem(HB_KEY, String(hbSeen)); }catch(e){}
+}
+function hbNewest(){
+  /* 返回发布时间最新、且晚于 hbSeen 的帖（不存在则 null） */
+  let best = null;
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id]; if (!d) return;
+    d.own.concat(d.related).forEach(p=>{
+      const t = Number(p.time) || 0;
+      if (t > hbSeen && (!best || t > best.t)) best = { t, star: s.id };
+    });
+  });
+  return best;
+}
+function hbDotUpdate(){
+  const el = document.getElementById('hbDot');
+  if (el) el.hidden = !hbNewest();          /* hidden=true 即隐藏，属性驱动不依赖渲染时机 */
+}
+function hbDotClick(){
+  const best = hbNewest();
+  hbTouch();                                 /* 先刷新 seen 再跳转，保证红点「点击后立即消失」 */
+  hbDotUpdate();
+  if (best) navigate('star', { star: best.star });   /* 落到最新新帖所在明星的时间线（go() 会置顶滚动） */
+  else toast('没有新动态了');
+}
+/* 停留首页时的新帖不算「离开期间」：刷新后若人就在首页且页面可见，同步刷新 seen */
+function hbTouchIfOnHome(){
+  const cur = document.querySelector('.view.active');
+  if (cur && cur.id === 'view-home' && document.visibilityState === 'visible') hbTouch();
+}
+
 function changeImg(id, input){
   const file = input.files && input.files[0];
   if (!file) return;
@@ -895,6 +941,9 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
 
 /* 按状态切换视图（被 navigate 与 popstate 共用） */
 function showView(view, extra){
+  /* 小红点时机记录：离开首页的一瞬间刷新 seen（之后到的新帖都算「离开期间」） */
+  const curEl = document.querySelector('.view.active');
+  if (curEl && curEl.id === 'view-home' && view !== 'home') hbTouch();
   if (view === 'star'){
     const id = (extra && extra.star) || curStar;
     curStar = id; curOwnPf = 'all'; curRelPf = 'all'; curRelFilter = 'all';
@@ -910,6 +959,7 @@ function showView(view, extra){
   } else {
     go('home');
   }
+  if (view === 'home') hbDotUpdate();   /* 回到首页：按 seen 时刻重算小红点 */
 }
 
 /* 进入子页面：压入一条 History 状态（不刷新页面），用于系统返回时还原 */
@@ -932,6 +982,13 @@ window.addEventListener('popstate', function(e){
   const st = (e.state && e.state.view) ? e.state : { view:'home' };
   showView(st.view, st);
 });
+
+/* 小红点：App 切后台 / 页面隐藏 → 记下离开时刻；回到前台且停在首页 → 重算红点 */
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden') hbTouch();
+  else if ((document.querySelector('.view.active') || {}).id === 'view-home') hbDotUpdate();
+});
+window.addEventListener('pagehide', hbTouch);
 
 /* 初始：把首页标记为历史基线，避免在首页时系统返回直接退出
    （应退出时由原生 finish() 处理） */
@@ -1212,7 +1269,7 @@ function jumpA(p, label){
    内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
 const AV_CLS = { weibo:'av-weibo', douyin:'av-dy' };
 function postCard(p){
-  const s = SRC[p.platform], today = isNew(p.time), read = readSet.has(p._uid);
+  const s = SRC[p.platform], read = readSet.has(p._uid);
   const av = String(p.account || '？').trim().charAt(0) || '？';
   return `
   <div class="post" data-uid="${p._uid}">
@@ -1220,7 +1277,6 @@ function postCard(p){
       <span class="p-av ${AV_CLS[p.platform] || 'av-weibo'}">${av}</span>
       <span class="p-account">${p.account}</span>
       <span class="p-tag">${p.tag}</span>
-      ${today ? '<div class="rdot" title="今日新发布"></div>' : ''}
       <span class="p-src ${s.cls}">${s.label}${EXT}</span>
     </div>
     <div class="p-main">
@@ -1558,6 +1614,8 @@ async function loadLive(silent){
   ensureStartupSnap();                   /* 首次加载成功：把当时全部帖子纳入启动快照 → 默认已读折叠 */
   renderHome();
   if (curStar) renderDetail();
+  hbTouchIfOnHome();                     /* 人就在首页看着 → 新帖不算「离开期间」，刷新 seen */
+  hbDotUpdate();                         /* 其余情况按 seen 时刻重算右上角小红点 */
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
   return isNew;
 }
@@ -1578,6 +1636,7 @@ window.addEventListener('error', e=>{
   if (t){ t.textContent = '脚本错误：' + e.message; t.classList.add('show'); }
 });
 renderHome();
+hbDotUpdate();          /* 启动即按 seen 时刻判定一次（冷启动期间到达的新帖会显示红点） */
 renderMineImg();
 renderSyncBox();
 /* 原生采集上传成功后派发的starhub:refresh 事件 → 立刻重拉一次线上数据 */
