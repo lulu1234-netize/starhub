@@ -1,6 +1,86 @@
 {
-  "updatedAt": 1792065043986,
+  "updatedAt": 1792069544682,
   "posts": [
+    {
+      "id": "5354375800164994",
+      "platform": "weibo",
+      "account": "侯明昊工作室",
+      "tag": "工作室",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话 🥝 #侯明昊新歌迢迢星河#\n\n𝗥𝗘𝗖𝗢𝗥𝗗｜@侯明昊\n\n星空为喻，遥寄思念\n感念每一程跨越山海的奔赴\n#七号打歌中心#\n\nQQ音乐 \nGalaxy Far Far Away\n酷狗音乐 \n网页链接\n酷我音乐 \n网页链接 侯明昊工作室的微博视频 ​​​",
+      "time": 1792066133000,
+      "timeRaw": "Thu Oct 15 20:08:53 +0800 2026",
+      "link": "https://weibo.com/5763552342/RmOyU0GVc",
+      "pics": [],
+      "imgs": [
+        "data/img/240d8a05b9b0386a.jpg"
+      ],
+      "video": true,
+      "cover": "data/img/240d8a05b9b0386a.jpg",
+      "timeStr": "2026-10-15 20:08:53"
+    },
+    {
+      "id": "5354375667256893",
+      "platform": "weibo",
+      "account": "侯明昊全球后援会",
+      "tag": "全球后援会",
+      "kind": "related",
+      "star": "hmh",
+      "text": "Galaxy Far Far Away 上线啦！终于可以畅快听到完整版了！还是侯监制！棒棒\n\n转发 @侯明昊：一次被引力拉长的对视\n一段以退场写成的成全\n一起来听《Galaxy Far Far Away》🎵\n#七号打歌中心#\n\nQQ音乐 \nGalaxy Far Far Away\n酷狗音乐 \n网页链接\n酷我音乐 \n网页链接 ​​​",
+      "time": 1792066101000,
+      "timeRaw": "Thu Oct 15 20:08:21 +0800 2026",
+      "link": "https://weibo.com/5702872851/RmOyGurQF",
+      "pics": [],
+      "imgs": [
+        "https://y.gtimg.cn/music/photo_new/T002R300x300M000002UiO1r1dsbdK.jpg"
+      ],
+      "video": false,
+      "cover": "https://y.gtimg.cn/music/photo_new/T002R300x300M000002UiO1r1dsbdK.jpg",
+      "timeStr": "2026-10-15 20:08:21"
+    },
+    {
+      "id": "5354374520898756",
+      "platform": "weibo",
+      "account": "侯明昊工作室",
+      "tag": "工作室",
+      "kind": "related",
+      "star": "hmh",
+      "text": "侯明昊超话 🥝 #侯明昊新歌迢迢星河#\n\n𝗥𝗘𝗖𝗢𝗥𝗗｜@侯明昊\n\n星空为喻，遥寄思念\n感念每一程跨越山海的奔赴\n#七号打歌中心#\n\nQQ音乐 \nGalaxy Far Far Away\n酷狗音乐 \n网页链接\n酷我音乐 \n网页链接 ​​​",
+      "time": 1792065828000,
+      "timeRaw": "Thu Oct 15 20:03:48 +0800 2026",
+      "link": "https://weibo.com/5763552342/RmOwQ3LO4",
+      "pics": [
+        "data/img/bc786d0bc07e5866.jpg"
+      ],
+      "imgs": [
+        "data/img/bc786d0bc07e5866.jpg"
+      ],
+      "video": false,
+      "cover": "https://y.gtimg.cn/music/photo_new/T002R300x300M000002UiO1r1dsbdK.jpg",
+      "timeStr": "2026-10-15 20:03:48"
+    },
+    {
+      "id": "5354374500713311",
+      "platform": "weibo",
+      "account": "侯明昊",
+      "tag": "本人",
+      "kind": "own",
+      "star": "hmh",
+      "text": "一次被引力拉长的对视\n一段以退场写成的成全\n一起来听《Galaxy Far Far Away》🎵\n#七号打歌中心#\n\nQQ音乐 \nGalaxy Far Far Away\n酷狗音乐 \n网页链接\n酷我音乐 \n网页链接 ​​​",
+      "time": 1792065823000,
+      "timeRaw": "Thu Oct 15 20:03:43 +0800 2026",
+      "link": "https://weibo.com/1831550987/RmOwO2Zz1",
+      "pics": [
+        "data/img/0b46e8a767053b18.jpg"
+      ],
+      "imgs": [
+        "data/img/0b46e8a767053b18.jpg"
+      ],
+      "video": false,
+      "cover": "https://y.gtimg.cn/music/photo_new/T002R300x300M000002UiO1r1dsbdK.jpg",
+      "timeStr": "2026-10-15 20:03:43"
+    },
     {
       "id": "5354015338792139",
       "platform": "weibo",
@@ -19,6 +99,29 @@
       "video": true,
       "cover": "data/img/f5124bb9af6a66dd.jpg",
       "timeStr": "2026-10-14 20:16:31"
+    },
+    {
+      "id": "5354015263297219",
+      "platform": "weibo",
+      "account": "卢昱晓_",
+      "tag": "后援会",
+      "kind": "related",
+      "star": "lyx",
+      "text": "卢昱晓超话 🐶你们好益虫虫！♥️🙏 ​​​",
+      "time": 1791980174000,
+      "timeRaw": "Wed Oct 14 20:16:14 +0800 2026",
+      "link": "https://weibo.com/5503575607/RmFbodPKX",
+      "pics": [
+        "data/img/d5f1a81a22f728e0.jpg",
+        "data/img/27874526629cd22c.jpg"
+      ],
+      "imgs": [
+        "data/img/d5f1a81a22f728e0.jpg",
+        "data/img/27874526629cd22c.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/d5f1a81a22f728e0.jpg",
+      "timeStr": "2026-10-14 20:16:14"
     },
     {
       "id": "5354014866932853",
@@ -3396,10 +3499,10 @@
       "link": "https://weibo.com/1831550987/RjLaIqsFY",
       "pics": [],
       "imgs": [
-        "data/img/dd91c109c9c15b21.jpg"
+        "data/img/ff1588813d6b51dd.jpg"
       ],
       "video": false,
-      "cover": "data/img/dd91c109c9c15b21.jpg",
+      "cover": "data/img/ff1588813d6b51dd.jpg",
       "timeStr": "2026-09-25 18:00:09"
     },
     {
@@ -3459,10 +3562,10 @@
       "link": "https://weibo.com/5503575607/RjJcUgvfW",
       "pics": [],
       "imgs": [
-        "data/img/8081556c8c25eabd.jpg"
+        "data/img/46b37c0f28a4f4ad.jpg"
       ],
       "video": false,
-      "cover": "data/img/8081556c8c25eabd.jpg",
+      "cover": "data/img/46b37c0f28a4f4ad.jpg",
       "timeStr": "2026-09-25 13:00:03"
     },
     {
