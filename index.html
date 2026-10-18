@@ -139,11 +139,11 @@
   .acct-item .a-id{font-size:10.5px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .acct-item .a-open{font-size:9.5px;color:var(--accent);margin-top:1px;font-weight:500}
   .acct-item{text-decoration:none}
-  .p-weibo{color:var(--wb)} .p-dy{color:var(--dy)}
+  .p-weibo{color:var(--wb)}
 
   /* 筛选区：主行 = 平台；从属行 = 该平台下的账号筛选 */
   .filter-tabs{display:flex;gap:8px;padding:0 2px;flex-wrap:wrap}
-  /* 平台筛选行：固定单行（全部/微博/抖音 排一行） */
+  /* 平台筛选行：固定单行（全部/微博 排一行） */
   .pf-row .filter-tabs{flex-wrap:nowrap;flex:1;min-width:0}
   .pf-row .ftab{flex:0 0 auto;padding:6px 12px}
   /* 平台行（主筛选）：带左侧标签，视觉权重最高 */
@@ -205,21 +205,17 @@
   .ph-3{background:linear-gradient(135deg,#d4f2cf,#93c98c)}
   .ph-4{background:linear-gradient(135deg,#e8d1f0,#b78ac9)}
   .ph-real{background:linear-gradient(135deg,#eef0f5,#dfe3ec)}
-  /* 封面占位：按平台品牌色区分，保证三平台卡片的信息密度与观感一致 */
+  /* 封面占位：按平台品牌色区分，保证微博卡片的信息密度与观感一致 */
   .ph-weibo{background:linear-gradient(135deg,#f4d6d8,#cf9097)}
-
-  .ph-dy{background:linear-gradient(135deg,#4a5068,#20242f)}
   .ph-tip{position:absolute;left:7px;top:7px;font-size:9.5px;color:#fff;background:rgba(0,0,0,.3);
     padding:1.5px 6px;border-radius:10px;letter-spacing:.3px}
-  /* 作者头像（三平台统一） */
+  /* 作者头像（微博统一） */
   .p-av{width:26px;height:26px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;
     justify-content:center;color:#fff;font-size:12.5px;font-weight:700}
   .av-weibo{background:linear-gradient(135deg,#f4595b,#c2141f)}
-
-  .av-dy{background:linear-gradient(135deg,#4a5062,#161823)}
   .p-title{font-size:14.5px;font-weight:600;line-height:1.5;margin-bottom:3px;
     overflow-wrap:anywhere;word-break:break-word}
-  /* 互动数据行（点赞 / 评论 / 转发·收藏）：缺省显示 —，三平台排版一致 */
+  /* 互动数据行（转发 / 评论 / 点赞）：缺省显示 —，微博排版一致 */
   .p-stats{display:flex;align-items:center;gap:14px;margin-top:9px;font-size:11.5px;color:var(--ink3)}
   .p-stats .st{display:inline-flex;align-items:center;gap:4px}
   .p-stats .st svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;
@@ -423,72 +419,25 @@
 <script>
 /* ================= 官方账号配置（核对后统一引用，须在数据层之前声明） ================= */
 /* schemes 为「依次尝试」的候选列表：不同机型/App 版本支持的 Scheme 不同，多试几个成功率更高；
-   全部失败后回退到 url（网页版）。
-   ⚠ 抖音不要用 snssdk1128://user/profile/<sec_uid>：真机能唤起抖音但落在空白个人页，
-   且"页面被切后台"会被判定成成功、后续候选不再执行（2026-10-12 实测），
-   故抖音统一走 snssdk1128://search?keyword=<昵称>（搜索结果首位即官方账号，有画面）。 */
+   全部失败后回退到 url（网页版）。 */
 const ACCOUNTS = {
   weibo: { id:'1831550987', label:'微博',
            schemes:['sinaweibo://cardlist?containerid=1005051831550987',
                     'sinaweibo://userinfo?uid=1831550987'],
-           url:'https://m.weibo.cn/u/1831550987' },
-  douyin:{ id:'390049435',  label:'抖音',
-           secUid:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg',
-           schemes:['snssdk1128://search?keyword=侯明昊'],
-           url:'https://www.douyin.com/user/MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' }
+           url:'https://m.weibo.cn/u/1831550987' }
 };
 
-/* 各明星的抖音号 / sec_uid（详情页「前往主页」按明星取，缺省回退 ACCOUNTS 里的默认值） */
-const DOUYIN_IDS   = { hmh:'390049435', lyx:'1109107012' };
-const DOUYIN_SECUID = { hmh:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bnw7fg' };
-
-/* ================= 数据同步（抖音） =================
-   抖音的接口签名由平台自己的网页 JS 计算，服务器 IP 会被地域风控，
-   因此改为在星汇 App 内用手机网络 + 真实浏览器内核采集（原生桥 StarHubNative）。
-   网页只负责：保存令牌、发指令、提示状态。 */
-const SYNC_PLATFORMS = [
-  { key:'douyin', label:'抖音',   search:'https://www.douyin.com/search/' }
-];
-/* 抖音手动采集的四个独立账号：每位明星的「本人」与「工作室」各一个，分开采集、分开归属 */
-const COLLECT_TARGETS = [
-  { star:'hmh', name:'侯明昊',       label:'侯明昊 · 本人' },
-  { star:'hmh', name:'侯明昊工作室',  label:'侯明昊 · 工作室' },
-  { star:'lyx', name:'卢昱晓',       label:'卢昱晓 · 本人' },
-  { star:'lyx', name:'卢昱晓工作室',  label:'卢昱晓 · 工作室' }
-];
-
-/* 采集时交给原生的昵称表：用于把抓到的内容归到对应明星（与采集器按昵称匹配一致） */
-function syncTargetsJson(){
-  return JSON.stringify((DATA.stars || []).map(s => ({ star:s.id, name:s.name })));
-}
-function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.startCollect); }
-/* 抖音采集：用搜索页 + 明星名起手，App 内会自动进主页并抓取。 */
-
-function syncStart(p, starId, nameOverride){
-  if (!nativeHas()){ toast('同步功能需要在星汇 App 内使用（当前是浏览器环境）'); return; }
-  if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
-  const nm = nameOverride || ((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '';
-  const url = p.search + encodeURIComponent(nm);
-  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url, nm); }
-  catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
-}
+/* ================= 数据同步 =================
+   微博由 GitHub Actions 每 5 分钟自动采集；本面板只负责保存令牌——
+   令牌供首页「立即刷新」按需触发一次采集 workflow（PAT 需 Actions: Read and write）。 */
+function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.saveToken); }
 function renderSyncBox(){
   const box = document.getElementById('syncMgr');
   if (!box) return;
   const inApp = nativeHas();
   const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
   box.innerHTML = `
-    <div class="sync-note">抖音的接口需手机网络环境，在星汇 App 内点下面的按钮即可采集；
-      首次使用需在弹出的页面里登录一次，之后免登。采集完成后约 1 分钟，下拉刷新即可看到。</div>
-    <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
-      页面会自动进入 TA 的主页并加载作品列表，左上角会显示已抓到的条数，然后点右上角「完成并上传」。</div>
-    ${SYNC_PLATFORMS.map((p, pi) => `
-      <div class="sync-row sync-row-col">
-        <span class="sync-tag">${p.label}（四个账号分别采集）</span>
-        <div class="sync-btns">
-          ${COLLECT_TARGETS.map(t => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${t.star}','${t.name}')">${t.label}</button>`).join('')}
-        </div>
-      </div>`).join('')}
+    <div class="sync-note">微博由 GitHub Actions 每 5 分钟自动采集；点首页「立即刷新」可马上触发一次，约 1 分钟后出新帖。</div>
     <div class="sync-tk">
       <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
       <button class="img-btn" onclick="saveTokenNow()">保存令牌</button>
@@ -534,9 +483,8 @@ function contentLink(platform, text){
   raw = raw.replace(/[【\[(（][^\]】)）]{0,20}(示例|占位|演示|待补充)[^\]】)）]{0,20}[】\])）]/g, '').trim();
   const key = (/示例|占位|演示|加载中/.test(raw) || raw.length < 2) ? '侯明昊' : raw.slice(0, 16);
   const q = safeEncode(key);
-  if (platform === 'weibo')  return 'https://m.weibo.cn/search?containerid=100103type%3D1%26q%3D' + q;
-  if (platform === 'douyin') return 'https://www.douyin.com/search/' + q;
-  return 'https://www.douyin.com/search/' + q;
+  /* 只剩微博平台：统一用微博移动端搜索定位原帖 */
+  return 'https://m.weibo.cn/search?containerid=100103type%3D1%26q%3D' + q;
 }
 /* 兜底规范：任何 PC 链接都要先转成对应的手机版页，保证手机上打开的是移动页面 */
 function toMobile(u){
@@ -579,14 +527,14 @@ const DATA = {
   stars: [
     { id:'hmh', name:'侯明昊', en:'Hou Minghao', implemented:true, online:true,
       img:'img/hmh.jpg',
-      platforms:['微博','抖音'],
-      acct:{ weibo:'1831550987', douyin:'390049435' },
+      platforms:['微博'],
+      acct:{ weibo:'1831550987' },
       latest:'藏锋入局，扭转乾坤。前路险峻，杨无间与你们共进退！' },
-    /* 卢昱晓：微博 + 抖音 */
+    /* 卢昱晓：微博 */
     { id:'lyx', name:'卢昱晓', en:'Lu Yuxiao', implemented:true, online:true,
       img:'img/lyx.jpg',
-      platforms:['微博','抖音'],
-      acct:{ weibo:'5503575607', douyin:'1109107012' },
+      platforms:['微博'],
+      acct:{ weibo:'5503575607' },
       latest:null }
   ],
   hmh: {
@@ -605,12 +553,7 @@ const DATA = {
         pics:[],
         time:TS('2026-09-17T19:07:00+08:00'),
         link:'https://weibo.com/1831550987/5344211604866386' },
-      /* ↓↓↓ 抖音：暂无可核实的本人真实内容，保留示例占位（tag 标注「示例」），
-         用于演示平台统一展示；拿到真实链接或 M2 采集上线后替换为真实动态 */
-      { platform:'douyin', account:'侯明昊', tag:'本人 · 示例',
-        text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
-        video:true, vlabel:'▶ 视频', pics:['ph-1'],
-        time:TS('2026-09-20T18:30:00+08:00') }    ],
+    ],
     related: [
       /* ↓ 真实采集：2026-09-23 10:15 碧血蝉官博 发布殊途同归版预告（即本人转发的原视频） */
       { platform:'weibo', account:'碧血蝉官博', tag:'剧方官博',
@@ -627,13 +570,6 @@ const DATA = {
         text:'【示例占位】演示用内容，接入真实采集后替换。',
         pics:['ph-3'], time:TS('2026-09-21T11:00:00+08:00') },
 
-      { platform:'douyin', account:'侯明昊影综剪辑', tag:'剪辑号 · 示例',
-        text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
-        pics:['ph-3','ph-1'],
-        time:TS('2026-09-21T22:00:00+08:00') },
-      { platform:'douyin', account:'侯明昊影综剪辑', tag:'剪辑号 · 示例',
-        text:'【示例占位】演示用内容，接入抖音真实采集后替换。',
-        pics:['ph-1'], time:TS('2026-09-17T20:00:00+08:00') },
       { platform:'weibo', account:'桃圈播报员', tag:'桃圈 · 示例',
         text:'【示例占位】演示用内容，接入真实采集后替换。',
         pics:[], time:TS('2026-09-16T10:30:00+08:00') }
@@ -669,9 +605,7 @@ const STAR_REL = {
 
 /* ================= 工具 ================= */
 const SRC = {
-  weibo:{label:'微博', cls:'src-weibo'},
-
-  douyin:{label:'抖音', cls:'src-dy'}
+  weibo:{label:'微博', cls:'src-weibo'}
 };
 /* 完整标准时间 YYYY-MM-DD HH:mm:ss（北京时间），用于长按/详情页查看 */
 function fullTime(t){
@@ -724,7 +658,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018c';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018d';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -968,14 +902,14 @@ function renderHome(){
      · 相关账号区：curRelPf（平台） + curRelFilter（该平台下的账号）
    即：两个板块各自持有筛选状态，某板块的筛选只作用于该板块自身的列表。 */
 let curStar = null;
-const FILTERS = [['all','全部'],['weibo','微博'],['douyin','抖音']];
+const FILTERS = [['all','全部'],['weibo','微博']];
 
 /* —— 本人区筛选（独立） —— */
-let curOwnPf = 'all';            /* all | weibo | douyin */
+let curOwnPf = 'all';            /* all | weibo */
 function setOwnPf(k){ curOwnPf = k; revealed.own = new Set(); renderDetail(); }
 
 /* —— 相关账号区筛选（独立） —— */
-let curRelPf = 'all';            /* all | weibo | douyin */
+let curRelPf = 'all';            /* all | weibo */
 function setRelPf(k){ curRelPf = k; curRelFilter = 'all'; revealed.rel = new Set(); renderDetail(); }
 let curRelFilter = 'all';        /* all | 相关账号 account 名（在当前所选平台内生效） */
 function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDetail(); }
@@ -983,12 +917,12 @@ function setRelFilter(a){ curRelFilter = a; revealed.rel = new Set(); renderDeta
 /* 媒体区：三个平台共用同一套规则，保证封面/视频/占位的结构完全一致
    ① 采到的真实多图 → 真图；② 单张封面（cover）→ 真图 + 角标；
    ③ 都没有 → 按平台配色的统一占位块（带「封面待采集」提示，不再出现随机色块） */
-const PH_CLS = { weibo:'ph-weibo', douyin:'ph-dy' };
+const PH_CLS = { weibo:'ph-weibo' };
 function mediaBlock(p){
   const badge = p.video ? `<span class="vbadge">${p.vlabel || '▶ 视频'}</span>` : '';
   const play  = p.video ? `<span class="vplay"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>` : '';
   const pcls = PH_CLS[p.platform] || 'ph-weibo';
-  /* referrerpolicy=no-referrer 绕过图床（新浪 / 抖音）Referer 防盗链，否则在 github.io 域下被 403；
+  /* referrerpolicy=no-referrer 绕过图床（新浪）Referer 防盗链，否则在 github.io 域下被 403；
      onerror 不再隐藏图片，而是给 .ph 加 imgfail 显示占位提示，避免空白 */
   const imgTag = u => `<img src="${u}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.ph').classList.add('imgfail')">`;
   if (p.imgs && p.imgs.length){
@@ -1012,11 +946,9 @@ function mediaBlock(p){
   }).join('')}</div>`;
 }
 
-/* 互动数据：三平台都渲染「点赞 / 评论 / 转发或收藏」，缺省统一显示 — */
+/* 互动数据：微博渲染「转发 / 评论 / 点赞」，缺省统一显示 — */
 const STATS_SPEC = {
-  weibo:  [['repost','转发'],['comment','评论'],['like','点赞']],
-  douyin: [['like','点赞'],['comment','评论'],['collect','收藏']],
-
+  weibo:  [['repost','转发'],['comment','评论'],['like','点赞']]
 };
 const I_HEART = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20z"/></svg>';
 const I_COMMENT = '<svg viewBox="0 0 24 24"><path d="M20 14a2 2 0 0 1-2 2H8l-4 4v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>';
@@ -1045,31 +977,24 @@ function postId(p){
   let m;
   m = l.match(/weibo\.com\/\d+\/([A-Za-z0-9]+)/);                       if (m) return m[1];
   m = l.match(/m\.weibo\.cn\/(?:detail|status)\/([A-Za-z0-9]+)/);       if (m) return m[1];
-  m = l.match(/douyin\.com\/(?:video|note|slides)\/([0-9]+)/);          if (m) return m[1];
   return '';
 }
 
-/* 兜底用：按内容在该平台内搜索（拿不到帖子 ID 时使用） */
+/* 兜底用：按内容在微博内搜索（拿不到帖子 ID 时使用） */
 function searchScheme(p){
   const q = safeEncode((p.text || '').replace(/\s+/g, ' ').trim().slice(0, 16));
-  if (p.platform === 'weibo')  return 'sinaweibo://search?q=' + q;
-  if (p.platform === 'douyin') return 'snssdk1128://search?keyword=' + q;
-  return 'snssdk1128://search?keyword=' + q;
+  return 'sinaweibo://search?q=' + q;
 }
 /* 直达该条帖子的原生 App Scheme；拿不到帖子 ID 时退化为按内容搜索 */
 function deepLink(p){
   const id = postId(p);
-  if (p.platform === 'weibo')  return id ? 'sinaweibo://detail?mblogid=' + id : searchScheme(p);
-  if (p.platform === 'douyin') return id ? 'snssdk1128://aweme/detail/' + id : searchScheme(p);
-  return searchScheme(p);
+  return id ? 'sinaweibo://detail?mblogid=' + id : searchScheme(p);
 }
 
 /* 回退用的手机网页版地址（一律移动端，与 PC 页面无关） */
 function webFallback(p){
   const id = postId(p);
-  if (p.platform === 'weibo' && id)  return 'https://m.weibo.cn/detail/' + id;
-  if (p.platform === 'douyin' && id) return 'https://www.douyin.com/video/' + id;
-
+  if (id) return 'https://m.weibo.cn/detail/' + id;
   const link = toMobile(p.link);
   return link || contentLink(p.platform, p.text || '');
 }
@@ -1095,7 +1020,7 @@ function isPhone(){
   return /Android|iPhone|iPad|iPod|Windows Phone|HarmonyOS|Mobile/i.test(navigator.userAgent || '');
 }
 
-/* 统一埋点：微博 / 抖音 共用同一份记录，便于核对跳转成功率 */
+/* 统一埋点：微博共用同一份记录，便于核对跳转成功率 */
 function trackJump(platform, kind, target, result){
   try {
     const log = JSON.parse(store.getItem('starhub_jump_log') || '[]');
@@ -1107,7 +1032,7 @@ function trackJump(platform, kind, target, result){
 }
 
 /* 网页版回退：App 内经原生桥交给系统浏览器打开（WebView 自带的渲染器
-   加载抖音等网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
+   加载微博等网页版会白屏，必须换系统浏览器）；普通浏览器用 window.open */
 function gotoWeb(web){
   if (nativeOpen(web)) return;
   const w = window.open(web, '_blank', 'noopener');
@@ -1115,7 +1040,7 @@ function gotoWeb(web){
 }
 
 /* ============ 统一跳转引擎 ============
-   微博 / 抖音、主页 / 帖子 全部走这一个函数，行为与提示完全一致：
+   微博、主页 / 帖子 全部走这一个函数，行为与提示完全一致：
      ① 桌面端不跳转、不展示外链内容，只提示用手机；
      ② 手机端先依次尝试 App 的 scheme/deeplink（1.1s 一个，页面切后台即判定成功）；
      ③ 全部没唤起成功 → 打开该平台手机网页版，并给出与微博相同的兜底提示；
@@ -1162,8 +1087,7 @@ function openExternal(o, e){
   return false;
 }
 
-/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。
-   抖音走「昵称搜索页」而非 sec_uid 直达，原因见下方 douyin 分支注释（真机实测）。 */
+/* 「前往主页」：按平台依次尝试主页 Scheme，失败回退该平台手机网页版。 */
 function openHome(key, uid, e){
   const a = ACCOUNTS[key];
   if (!a) return false;
@@ -1174,22 +1098,6 @@ function openHome(key, uid, e){
        故降为后备。两者都失败则走网页兜底 m.weibo.cn/u/<uid>（已验证有效） */
     schemes = [`sinaweibo://userinfo?uid=${id}`, `sinaweibo://cardlist?containerid=100505${id}`];
     url = `https://m.weibo.cn/u/${id}`;
-  } else if (key === 'douyin'){
-    /* 抖音「前往主页」真机实测结论（2026-10-12）：
-       · snssdk1128://user/profile/<sec_uid> 确实能唤起抖音 App，但落在「空白个人页」
-         （默认灰头像、无昵称、获赞/关注/粉丝全空）——sec_uid 本身没错（网页版
-         douyin.com/user/<sec_uid> 打开就是侯明昊主页），是 App 对该 scheme 的落地页有问题。
-         且页面被切后台会被 openExternal 判定为"已成功"，后面的候选永远不会执行，
-         所以这个 scheme 不能再放进候选链，否则用户每次点都看到空白。
-       · snssdk1128://search?keyword=<昵称> 有画面：搜索结果首位即明星官方账号卡片
-         （头像/粉丝数/最新作品），侯明昊/卢昱晓两位都已验证可用。
-       · 搜索也没唤起 App 时，回退网页版个人主页（有 sec_uid 用 /user/<sec_uid>，
-         否则 /search/<昵称>）。 */
-    const nm  = (DATA.stars.find(s=>s.id===curStar) || {}).name || (DOUYIN_IDS[curStar] || a.id);
-    const sec = DOUYIN_SECUID[curStar] || '';
-    schemes = ['snssdk1128://search?keyword=' + safeEncode(nm)];
-    url = sec ? ('https://www.douyin.com/user/' + sec)
-              : ('https://www.douyin.com/search/' + safeEncode(nm));
   }
   return openExternal({ platform:key, kind:'home', label:a.label, schemes:schemes, web:url }, e);
 }
@@ -1214,9 +1122,9 @@ function jumpA(p, label){
     title="在手机上唤起${SRC[p.platform].label}App 打开本条内容；未安装则打开手机网页版">${label || '前往原平台查看'} ${EXT}</a>`;
 }
 
-/* 统一动态卡片：三个平台共用同一结构（头像/作者/平台 → 标题 → 正文 → 封面 → 互动数据 → 时间+跳转），
+/* 统一动态卡片：微博共用同一结构（头像/作者/平台 → 标题 → 正文 → 封面 → 互动数据 → 时间+跳转），
    内容始终完整展示（无折叠）；已读按钮负责清理旧帖 */
-const AV_CLS = { weibo:'av-weibo', douyin:'av-dy' };
+const AV_CLS = { weibo:'av-weibo' };
 function postCard(p){
   const s = SRC[p.platform], read = readSet.has(p._uid);
   const av = String(p.account || '？').trim().charAt(0) || '？';
@@ -1326,13 +1234,13 @@ function renderDetail(){
   const viewEl = document.getElementById('view-star');
   const sv = viewEl.scrollTop;   /* 重渲染后保持滚动位置，避免折叠/筛选时跳动 */
   const todaySum = d.own.concat(d.related).filter(p => isNew(p.time)).length;
-  const acctCls = { weibo:'p-weibo', douyin:'p-dy' };
+  const acctCls = { weibo:'p-weibo' };
   const starAcct = (DATA.stars.find(s=>s.id===curStar)||{}).acct || {};
-  const acctStrip = ['weibo','douyin'].map(k=>{
+  const acctStrip = ['weibo'].map(k=>{
     const a = ACCOUNTS[k];
-    const id = starAcct[k] || (k === 'weibo' ? a.id : '');
+    const id = starAcct[k] || a.id;
     if (!id) return '';
-    const url = k === 'weibo' ? `https://m.weibo.cn/u/${id}` : a.url;
+    const url = `https://m.weibo.cn/u/${id}`;
     return `<a class="acct-item" href="${url}" onclick="return openHome('${k}','${id}',event)"
       title="点击唤起${a.label}App，未安装则打开网页版">
       <div class="a-p ${acctCls[k]}">${a.label}</div>
@@ -1344,7 +1252,7 @@ function renderDetail(){
      ① 本人区：自带「平台」筛选行（curOwnPf），只作用于本人区；
      ② 相关账号区：自带「平台」筛选行（curRelPf）+ 其下方「账号」筛选行（curRelFilter，从属于所选平台），
         只作用于相关账号区。两个板块的状态互不影响。 */
-  const PF_LABEL = { weibo:'微博', douyin:'抖音' };
+  const PF_LABEL = { weibo:'微博' };
   const tabsOf = (cur, fn) => FILTERS.map(([k,l]) =>
     `<button class="ftab ${cur===k ? 'on' : ''}" onclick="${fn}('${k}')">${l}</button>`).join('');
 
@@ -1385,7 +1293,7 @@ function renderDetail(){
           <div class="rel-head"><div class="mini-av">${(DATA.stars.find(x=>x.id===curStar)||{}).name.charAt(0)}</div><b>${(DATA.stars.find(x=>x.id===curStar)||{}).name} · 相关账号</b><span>显示 ${relListFinal.length} 条</span></div>
           ${sectionRender(relListFinal, 'rel')}</div>`
     : `<div class="empty-sm">当前筛选下暂无相关账号动态</div>`;
-  const PF_NAME = { weibo:'微博', douyin:'抖音' };
+  const PF_NAME = { weibo:'微博' };
   const pfList = [...new Set(d.own.concat(d.related).map(p=>p.platform))].map(k=>PF_NAME[k] || k);
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
@@ -1405,7 +1313,7 @@ function renderDetail(){
     ${secNav}
     ${todaySum ? `<div class="sec-label"><div class="bar" style="background:var(--wb)"></div>
       <h2>今日更新</h2><span>${todaySum} 条新动态</span></div>` : ''}
-    <div class="sec-label" id="sec-own"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博 / 抖音 统一展示</span></div>
+    <div class="sec-label" id="sec-own"><div class="bar"></div><h2>置顶 · 本人账号</h2><span>微博统一展示</span></div>
     ${ownPfRow}
     ${ownBlock}
     <div class="sec-label" id="sec-rel" style="margin-top:6px"><div class="bar" style="background:#d8a13a"></div>
@@ -1463,13 +1371,13 @@ function resetImg(id){
 const LIVE = { ok:false, updatedAt:0, count:0, ids:new Set() };
 /* 部署在 GitHub Pages（xxx.github.io）时属于云端模式：
    没有本地服务接口，直接读取仓库里的 data/posts.json，
-   数据由 GitHub Actions 每 10 分钟自动更新。 */
+   数据由 GitHub Actions 每 5 分钟自动更新。 */
 const IS_CLOUD = /github\.io$|netlify\.app$|vercel\.app$|pages\.dev$/.test(location.hostname);
 
 function toLivePost(p, i){
-  /* 平台由数据自身决定（微博 / 抖音 共用同一套渲染与跳转逻辑） */
+  /* 只剩微博平台：统一走微博渲染与跳转逻辑 */
   const pf = p.platform || 'weibo';
-  const prefix = pf === 'douyin' ? 'dy_' : 'wb_';
+  const prefix = 'wb_';
   return {
     _uid: prefix + (p.id || p.link || i),
     platform:pf, account:p.account || '', tag:p.tag || '本人',
@@ -1481,7 +1389,7 @@ function toLivePost(p, i){
   };
 }
 function reuid(){
-  /* 真实采集数据保留 wb_/dy_ 前缀的真实 _uid；内置示例按「明星_own/rel_序号」补编号，保证跨明星唯一 */
+  /* 真实采集数据保留 wb_ 前缀的真实 _uid；内置示例按「明星_own/rel_序号」补编号，保证跨明星唯一 */
   (DATA.stars || []).forEach(s=>{
     const d = DATA[s.id]; if (!d) return;
     d.own.forEach((p,i)=>{ if(!p._uid || String(p._uid).indexOf('demo_')===0) p._uid = 'demo_' + s.id + '_own_' + i; });
@@ -1612,8 +1520,7 @@ renderHome();
 hbDotUpdate();          /* 启动即按 seen 时刻判定一次（冷启动期间到达的新帖会显示红点） */
 renderMineImg();
 renderSyncBox();
-/* 原生采集上传成功后派发的starhub:refresh 事件 → 立刻重拉一次线上数据 */
-window.addEventListener('starhub:refresh', ()=>{ loadLive(true); toast('已同步，正在刷新动态…'); });
+/* 微博采集由 GitHub Actions 每 5 分钟自动跑；首页「立即刷新」会按需触发一次，拉取在 loadLive 里完成 */
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 /* ===== 首页下拉刷新（顶部下拉 → 触发 loadLive + renderHome） ===== */
