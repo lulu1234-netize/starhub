@@ -43,9 +43,14 @@
   /* ---------- home ---------- */
   .home-head{position:relative;padding:34px 22px 14px}
   /* 首页右上角小红点：离开期间有新动态时出现，点一下看新帖即消失 */
-  .hb-dot{position:absolute;top:40px;right:22px;width:10px;height:10px;padding:0;border:0;
-    border-radius:50%;background:var(--wb);cursor:pointer;animation:pulse 1.6s ease-in-out infinite}
+  .hb-dot{position:absolute;top:30px;right:18px;min-width:20px;height:20px;padding:0 6px;border:0;
+    border-radius:11px;background:#e23b3b;color:#fff;font-size:12px;font-weight:700;line-height:20px;
+    cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.28);font-family:inherit}
   .hb-dot[hidden]{display:none}
+  .home-sub{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--ink3)}
+  .home-sub .lnk{background:none;border:0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px;font-family:inherit}
+  .sync-row-col{flex-direction:column;align-items:flex-start;gap:6px}
+  .sync-btns{display:flex;flex-wrap:wrap;gap:6px}
   .home-head h1{font-size:28px;font-weight:800;letter-spacing:1px;display:inline-block;
     background:linear-gradient(120deg,#3a4a8c,#7a5cc9 55%,#c05a8e);
     -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -342,9 +347,13 @@
     <div class="ptr-pill" id="ptrPill"><span id="ptrTxt">下拉刷新</span></div>
     <div class="home-head">
       <button class="hb-dot" id="hbDot" hidden onclick="hbDotClick()"
-        title="离开期间有新的动态，点击查看"></button>
+        title="有新的动态，点击查看"></button>
       <h1>星汇</h1>
       <p>多平台明星动态，一处看全</p>
+      <div class="home-sub">
+        <span id="lastUpd">更新中…</span>
+        <button class="lnk" onclick="refreshNow()">立即刷新</button>
+      </div>
     </div>
     <div class="star-list" id="starList"></div>
     <nav class="tabbar">
@@ -440,6 +449,13 @@ const DOUYIN_SECUID = { hmh:'MS4wLjABAAAAY5Yd4tL9-HkMUod_aYWcI_JMPu22bwwfzTNZ2bn
 const SYNC_PLATFORMS = [
   { key:'douyin', label:'抖音',   search:'https://www.douyin.com/search/' }
 ];
+/* 抖音手动采集的四个独立账号：每位明星的「本人」与「工作室」各一个，分开采集、分开归属 */
+const COLLECT_TARGETS = [
+  { star:'hmh', name:'侯明昊',       label:'侯明昊 · 本人' },
+  { star:'hmh', name:'侯明昊工作室',  label:'侯明昊 · 工作室' },
+  { star:'lyx', name:'卢昱晓',       label:'卢昱晓 · 本人' },
+  { star:'lyx', name:'卢昱晓工作室',  label:'卢昱晓 · 工作室' }
+];
 
 /* 采集时交给原生的昵称表：用于把抓到的内容归到对应明星（与采集器按昵称匹配一致） */
 function syncTargetsJson(){
@@ -448,10 +464,11 @@ function syncTargetsJson(){
 function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.startCollect); }
 /* 抖音采集：用搜索页 + 明星名起手，App 内会自动进主页并抓取。 */
 
-function syncStart(p, starId){
+function syncStart(p, starId, nameOverride){
   if (!nativeHas()){ toast('同步功能需要在星汇 App 内使用（当前是浏览器环境）'); return; }
   if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
-  const url = p.search + encodeURIComponent(((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '');
+  const nm = nameOverride || ((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '';
+  const url = p.search + encodeURIComponent(nm);
   try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url); }
   catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
 }
@@ -466,9 +483,11 @@ function renderSyncBox(){
     <div class="sync-note" style="margin-top:4px">选择要同步的平台与明星，App 会弹出采集窗口：
       页面会自动进入 TA 的主页并加载作品列表，左上角会显示已抓到的条数，然后点右上角「完成并上传」。</div>
     ${SYNC_PLATFORMS.map((p, pi) => `
-      <div class="sync-row">
-        <span class="sync-tag">${p.label}</span>
-        ${(DATA.stars||[]).map(s => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${s.id}')">${s.name}</button>`).join('')}
+      <div class="sync-row sync-row-col">
+        <span class="sync-tag">${p.label}（四个账号分别采集）</span>
+        <div class="sync-btns">
+          ${COLLECT_TARGETS.map(t => `<button class="img-btn" onclick="syncStart(SYNC_PLATFORMS[${pi}],'${t.star}','${t.name}')">${t.label}</button>`).join('')}
+        </div>
       </div>`).join('')}
     <div class="sync-tk">
       <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
@@ -705,7 +724,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261015a';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018a';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -747,17 +766,21 @@ function ensureStartupSnap(){
   /* 仅当当前数据已是真实数据时才落下锁定标记；demo 占位阶段不锁定，等真实数据到达后重做 */
   if (hasReal){ startupDone = true; try{ store.setItem(SNAP_KEY, '1'); }catch(e){} }
 }
-/* ================= 首页右上角小红点（离开期间有新动态） =================
-   规则（与已读/折叠状态完全独立，纯按发布时间判定，逐条标已读不影响它）：
-   · hbSeen = 用户上次「身处首页 / 离开 App」的时刻（localStorage 持久化，跨重启保留）；
-   · 离开首页（进「我的」或明星详情）、App 切后台/关闭 → hbSeen 刷新为当下时刻；
-   · 回到首页时：若存在发布时间 > hbSeen 的帖 → 右上角显示小红点；
-   · 人正停留在首页时刷新到的新帖（本来就会看到）→ 同步刷新 hbSeen，不弹点；
-   · 点小红点 → 跳到最新一条新帖所在的明星时间线，同时 hbSeen 刷新为当下 → 红点立即消失。
-   明星卡右上角小圆点（.dot-badge）同用这套逻辑：该明星在 hbSeen 后有新帖才显示，
-   进入该明星时间线（离开首页即 hbTouch）后回来自动熄灭——不再是旧的「已上线」常亮标记。 */
+/* ================= 首页右上角小红点（未读新帖） =================
+   规则（与已读/折叠状态完全独立，纯按发布时间判定）：
+   · hbSeen = 用户「最后一次确认看过新帖」的时刻（localStorage 持久化，跨重启保留）；
+   · 只要存在发布时间 > hbSeen 的帖 → 右上角红点出现并显示未读数量（不依赖离开 App）；
+   · 点红点 → 跳到最新新帖所在明星时间线，同时 hbSeen 刷新为当下 → 红点立即消失；
+   · 明星卡右上角小圆点（.dot-badge）同用这套逻辑：该明星有未读新帖才显示。
+   注意：hbSeen 只在「点红点确认」时前进；页面 60 秒轮询 / 切后台 / 切视图都不再自动清除，
+   因此新帖采到后稳定可见，不会再被轮询「顶掉」（这是此前红点永不亮的根因）。 */
 const HB_KEY = SHARE_MODE ? 'starhub_hb_seen_share' : 'starhub_hb_seen';
-let hbSeen = (()=>{ try{ const v = Number(store.getItem(HB_KEY)); return v > 0 ? v : Date.now(); }catch(e){ return Date.now(); } })();
+let hbSeen = (()=>{
+  try{ const v = Number(store.getItem(HB_KEY)); if (v > 0) return v; }catch(e){}
+  const now = Date.now();                   /* 首次打开：把已有帖都算「已看过」，不打红点 */
+  try{ store.setItem(HB_KEY, String(now)); }catch(e){}
+  return now;
+})();
 function hbTouch(){
   hbSeen = Date.now();
   try{ store.setItem(HB_KEY, String(hbSeen)); }catch(e){}
@@ -774,27 +797,46 @@ function hbNewest(){
   });
   return best;
 }
+function hbUnseenCount(){
+  let n = 0;
+  (DATA.stars || []).forEach(s=>{
+    const d = DATA[s.id]; if (!d) return;
+    d.own.concat(d.related).forEach(p=>{ if ((Number(p.time) || 0) > hbSeen) n++; });
+  });
+  return n;
+}
 function hbStarHasNew(id){
-  /* 某明星在 hbSeen 之后是否有新帖（驱动明星卡右上角的小圆点） */
+  /* 某明星是否有未读新帖（驱动明星卡右上角的小圆点） */
   const d = DATA[id]; if (!d) return false;
   return d.own.concat(d.related).some(p => (Number(p.time) || 0) > hbSeen);
 }
 function hbDotUpdate(){
   const el = document.getElementById('hbDot');
-  if (el) el.hidden = !hbNewest();          /* hidden=true 即隐藏，属性驱动不依赖渲染时机 */
+  const n = hbUnseenCount();
+  if (el){
+    el.hidden = n === 0;
+    el.textContent = n > 99 ? '99+' : String(n);   /* 显示未读数量，点一下即清零 */
+  }
   renderHome();                             /* 同步每张明星卡的「有新动态」小圆点（同一套 hbSeen 逻辑） */
 }
 function hbDotClick(){
   const best = hbNewest();
-  hbTouch();                                 /* 先刷新 seen 再跳转，保证红点「点击后立即消失」 */
+  hbTouch();                                 /* 确认看过 → 红点立即消失 */
   hbDotUpdate();
   if (best) navigate('star', { star: best.star });   /* 落到最新新帖所在明星的时间线（go() 会置顶滚动） */
   else toast('没有新动态了');
 }
-/* 停留首页时的新帖不算「离开期间」：刷新后若人就在首页且页面可见，同步刷新 seen */
-function hbTouchIfOnHome(){
-  const cur = document.querySelector('.view.active');
-  if (cur && cur.id === 'view-home' && document.visibilityState === 'visible') hbTouch();
+function fmtAgo(ts){
+  if (!ts) return '未知';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s/60) + ' 分钟前';
+  if (s < 86400) return Math.floor(s/3600) + ' 小时前';
+  return Math.floor(s/86400) + ' 天前';
+}
+function updateLastUpd(){
+  const el = document.getElementById('lastUpd');
+  if (el) el.textContent = LIVE.updatedAt ? ('最近更新 ' + fmtAgo(LIVE.updatedAt)) : '尚未获取数据';
 }
 
 function changeImg(id, input){
@@ -853,7 +895,6 @@ document.querySelectorAll('.tabbar .tab').forEach(t=>{
 function showView(view, extra){
   /* 小红点时机记录：离开首页的一瞬间刷新 seen（之后到的新帖都算「离开期间」） */
   const curEl = document.querySelector('.view.active');
-  if (curEl && curEl.id === 'view-home' && view !== 'home') hbTouch();
   if (view === 'star'){
     const id = (extra && extra.star) || curStar;
     curStar = id; curOwnPf = 'all'; curRelPf = 'all'; curRelFilter = 'all';
@@ -895,10 +936,8 @@ window.addEventListener('popstate', function(e){
 
 /* 小红点：App 切后台 / 页面隐藏 → 记下离开时刻；回到前台且停在首页 → 重算红点 */
 document.addEventListener('visibilitychange', function(){
-  if (document.visibilityState === 'hidden') hbTouch();
-  else if ((document.querySelector('.view.active') || {}).id === 'view-home') hbDotUpdate();
+  if (document.visibilityState === 'visible' && (document.querySelector('.view.active') || {}).id === 'view-home') hbDotUpdate();
 });
-window.addEventListener('pagehide', hbTouch);
 
 /* 初始：把首页标记为历史基线，避免在首页时系统返回直接退出
    （应退出时由原生 finish() 处理） */
@@ -1351,7 +1390,7 @@ function renderDetail(){
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
     <span class="live-txt">${LIVE.ok
-      ? `${(d.own.length + d.related.length)} 条 · ${pfList.join(' / ') || '微博'}真实数据 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 10 分钟）`
+      ? `${(d.own.length + d.related.length)} 条 · ${pfList.join(' / ') || '微博'}真实数据 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 5 分钟）`
       : '未连接采集服务 · 当前为内置数据'}</span>
     <button class="live-btn" onclick="refreshNow()">立即刷新</button>
   </div>`;
@@ -1524,8 +1563,9 @@ async function loadLive(silent){
   ensureStartupSnap();                   /* 首次加载成功：把当时全部帖子纳入启动快照 → 默认已读折叠 */
   renderHome();
   if (curStar) renderDetail();
-  hbTouchIfOnHome();                     /* 人就在首页看着 → 新帖不算「离开期间」，刷新 seen */
+                     /* 重拉后按 seen 时刻重算红点（seen 只在「点红点确认」时前进，这里不自动清零） */
   hbDotUpdate();                         /* 其余情况按 seen 时刻重算右上角小红点 */
+  updateLastUpd();                      /* 刷新「最近更新」文案 */
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
   return isNew;
 }
