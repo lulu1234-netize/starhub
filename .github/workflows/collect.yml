@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '*/5 * * * *'       # 每 5 分钟跑一次（用户要求缩短采集延迟；GitHub Actions 定时任务有排队抖动，5 分钟为免费版下限）
                                # 注：若 Cookie 因此又被微博风控快速失效（机房 IP 限流），
-                               # 根治方案是把微博采集搬进手机 App（同抖音），届时会另行处理
+                               # 届时再考虑其它采集方式
   workflow_dispatch:            # 允许在网页上手动点「Run workflow」立刻采集一次
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-    # 与「抖音小红书采集」共用并发锁：两个任务不同时写仓库，避免互相覆盖
+    # 并发锁：避免定时运行互相踩踏（同时写仓库会互相覆盖）
     concurrency:
       group: starhub-data-write
       cancel-in-progress: false
@@ -44,10 +44,9 @@ jobs:
           git config user.email "starhub-bot@users.noreply.github.com"
           # 每次运行都留下痕迹，避免仓库长期无活动导致定时任务被 GitHub 自动停用
           echo "{\"at\":\"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"}" > data/lastcheck.json
-          # posts_ext.json 是抖音/小红书的采集结果，一并纳入，避免本次提交把它冲掉
           # data/img 是本地化后的微博图片（采集器下载），存在才提交
           # data/collect_status.json 是采集健康报告（每个账号实时结果），存在才提交
-          git add -A data/posts.json data/posts_ext.json data/lastcheck.json data/collect_status.json
+          git add -A data/posts.json data/lastcheck.json data/collect_status.json
           if [ -d data/img ]; then git add -A data/img; fi
           if git diff --staged --quiet; then
             echo "本次没有新内容，跳过提交"
