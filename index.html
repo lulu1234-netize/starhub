@@ -49,8 +49,6 @@
   .hb-dot[hidden]{display:none}
   .home-sub{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--ink3)}
   .home-sub .lnk{background:none;border:0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px;font-family:inherit}
-  .sync-row-col{flex-direction:column;align-items:flex-start;gap:6px}
-  .sync-btns{display:flex;flex-wrap:wrap;gap:6px}
   .home-head h1{font-size:28px;font-weight:800;letter-spacing:1px;display:inline-block;
     background:linear-gradient(120deg,#3a4a8c,#7a5cc9 55%,#c05a8e);
     -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -113,23 +111,6 @@
     border-radius:14px;cursor:pointer;font-family:inherit;flex-shrink:0}
   .live-btn:active{transform:scale(.94)}
   .acct-strip{display:flex;gap:8px;margin:0 16px 0}
-  .sync-note{font-size:12px;line-height:1.6;color:var(--sub,#777);margin:0 0 10px}
-  .sync-btns{display:flex;gap:8px;margin-bottom:10px}
-  .sync-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-  .sync-tag{font-size:12px;color:#5f5e5a;min-width:44px}
-  .sync-tk{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .sync-tk input{flex:1 1 180px;min-width:0;font-size:12px;padding:8px 10px;border:1px solid #ddd;
-    border-radius:8px;background:#fff;color:#2c2c2a}
-  /* 每小时自动检测（仅 App 内） */
-  .sync-auto{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line,#e5e3df)}
-  .sync-auto-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-  .sync-auto-head .sync-tag{font-weight:600;color:#2c2c2a;min-width:0}
-  .sync-auto-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
-  .sync-auto-row>label{font-size:12px;color:#5f5e5a;min-width:56px}
-  .sync-auto-row input[type=time]{font-size:12px;padding:6px 8px;border:1px solid #ddd;
-    border-radius:8px;background:#fff;color:#2c2c2a}
-  .sync-auto-radio{display:flex;gap:10px;font-size:12px;color:#2c2c2a;align-items:center}
-  .sync-auto-radio label{display:flex;align-items:center;gap:4px;min-width:0}
 
   .acct-item{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:6px 6px;text-align:center;cursor:pointer;transition:transform .15s, box-shadow .15s}
@@ -303,13 +284,9 @@
     border-radius:14px;cursor:pointer}
   .fold-more:active{background:#f4f4f6}
 
-  /* ===== 视觉优化：我的页头像 / 数据同步卡片化 ===== */
+  /* ===== 视觉优化：我的页头像 ===== */
   .mine-av{box-shadow:0 10px 24px rgba(58,74,140,.28)}
   .mine-head h2{font-size:19px;letter-spacing:.06em}
-  #syncMgr{margin:0 18px 4px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    padding:13px 14px;box-shadow:0 1px 2px rgba(30,35,60,.04)}
-  #syncMgr .sync-note{font-size:11.5px;color:var(--ink3)}
-  #syncMgr .img-btn{font-size:12px;padding:7px 13px}
 
   /* ===== 首页下拉刷新指示胶囊 ===== */
   .ptr-pill{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 12px);
@@ -338,7 +315,7 @@
       <button class="hb-dot" id="hbDot" hidden onclick="hbDotClick()"
         title="有新的动态，点击查看"></button>
       <h1>星汇</h1>
-      <p>多平台明星动态，一处看全</p>
+      <p>多账号明星动态，一处看全</p>
       <div class="home-sub">
         <span id="lastUpd">更新中…</span>
         <button class="lnk" onclick="refreshNow()">立即刷新</button>
@@ -384,8 +361,6 @@
         关于星汇 <span class="sub">v0.1</span>
       </div>
     </div>
-    <div class="sec-title" style="margin-top:10px">数据同步</div>
-    <div id="syncMgr"></div>
     <p class="mine-note">本应用为个人自用工具，仅聚合公开动态并跳转至原平台查看，<br>不在应用内存储或转发任何受版权保护的内容。</p>
     <nav class="tabbar">
       <div class="tab" data-tab="home">
@@ -420,39 +395,19 @@ const ACCOUNTS = {
            url:'https://m.weibo.cn/u/1831550987' }
 };
 
-/* ================= 数据同步 =================
-   微博由 GitHub Actions 每 5 分钟自动采集；本面板只负责保存令牌——
-   令牌供首页「立即刷新」按需触发一次采集 workflow（PAT 需 Actions: Read and write）。 */
-function nativeHas(){ return !!(window.StarHubNative && window.StarHubNative.saveToken); }
-function renderSyncBox(){
-  const box = document.getElementById('syncMgr');
-  if (!box) return;
-  const inApp = nativeHas();
-  const saved = inApp ? (window.StarHubNative.getToken() || '') : '';
-  box.innerHTML = `
-    <div class="sync-note">微博由 GitHub Actions 每 5 分钟自动采集；点首页「立即刷新」可马上触发一次，约 1 分钟后出新帖。</div>
-    <div class="sync-tk">
-      <input id="tkInput" type="password" placeholder="GitHub 细粒度令牌（github_pat_…）" value="">
-      <button class="img-btn" onclick="saveTokenNow()">保存令牌</button>
-      ${saved ? '<button class="img-btn ghost" onclick="clearTokenNow()">清除</button>' : ''}
-    </div>
-    <div class="img-status" style="margin-top:6px">${inApp
-      ? (saved ? '令牌已保存（仅存本机）' : '尚未保存令牌')
-      : '当前是浏览器环境，无法保存令牌，请在星汇 App 内操作'}</div>
-  `;
-}
-function saveTokenNow(){
-  if (!nativeHas()){ toast('请在星汇 App 内保存令牌'); return; }
-  const v = document.getElementById('tkInput').value.trim();
-  if (!v){ toast('请先粘贴令牌'); return; }
-  window.StarHubNative.saveToken(v);
-  document.getElementById('tkInput').value = '';
-  renderSyncBox();
-}
-function clearTokenNow(){
-  if (!nativeHas()) return;
-  window.StarHubNative.clearToken();
-  renderSyncBox();
+/* ================= GitHub 令牌（供「立即刷新」按需触发采集） =================
+   微博由 GitHub Actions 每 5 分钟自动采集；首页「立即刷新」用令牌直接触发一次
+   collect.yml，约 30~60 秒后出新帖（PAT 需 Actions: Read and write 权限）。
+   令牌来源：App 原生保存的（历史入口）→ 前端 localStorage 缓存；都没有时
+   首次点「立即刷新」会弹一次输入框，粘贴后只存本机，之后不再询问。 */
+function ghToken(){
+  try {
+    if (window.StarHubNative && window.StarHubNative.getToken){
+      const t = window.StarHubNative.getToken() || '';
+      if (t) return t;
+    }
+  } catch(e){}
+  try { return localStorage.getItem('sh_gh_token') || ''; } catch(e){ return ''; }
 }
 
 /* 按动态自身内容生成"该条内容"的定位链接（示例数据阶段用内容检索定位原帖）。
@@ -651,7 +606,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018e';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018f';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -832,7 +787,6 @@ function showView(view, extra){
     renderDetail();
     go('star');
   } else if (view === 'mine'){
-    renderSyncBox();
     go('mine');
   } else {
     go('home');
@@ -1436,8 +1390,14 @@ async function loadLive(silent){
 /* 用已保存的 GitHub 令牌直接触发 collect.yml 工作流：不等 5 分钟定时，约 30~60 秒后出新帖 */
 let _lastDispatch = 0;
 function triggerCollectNow(){
-  const tk = (window.StarHubNative && window.StarHubNative.getToken) ? (window.StarHubNative.getToken() || '') : '';
-  if (!tk) return false;                       /* 没令牌 → 交给上层直接重拉 */
+  let tk = ghToken();
+  if (!tk){
+    /* 从未保存过令牌：弹一次输入框（只此一次，之后存 localStorage 不再问） */
+    const v = (prompt('粘贴 GitHub 令牌（github_pat_…，需 Actions: Read and write 权限）后点「立即刷新」即可马上采集：') || '').trim();
+    if (!v) return false;
+    try { localStorage.setItem('sh_gh_token', v); } catch(e){}
+    tk = v;
+  }
   const now = Date.now();
   if (now - _lastDispatch < 60000) return 'throttled';   /* 60 秒内不重复触发，避免刷爆 Actions */
   _lastDispatch = now;
@@ -1475,7 +1435,6 @@ window.addEventListener('error', e=>{
 renderHome();
 hbDotUpdate();          /* 启动即按 seen 时刻判定一次（冷启动期间到达的新帖会显示红点） */
 renderMineImg();
-renderSyncBox();
 /* 微博采集由 GitHub Actions 每 5 分钟自动跑；首页「立即刷新」会按需触发一次，拉取在 loadLive 里完成 */
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
