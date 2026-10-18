@@ -469,7 +469,7 @@ function syncStart(p, starId, nameOverride){
   if (!(window.StarHubNative.getToken() || '')){ toast('请先在「我的 › 数据同步」里填写 GitHub 令牌'); return; }
   const nm = nameOverride || ((DATA.stars||[]).find(x=>x.id===starId)||{name:''}).name || '';
   const url = p.search + encodeURIComponent(nm);
-  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url); }
+  try { window.StarHubNative.startCollect(p.key, syncTargetsJson(), url, nm); }
   catch(e){ toast('启动采集失败：' + (e && e.message ? e.message : e)); }
 }
 function renderSyncBox(){
@@ -724,7 +724,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018b';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018c';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
