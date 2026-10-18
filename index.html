@@ -724,7 +724,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018a';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018b';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -1569,10 +1569,33 @@ async function loadLive(silent){
   if (isNew && !silent) toast('已更新：抓到新的微博动态');
   return isNew;
 }
+/* 用已保存的 GitHub 令牌直接触发 collect.yml 工作流：不等 5 分钟定时，约 30~60 秒后出新帖 */
+let _lastDispatch = 0;
+function triggerCollectNow(){
+  const tk = (window.StarHubNative && window.StarHubNative.getToken) ? (window.StarHubNative.getToken() || '') : '';
+  if (!tk) return false;                       /* 没令牌 → 交给上层直接重拉 */
+  const now = Date.now();
+  if (now - _lastDispatch < 60000) return 'throttled';   /* 60 秒内不重复触发，避免刷爆 Actions */
+  _lastDispatch = now;
+  fetch('https://api.github.com/repos/lulu1234-netize/starhub/actions/workflows/collect.yml/dispatches', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + tk, 'Content-Type':'application/json', 'Accept':'application/vnd.github+json' },
+    body: JSON.stringify({ ref:'main' })
+  }).then(r=>{
+    if (r.status === 204 || (r.status >= 200 && r.status < 300)){
+      toast('已触发采集，约 30~60 秒后自动刷新…');
+      setTimeout(()=>loadLive(false), 45000);
+    } else {
+      loadLive(false);                         /* 令牌缺 workflow 范围等 → 直接重拉现有数据 */
+    }
+  }).catch(()=>{ loadLive(false); });          /* CORS/网络异常 → 直接重拉，不阻塞 */
+  return true;
+}
 function refreshNow(){
   if (IS_CLOUD){
-    toast('云端模式：正在拉取 GitHub 上的最新数据…');
-    loadLive(false);
+    toast('正在拉取 GitHub 上的最新数据…');
+    const r = triggerCollectNow();
+    if (r !== true) loadLive(false);           /* 无令牌 / 被限流：直接重拉当前数据 */
     return;
   }
   toast('正在采集，约 20 秒后自动刷新…');
