@@ -217,12 +217,13 @@ async function localizeImages(posts) {
 
 (async () => {
   let cookie = getCookie();
-  if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留抖音数据');
-  /* 读取上一次的数据：既用于识别"新帖"，也在微博取空时兜底保留旧动态 */
+  if (!cookie) console.log('提示：缺少微博 Cookie（WEIBO_COOKIE），本次跳过微博，仍会保留旧微博动态');
+  /* 读取上一次的数据：既用于识别"新帖"，也在微博取空时兜底保留旧动态。
+     ⚠ 只认微博：2026-10-18 起抖音采集全链路移除，历史抖音条目在此一次性淘汰，不再回填 */
   let oldPosts = [];
   try {
     const prev = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
-    if (prev && Array.isArray(prev.posts)) oldPosts = prev.posts;
+    if (prev && Array.isArray(prev.posts)) oldPosts = prev.posts.filter(p => p.platform === 'weibo');
   } catch (e) {}
   let oldIds = new Set(oldPosts.map(p => p.id));
   const all = { updatedAt: Date.now(), posts: [] };
@@ -245,7 +246,7 @@ async function localizeImages(posts) {
      Cookie 失效/缺失时，微博接口返回的是登录页 HTML，fetchOne 抛"非 JSON 响应"，
      每个目标都取到 0 条；而旧逻辑是"全量重写 posts.json"——一次失效就把几百条
      历史微博动态全部抹掉（2026-10 实际发生：Cookie 过期数天无人察觉，
-     posts.json 里 200+ 条微博被清成 0，只剩抖音）。
+     posts.json 被清成 0 条）。
      现在双保险：
      ① 没取到数据的账号，其旧微博动态整段保留；
      ② 无论成功与否，旧微博动态都按 id 回填（mymblog 每页只返回最新若干条，
@@ -274,32 +275,6 @@ async function localizeImages(posts) {
       if (back) console.log(`[微博兜底] 回填旧微博动态 ${back} 条`);
     }
   }
-  /* 合并抖音采集结果（由手机端采集生成 posts_ext.json）。
-     两个采集器互不依赖：外部平台没跑或失败，微博数据照常写入，不受影响。 */
-  try {
-    const ext = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'posts_ext.json'), 'utf8'));
-    if (ext && ext.posts && ext.posts.length) {
-      /* 按「归一化 aweme/笔记 id」判重：同一作品可能因采集来源不同而带 dy_ / douyin_ 等不同前缀，
-         只比较裸 id 才能识别为同一条。同 id 冲突时保留字段更全的一份（ext 采集通常 imgs/text 更完整）。 */
-      const bare = id => String(id || '').replace(/^(dy_|douyin_)/, '');
-      const fullness = p => (p.text ? 2 : 0) + ((p.imgs && p.imgs.length) ? 2 : 0) + (p.cover ? 1 : 0) + (p.time ? 1 : 0);
-      const byBare = new Map(all.posts.map(p => [bare(p.id), p]));
-      const add = [];
-      for (const p of ext.posts){
-        const k = bare(p.id), cur = byBare.get(k);
-        if (!cur){ add.push(p); byBare.set(k, p); continue; }
-        if (fullness(p) > fullness(cur)){
-          /* ext 版更全 → 原位替换，保持时间线位置不变 */
-          const i = all.posts.indexOf(cur);
-          if (i > -1) all.posts[i] = p;
-          byBare.set(k, p);
-        }
-      }
-      all.posts = all.posts.concat(add);
-      const ago = Math.round((Date.now() - (ext.updatedAt || 0)) / 60000);
-      console.log(`[合并] 抖音/小红书 新增 ${add.length} 条（${ago} 分钟前采集）`);
-    }
-  } catch (e) { /* 外部采集未跑过，忽略 */ }
   /* 最终兜底：按归一化裸 id 去重（同前缀的完全相同 id 也在此清除） */
   {
     const bare = id => String(id || '').replace(/^(dy_|douyin_)/, '');
@@ -313,7 +288,7 @@ async function localizeImages(posts) {
   }
   /* 时间窗口：写入前剔除超过 180 天的动态（与前端 index.html 的 withinWindow 规则一致），
      避免过期数据持续堆积在数据文件里。
-     · 时间缺失（0）→ 保留（无法判定为过期，例如小红书不返回发布时间）；
+     · 时间缺失（0）→ 保留（无法判定为过期）；
      · 未来时间（时区/服务端误差）→ 保留，避免误删。 */
   {
     const MAX_AGE_MS = 180 * 86400e3;
