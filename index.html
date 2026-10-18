@@ -74,7 +74,6 @@
   .avatar-lyx{background:linear-gradient(135deg,#d67a9a,#8c3a5a)}
   .star-info{flex:1;min-width:0}
   .star-name{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
-  .badge-new{font-size:10px;color:#fff;background:var(--wb);border-radius:20px;padding:2px 7px;font-weight:500}
   .badge-soon{font-size:10px;color:var(--ink2);background:rgba(0,0,0,.06);border-radius:20px;padding:2px 7px}
   .star-meta{font-size:12px;color:var(--ink2);margin-top:6px}
   .star-latest{font-size:12px;color:var(--ink3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -606,7 +605,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018g';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261018h';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -834,7 +833,7 @@ function renderHome(){
       <div class="avatar ${s.id==='hmh'?'avatar-hmh':'avatar-lyx'}"><img src="${getStarImg(s)}" alt="${s.name}" referrerpolicy="no-referrer"></div>
       <div class="star-info">
         <div class="star-name">${s.name}
-          ${s.implemented ? '<span class="badge-new">已上线</span>' : '<span class="badge-soon">即将上线</span>'}
+          ${s.implemented ? '' : '<span class="badge-soon">即将上线</span>'}
         </div>
         <div class="star-meta">${s.platforms.join(' · ')}${s.en ? ' · ' + s.en : ''}</div>
         <div class="star-latest">${s.implemented ? (s.latest ? '最新：' + s.latest : '') : '模块建设中，敬请期待'}</div>
