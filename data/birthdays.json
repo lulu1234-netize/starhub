@@ -34,5 +34,11 @@
     "name": "石来怡",
     "birthday": "03-20",
     "early": true
+  },
+  {
+    "id": "b1792825949226",
+    "name": "张熙辰",
+    "birthday": "09-25",
+    "early": false
   }
 ]
