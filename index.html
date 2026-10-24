@@ -302,6 +302,27 @@
     transition:all .15s;user-select:none}
   .sec-nav .snav:active{transform:scale(.97)}
   .sec-nav .snav.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* ---------- 生日提醒 ---------- */
+  .bh-head{padding:34px 22px 12px}
+  .bh-head h1{font-size:26px;font-weight:800;letter-spacing:1px;
+    background:linear-gradient(120deg,#3a4a8c,#7a5cc9 55%,#c05a8e);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .bh-head p{font-size:12.5px;color:var(--ink2);margin-top:5px;line-height:1.5}
+  .bh-add{margin:6px 18px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;display:flex;flex-direction:column;gap:10px}
+  .bh-add input[type=text]{padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  .bh-add input[type=date]{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  .bh-add .sw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .bh-add .add-btn{border:none;background:var(--accent);color:#fff;font-size:14px;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit}
+  .bh-add .add-btn:active{transform:scale(.97)}
+  .bd-card{margin:0 18px 10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+  .bd-card .bd-name{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  .bd-card .bd-date{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  .bd-card .bd-sw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+  .bd-card .bd-meta{font-size:12px;color:var(--accent);font-weight:600}
+  .bd-card .bd-ops{display:flex;gap:8px}
+  .bd-card .bd-ops .read-btn{flex:1}
 </style>
 </head>
 <body>
@@ -324,6 +345,9 @@
     <nav class="tabbar">
       <div class="tab on" data-tab="home">
         <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>首页
+      </div>
+      <div class="tab" data-tab="birthday">
+        <svg viewBox="0 0 24 24"><path d="M4 9h16v3H4z"/><path d="M5 12v8h14v-8"/><path d="M12 9v11"/><path d="M9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>生日
       </div>
       <div class="tab" data-tab="mine">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>我的
@@ -365,7 +389,36 @@
       <div class="tab" data-tab="home">
         <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>首页
       </div>
+      <div class="tab" data-tab="birthday">
+        <svg viewBox="0 0 24 24"><path d="M4 9h16v3H4z"/><path d="M5 12v8h14v-8"/><path d="M12 9v11"/><path d="M9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>生日
+      </div>
       <div class="tab on" data-tab="mine">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>我的
+      </div>
+    </nav>
+  </section>
+
+  <!-- ===================== 生日提醒 ===================== -->
+  <section class="view" id="view-birthday">
+    <div class="bh-head">
+      <h1>生日提醒</h1>
+      <p>每年生日当天 00:00 与提前 14 天（若勾选），自动发邮件到 2639774644@qq.com</p>
+    </div>
+    <div class="bh-add">
+      <input type="text" id="bd-name" placeholder="联系人姓名">
+      <input type="date" id="bd-date">
+      <label class="sw"><input type="checkbox" id="bd-early"> 提前 14 天发「购礼提醒」</label>
+      <button class="add-btn" onclick="bdAdd()">添加联系人</button>
+    </div>
+    <div id="bdList"></div>
+    <nav class="tabbar">
+      <div class="tab" data-tab="home">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>首页
+      </div>
+      <div class="tab" data-tab="birthday">
+        <svg viewBox="0 0 24 24"><path d="M4 9h16v3H4z"/><path d="M5 12v8h14v-8"/><path d="M12 9v11"/><path d="M9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>生日
+      </div>
+      <div class="tab" data-tab="mine">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>我的
       </div>
     </nav>
@@ -741,7 +794,7 @@ function changeImg(id, input){
 }
 
 /* ================= 视图路由 ================= */
-const views = { home:'view-home', mine:'view-mine', star:'view-star' };
+const views = { home:'view-home', mine:'view-mine', star:'view-star', birthday:'view-birthday' };
 function go(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active','under'));
   const cur = document.querySelector('.view.active') || document.getElementById('view-home');
@@ -787,6 +840,9 @@ function showView(view, extra){
     go('star');
   } else if (view === 'mine'){
     go('mine');
+  } else if (view === 'birthday'){
+    go('birthday');
+    renderBirthday();
   } else {
     go('home');
   }
@@ -1426,6 +1482,103 @@ function refreshNow(){
   setTimeout(()=>loadLive(false), 18000);
 }
 
+/* ================= 生日提醒（联系人管理 + 云端定时邮件） =================
+   数据存仓库 data/birthdays.json（与 posts.json 同机制）；浏览器内用 localStorage 做缓存，
+   改动后通过 GitHub Contents API 写回仓库（需令牌具备 repo 写权限），GitHub Actions 每日 00:00 发邮件。 */
+const BD_REPO = 'lulu1234-netize/starhub';
+const BD_FILE = 'data/birthdays.json';
+let BIRTHDAYS = [];
+let bdSha = null;
+const BD_KEY = 'starhub_birthdays';
+
+function escAttr(s){ return String(s == null ? '' : s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function bdLoadLocal(){
+  try { const v = JSON.parse(store.getItem(BD_KEY) || '[]'); if (Array.isArray(v)) BIRTHDAYS = v; } catch(e){}
+}
+function bdSaveLocal(){ try { store.setItem(BD_KEY, JSON.stringify(BIRTHDAYS)); } catch(e){} }
+function bdDaysUntil(mmdd){
+  const [m,d] = mmdd.split('-').map(Number);
+  const now = new Date(Date.now() + 8*3600e3);
+  const y = now.getUTCFullYear(), t = now.getUTCMonth()+1, dd = now.getUTCDate();
+  const today = new Date(Date.UTC(y, t-1, dd)).getTime();
+  let next = new Date(Date.UTC(y, m-1, d));
+  if (next.getTime() < today) next = new Date(Date.UTC(y+1, m-1, d));
+  return Math.round((next.getTime() - today) / 86400e3);
+}
+function renderBirthday(){
+  const box = document.getElementById('bdList');
+  if (!box) return;
+  if (!BIRTHDAYS.length){ box.innerHTML = '<div class="empty">还没有联系人，在上方添加一位吧。</div>'; return; }
+  box.innerHTML = BIRTHDAYS.map((b,i)=>{
+    const days = bdDaysUntil(b.birthday);
+    const tip = days === 0 ? '今天生日' : ('还有 ' + days + ' 天');
+    return '<div class="bd-card">'
+      + '<input class="bd-name" value="'+escAttr(b.name)+'" placeholder="姓名">'
+      + '<input type="date" class="bd-date" value="2000-'+escAttr(b.birthday)+'">'
+      + '<label class="bd-sw"><input type="checkbox" class="bd-early"'+(b.early?' checked':'')+'> 提前购礼</label>'
+      + '<div class="bd-meta">'+tip+'</div>'
+      + '<div class="bd-ops"><button class="read-btn" onclick="bdSave('+i+')">保存</button>'
+      + '<button class="read-btn done" onclick="bdDel('+i+')">删除</button></div>'
+      + '</div>';
+  }).join('');
+}
+function bdAdd(){
+  const name = document.getElementById('bd-name').value.trim();
+  const date = document.getElementById('bd-date').value;
+  const early = document.getElementById('bd-early').checked;
+  if (!name || !date){ toast('请填写姓名和生日'); return; }
+  BIRTHDAYS.push({ id:'b'+Date.now(), name, birthday:date.slice(5), early });
+  bdSaveLocal(); renderBirthday(); bdPush();
+  document.getElementById('bd-name').value=''; document.getElementById('bd-date').value=''; document.getElementById('bd-early').checked=false;
+}
+function bdSave(i){
+  const row = document.getElementById('bdList').children[i];
+  if (!row) return;
+  const name = row.querySelector('.bd-name').value.trim();
+  const birthday = row.querySelector('.bd-date').value.slice(5);
+  const early = row.querySelector('.bd-early').checked;
+  if (!name || !birthday){ toast('姓名和生日不能为空'); return; }
+  BIRTHDAYS[i] = { id:(BIRTHDAYS[i]&&BIRTHDAYS[i].id)||('b'+Date.now()), name, birthday, early };
+  bdSaveLocal(); renderBirthday(); bdPush();
+}
+function bdDel(i){
+  const name = BIRTHDAYS[i] ? BIRTHDAYS[i].name : '';
+  if (!confirm('确定删除「'+name+'」？')) return;
+  BIRTHDAYS.splice(i,1); bdSaveLocal(); renderBirthday(); bdPush();
+}
+async function bdLoadRepo(){
+  try {
+    const r = await fetch(BD_FILE + '?t=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (Array.isArray(j)){ BIRTHDAYS = j; bdSaveLocal(); renderBirthday(); }
+  } catch(e){}
+}
+async function bdPush(){
+  const tk = ghToken();
+  if (!tk){ toast('未配置 GitHub 令牌，仅本机保存'); return; }
+  let sha = bdSha;
+  if (!sha){
+    try {
+      const r = await fetch('https://api.github.com/repos/'+BD_REPO+'/contents/'+BD_FILE+'?ref=main',
+        { headers:{ Authorization:'Bearer '+tk, Accept:'application/vnd.github+json' } });
+      if (r.ok){ const j = await r.json(); sha = j.sha; bdSha = sha; }
+    } catch(e){}
+  }
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(BIRTHDAYS, null, 2))));
+  const body = { message:'chore: update birthdays', content };
+  if (sha) body.sha = sha;
+  try {
+    const r = await fetch('https://api.github.com/repos/'+BD_REPO+'/contents/'+BD_FILE, {
+      method:'PUT',
+      headers:{ Authorization:'Bearer '+tk, 'Content-Type':'application/json', Accept:'application/vnd.github+json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok){ toast('同步失败：令牌需 repo 写权限'); return; }
+    const j = await r.json(); bdSha = j.content.sha; toast('已同步到云端');
+  } catch(e){ toast('同步失败，已本机保存'); }
+}
+
 /* ================= 启动（出错时页面显示错误而非白屏） ================= */
 window.addEventListener('error', e=>{
   const t = document.getElementById('toast');
@@ -1434,6 +1587,7 @@ window.addEventListener('error', e=>{
 renderHome();
 hbDotUpdate();          /* 启动即按 seen 时刻判定一次（冷启动期间到达的新帖会显示红点） */
 renderMineImg();
+bdLoadLocal(); bdLoadRepo();
 /* 微博采集由 GitHub Actions 每 5 分钟自动跑；首页「立即刷新」会按需触发一次，拉取在 loadLive 里完成 */
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
