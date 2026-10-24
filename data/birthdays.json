@@ -46,5 +46,11 @@
     "name": "郑润凡",
     "birthday": "09-17",
     "early": false
+  },
+  {
+    "id": "b1792825992799",
+    "name": "朱远墨",
+    "birthday": "07-21",
+    "early": true
   }
 ]
