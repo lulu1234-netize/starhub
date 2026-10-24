@@ -52,5 +52,11 @@
     "name": "朱远墨",
     "birthday": "07-21",
     "early": true
+  },
+  {
+    "id": "b1792826039897",
+    "name": "顾薇雯",
+    "birthday": "09-05",
+    "early": false
   }
 ]
