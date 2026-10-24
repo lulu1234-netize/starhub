@@ -1,0 +1,31 @@
+name: 生日提醒定时任务
+
+on:
+  schedule:
+    # UTC 16:00 = 北京时间次日 00:00，每天触发一次
+    - cron: '0 16 * * *'
+  workflow_dispatch: {}   # 允许在 Actions 页面手动点一次测试
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 运行生日提醒脚本
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          TO_EMAIL:  ${{ secrets.TO_EMAIL }}
+        run: python send_birthday.py
