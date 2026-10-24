@@ -88,5 +88,11 @@
     "name": "王樨之",
     "birthday": "11-15",
     "early": false
+  },
+  {
+    "id": "b1792826226886",
+    "name": "高若辰",
+    "birthday": "08-27",
+    "early": true
   }
 ]
