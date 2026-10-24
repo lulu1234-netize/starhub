@@ -21,6 +21,20 @@ function getCookie() {
   try { return JSON.parse(fs.readFileSync(COOKIE_FILE, 'utf8')).cookie; } catch (e) { return ''; }
 }
 
+/* 把 Cookie 字符串拆成键值表：既用于提取 x-xsrf-token，也用于健康报告里
+   列出「关键登录字段是否存在」（不泄露值，只报字段名），方便判断是 cookie 值
+   失效还是缺少 x-xsrf-token 头。 */
+function parseCookieMap(cookie) {
+  const m = {};
+  String(cookie || '').split(';').forEach(p => {
+    const i = p.indexOf('=');
+    if (i > 0) { const k = p.slice(0, i).trim(); const v = p.slice(i + 1).trim(); if (k) m[k] = v; }
+  });
+  return m;
+}
+/* 健康报告里记录的关键登录字段（有值才列出名字） */
+const CK_KEYS = ['SUB', 'SUBP', 'SSOLoginState', 'ALF', 'XSRF-TOKEN', 'SUS'];
+
 const TARGETS = JSON.parse(process.env.STARHUB_TARGETS || JSON.stringify([
   { star: 'hmh', name: '侯明昊', uid: '1831550987', kind: 'own', tag: '本人' },
   { star: 'hmh', name: '侯明昊工作室', uid: '5763552342', kind: 'related', tag: '工作室' },
@@ -124,18 +138,63 @@ function norm(mb, target) {
   };
 }
 
-async function fetchOne(target, cookie, page) {
+async function fetchMyblog(target, cookie, page) {
+  const ck = parseCookieMap(cookie);
+  const xsrf = ck['XSRF-TOKEN'] || ck['xsrf-token'] || '';
   const url = `https://weibo.com/ajax/statuses/mymblog?uid=${target.uid}&page=${page || 1}&feature=0`;
-  const r = await fetch(url, {
-    headers: { Cookie: cookie, 'User-Agent': UA, Referer: `https://weibo.com/u/${target.uid}`,
-      Accept: 'application/json, text/plain, */*', 'X-Requested-With': 'XMLHttpRequest' }
-  });
+  const headers = { Cookie: cookie, 'User-Agent': UA, Referer: `https://weibo.com/u/${target.uid}`,
+    Accept: 'application/json, text/plain, */*', 'X-Requested-With': 'XMLHttpRequest',
+    Origin: 'https://weibo.com' };
+  /* 2026-10 起微博对 mymblog 加强校验：浏览器会自动带 x-xsrf-token（取自 XSRF-TOKEN
+     Cookie），缺失时即使 Cookie 有效也返回 {"ok":-100} 被当成未登录 —— 这就是"更新了
+     Cookie 仍采不到"的根因。这里补上该请求头。 */
+  if (xsrf) headers['x-xsrf-token'] = xsrf;
+  const r = await fetch(url, { headers });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const t = await r.text();
   if (!t.trim().startsWith('{')) throw new Error('非 JSON 响应（Cookie 可能已过期）');
   const j = JSON.parse(t);
+  /* 把"未登录"响应从静默空结果改成明确报错，避免再出现"12 个账号全空却无错误"的盲区 */
+  if (j.ok === -100 || (j && j.ok === 0 && !j.data)) throw new Error('Cookie 未登录(-100)：请重新导出登录后的微博 Cookie');
+  if (!j.data) throw new Error('响应缺少 data 字段');
   const list = (j.data && j.data.list) || [];
   return list.map(mb => norm(mb, target)).filter(p => p && p.time);
+}
+
+/* 移动端兜底：当 mymblog 返回 0 条或 -100 时，改用 m.weibo.cn 的 container 接口。
+   移动端接口对登录态的要求与 PC 端不同，作为第二数据源提高健壮性。 */
+async function fetchMobile(target, cookie, page) {
+  const MUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
+  const mh = { Cookie: cookie, 'User-Agent': MUA, Referer: `https://m.weibo.cn/u/${target.uid}`,
+    Accept: 'application/json, text/plain, */*' };
+  const r1 = await fetch(`https://m.weibo.cn/api/container/getIndex?type=uid&value=${target.uid}`, { headers: mh });
+  if (!r1.ok) throw new Error('mHTTP ' + r1.status);
+  const j1 = await r1.json();
+  const cid = j1.data && j1.data.cardlistInfo && j1.data.cardlistInfo.containerid;
+  if (!cid) return [];
+  const r2 = await fetch(`https://m.weibo.cn/api/container/getIndex?containerid=${cid}&page=${page || 1}`, { headers: mh });
+  if (!r2.ok) throw new Error('mHTTP ' + r2.status);
+  const j2 = await r2.json();
+  const cards = (j2.data && j2.data.cards) || [];
+  const out = [];
+  for (const c of cards) if (c.card_type === 9 && c.mblog) out.push(norm(c.mblog, target));
+  return out.filter(p => p && p.time);
+}
+
+async function fetchOne(target, cookie, page) {
+  let lastErr = '';
+  try {
+    const list = await fetchMyblog(target, cookie, page);
+    if (list.length) return list;
+    lastErr = 'mymblog 返回 0 条';
+  } catch (e) { lastErr = e.message; }
+  /* 兜底移动端：mymblog 失败或为空时再试一次，成功就用移动端数据 */
+  try {
+    const mlist = await fetchMobile(target, cookie, page);
+    if (mlist.length) { console.log(`[${target.name}] 移动端兜底取到 ${mlist.length} 条`); return mlist; }
+  } catch (e) { console.log(`[${target.name}] 移动端兜底失败：${e.message}`); }
+  if (lastErr) throw new Error(lastErr);
+  return [];
 }
 
 /* 发现新帖时推送到微信（Server酱）：配置了 SENDKEY 才会启用 */
@@ -325,6 +384,7 @@ async function localizeImages(posts) {
       at: Date.now(),
       atStr: fmtShanghai(Date.now()),
       cookie: !!cookie,
+      cookieKeys: CK_KEYS.filter(k => parseCookieMap(cookie)[k]),
       weibo: {
         ok: targetStats.filter(t => t.count > 0).map(t => ({ name: t.name, count: t.count })),
         empty: targetStats.filter(t => t.count === 0 && !t.err).map(t => t.name),
