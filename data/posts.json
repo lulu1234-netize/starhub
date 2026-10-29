@@ -1,6 +1,44 @@
 {
-  "updatedAt": 1793242268154,
+  "updatedAt": 1793264374900,
   "posts": [
+    {
+      "id": "5359393160829676",
+      "platform": "weibo",
+      "account": "桃圈播报员",
+      "tag": "桃圈",
+      "kind": "related",
+      "star": "hmh",
+      "text": "新增节奏: 10.31预约链接发布，11.1预告视频发布。\n\n转发 @桃圈播报员：侯明昊超话\n\n睿士ELLEMEN杂志发布节奏\n\n10月28号 预告\n10月31号 预告图+售卖倒计时预约链接\n11月1号 预告视频\n11月2号 正式发开售\n\n@ELLEMEN\nELLEMEN的主页 ​​​",
+      "time": 1793262365000,
+      "timeRaw": "Thu Oct 29 16:26:05 +0800 2026",
+      "link": "https://weibo.com/7845560949/RoV5q3tPS",
+      "pics": [],
+      "imgs": [],
+      "video": false,
+      "cover": "",
+      "timeStr": "2026-10-29 16:26:05"
+    },
+    {
+      "id": "5359369982314297",
+      "platform": "weibo",
+      "account": "侯明昊全球后援会",
+      "tag": "全球后援会",
+      "kind": "related",
+      "star": "hmh",
+      "text": "【侯明昊｜属于我们的】郑州站应援 PART 1\n#侯明昊属于我们的巡回演唱会#\n \n🌸绿意铺展，繁花为证🌸\n━━━━━━━━━━━━━━━━━\n🍀 PART1｜爱意盛放，痛楼花墙应援\n━━━━━━━━━━━━━━━━━\n \n以花为礼，以光为引🌠\n三层组合式带灯光花墙浪漫登场，\n层层繁花搭配光影设计 ​​​ ...展开",
+      "time": 1793256839000,
+      "timeRaw": "Thu Oct 29 14:53:59 +0800 2026",
+      "link": "https://weibo.com/5702872851/RoUu29I3n",
+      "pics": [
+        "data/img/999a8fd0aa4dbf47.jpg"
+      ],
+      "imgs": [
+        "data/img/999a8fd0aa4dbf47.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/999a8fd0aa4dbf47.jpg",
+      "timeStr": "2026-10-29 14:53:59"
+    },
     {
       "id": "5359128522263250",
       "platform": "weibo",
@@ -35,7 +73,7 @@
       "tag": "桃圈",
       "kind": "related",
       "star": "hmh",
-      "text": "侯明昊超话\n\n睿士ELLEMEN杂志发布节奏\n\n10月28号 预告\n11月2号 预告+封面（购买链接）+视频\n\n@ELLEMEN\nELLEMEN的主页 ​​​",
+      "text": "侯明昊超话\n\n睿士ELLEMEN杂志发布节奏\n\n10月28号 预告\n10月31号 预告图+售卖倒计时预约链接\n11月1号 预告视频\n11月2号 正式发开售\n\n@ELLEMEN\nELLEMEN的主页 ​​​",
       "time": 1793187011000,
       "timeRaw": "Wed Oct 28 19:30:11 +0800 2026",
       "link": "https://weibo.com/7845560949/RoMRE9cnU",
@@ -115,7 +153,7 @@
       "tag": "桃圈",
       "kind": "related",
       "star": "hmh",
-      "text": "侯明昊超话  \n新商务节奏同步\n10.30  全平台官宣❤️\n- 0:00 微博商业话题、乐事品专上线\n- 9:30全平台品牌官宣&小侯微博发布TVC\n- 11:00 social花絮（微博+抖音+视频号+小红书）\n- 14:00 线下演唱会快闪预热海报+机制攻略（微博+小红书）\n\n官博：乐事官方微博的主页 ​​​",
+      "text": "侯明昊超话  \n新商务节奏同步\n10.30  全平台官宣❤️\n\n- 0:00 微博商业话题、乐事品专上线\n- 09:30 官宣kv（品牌🧣、🍠）\n- 09:30 官宣TVC（艺人🧣）【共创】\n- 09:40 官宣TVC（品牌🫘、🛰️、🍠）\n- 11:00 Social花絮（品牌🧣、🫘、🛰️、🍠）\n- 14:00 线下快闪预热海报+机制 ​​​ ...展开",
       "time": 1793182634000,
       "timeRaw": "Wed Oct 28 18:17:14 +0800 2026",
       "link": "https://weibo.com/7845560949/RoMo2EUOV",
@@ -4763,10 +4801,10 @@
       "link": "https://weibo.com/5503575607/RjJcUgvfW",
       "pics": [],
       "imgs": [
-        "data/img/f448ce8f886aa74a.jpg"
+        "data/img/4321c87c9e99beb4.jpg"
       ],
       "video": false,
-      "cover": "data/img/f448ce8f886aa74a.jpg",
+      "cover": "data/img/4321c87c9e99beb4.jpg",
       "timeStr": "2026-09-25 13:00:03"
     },
     {
