@@ -13,6 +13,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      actions: write          # 允许工作流结束时用 GITHUB_TOKEN 主动再唤起自己（自循环采集）
     # 并发锁：避免定时运行互相踩踏（同时写仓库会互相覆盖）
     concurrency:
       group: starhub-data-write
@@ -57,3 +58,12 @@ jobs:
               git push && break || sleep 8
             done
           fi
+
+      - name: 链式触发下一轮（每 ~2 分钟自循环）
+        # 绕过 GitHub 调度器对高频定时的限速：本轮跑完主动再唤起一次自己，
+        # 形成稳定 ~2 分钟采集循环。原生 schedule 仍保留作兜底（链条偶断时几小时后自动重启）。
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run collect.yml
