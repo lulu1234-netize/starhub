@@ -2,7 +2,7 @@ name: 星汇定时采集
 
 on:
   schedule:
-    - cron: '*/5 * * * *'       # 每 5 分钟跑一次（用户要求缩短采集延迟；GitHub Actions 定时任务有排队抖动，5 分钟为免费版下限）
+    - cron: '*/2 * * * *'       # 每 2 分钟跑一次（用户要求缩短采集延迟；GitHub Actions 定时任务支持 1 分钟粒度，2 分钟是「低延迟 vs 微博机房 IP 限流风险」的折中）
                                # 注：若 Cookie 因此又被微博风控快速失效（机房 IP 限流），
                                # 届时再考虑其它采集方式
   workflow_dispatch:            # 允许在网页上手动点「Run workflow」立刻采集一次
