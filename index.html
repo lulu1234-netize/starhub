@@ -311,7 +311,8 @@
   .bh-add{margin:6px 18px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
     padding:14px;display:flex;flex-direction:column;gap:10px}
   .bh-add input[type=text]{padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
-  .bh-add input[type=date]{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  .bd-md{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .bd-md input{flex:1;min-width:64px;padding:9px 8px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
   .bh-add .sw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
   .bh-add .add-btn{border:none;background:var(--accent);color:#fff;font-size:14px;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit}
   .bh-add .add-btn:active{transform:scale(.97)}
@@ -407,8 +408,8 @@
     <div class="bh-add">
       <input type="text" id="bd-name" placeholder="联系人姓名">
       <div class="bd-md">
-        <select id="bd-month"></select><span class="bd-sep">月</span>
-        <select id="bd-day"></select><span class="bd-sep">日</span>
+        <input type="number" id="bd-month" min="1" max="12" placeholder="月">
+        <input type="number" id="bd-day" min="1" max="31" placeholder="日">
       </div>
       <label class="sw"><input type="checkbox" id="bd-early"> 提前 14 天发「购礼提醒」</label>
       <button class="add-btn" onclick="bdAdd()">添加联系人</button>
@@ -451,7 +452,7 @@ const ACCOUNTS = {
 };
 
 /* ================= GitHub 令牌（供「立即刷新」按需触发采集） =================
-   微博由 GitHub Actions 每 5 分钟自动采集；首页「立即刷新」用令牌直接触发一次
+   微博由 GitHub Actions 每 2 分钟自动采集；首页「立即刷新」用令牌直接触发一次
    collect.yml，约 30~60 秒后出新帖（PAT 需 Actions: Read and write 权限）。
    令牌来源：App 原生保存的（历史入口）→ 前端 localStorage 缓存；都没有时
    首次点「立即刷新」会弹一次输入框，粘贴后只存本机，之后不再询问。 */
@@ -661,7 +662,7 @@ function getStarImg(s){ return store.getItem(IMG_KEY(s.id)) || s.img; }
    · 已读记录写独立键 starhub_read_share，不碰正常键 starhub_read，也不落 SNAP 锁定标记
      → 本人手机（无该参数）与后续正常使用完全不受影响。 */
 const SHARE_MODE = /(?:^|[?&])share=1(?:&|$)/.test(location.search);
-const APP_VER = '20261018h';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
+const APP_VER = '20261030a';   /* 前端版本号：改动 index.html 时同步 +1 并更新 meta.json，App 会自动重载拿到新代码 */
 const SHARE_UNREAD = new Set();   /* 分享版里手动「取消已读」的帖，避免被轮询重新标回已读 */
 const READ_KEY = SHARE_MODE ? 'starhub_read_share' : 'starhub_read';
 const SNAP_KEY = 'starhub_snap_done';
@@ -1270,7 +1271,7 @@ function renderDetail(){
   const liveBar = `<div class="live-bar">
     <span class="live-dot ${LIVE.ok ? '' : 'off'}"></span>
     <span class="live-txt">${LIVE.ok
-      ? `${(d.own.length + d.related.length)} 条 · ${pfList.join(' / ') || '微博'}真实数据 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 5 分钟）`
+      ? `${(d.own.length + d.related.length)} 条 · ${pfList.join(' / ') || '微博'}真实数据 · 更新于 ${new Date(LIVE.updatedAt).toTimeString().slice(0,5)}（自动每 2 分钟）`
       : '未连接采集服务 · 当前为内置数据'}</span>
     <button class="live-btn" onclick="refreshNow()">立即刷新</button>
   </div>`;
@@ -1339,7 +1340,7 @@ function resetImg(id){
 const LIVE = { ok:false, updatedAt:0, count:0, ids:new Set() };
 /* 部署在 GitHub Pages（xxx.github.io）时属于云端模式：
    没有本地服务接口，直接读取仓库里的 data/posts.json，
-   数据由 GitHub Actions 每 5 分钟自动更新。 */
+   数据由 GitHub Actions 每 2 分钟自动更新。 */
 const IS_CLOUD = /github\.io$|netlify\.app$|vercel\.app$|pages\.dev$/.test(location.hostname);
 
 function toLivePost(p, i){
@@ -1508,15 +1509,6 @@ function bdDaysUntil(mmdd){
   if (next.getTime() < today) next = new Date(Date.UTC(y+1, m-1, d));
   return Math.round((next.getTime() - today) / 86400e3);
 }
-function mdOptions(kind, cur){
-  const n = kind === 'm' ? 12 : 31;
-  let s = '';
-  for (let i = 1; i <= n; i++){
-    const v = String(i).padStart(2, '0');
-    s += '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + v + '</option>';
-  }
-  return s;
-}
 function renderBirthday(){
   const box = document.getElementById('bdList');
   if (!box) return;
@@ -1527,8 +1519,8 @@ function renderBirthday(){
     const p = (b.birthday || '01-01').split('-');
     return '<div class="bd-card">'
       + '<input class="bd-name" value="'+escAttr(b.name)+'" placeholder="姓名">'
-      + '<div class="bd-md"><select class="bd-month">'+mdOptions('m', p[0])+'</select><span class="bd-sep">月</span>'
-      + '<select class="bd-day">'+mdOptions('d', p[1])+'</select><span class="bd-sep">日</span></div>'
+      + '<div class="bd-md"><input type="number" class="bd-month" min="1" max="12" placeholder="月" value="'+parseInt(p[0],10)+'">'
+      + '<input type="number" class="bd-day" min="1" max="31" placeholder="日" value="'+parseInt(p[1],10)+'"></div>'
       + '<label class="bd-sw"><input type="checkbox" class="bd-early"'+(b.early?' checked':'')+'> 提前购礼</label>'
       + '<div class="bd-meta">'+tip+'</div>'
       + '<div class="bd-ops"><button class="read-btn" onclick="bdSave('+i+')">保存</button>'
@@ -1536,34 +1528,25 @@ function renderBirthday(){
       + '</div>';
   }).join('');
 }
-function initBDSelectors(){
-  const m = document.getElementById('bd-month'), d = document.getElementById('bd-day');
-  if (m && !m.options.length){
-    for (let i = 1; i <= 12; i++){ const v = String(i).padStart(2, '0'); m.insertAdjacentHTML('beforeend', '<option value="'+v+'">'+v+'</option>'); }
-  }
-  if (d && !d.options.length){
-    for (let i = 1; i <= 31; i++){ const v = String(i).padStart(2, '0'); d.insertAdjacentHTML('beforeend', '<option value="'+v+'">'+v+'</option>'); }
-  }
-}
 function bdAdd(){
   const name = document.getElementById('bd-name').value.trim();
-  const m = document.getElementById('bd-month').value;
-  const d = document.getElementById('bd-day').value;
+  const mv = parseInt(document.getElementById('bd-month').value, 10);
+  const dv = parseInt(document.getElementById('bd-day').value, 10);
   const early = document.getElementById('bd-early').checked;
-  if (!name || !m || !d){ toast('请填写姓名和生日'); return; }
-  BIRTHDAYS.push({ id:'b'+Date.now(), name, birthday:m+'-'+d, early });
+  if (!name || !(mv>=1 && mv<=12) || !(dv>=1 && dv<=31)){ toast('请填写姓名和有效月/日'); return; }
+  BIRTHDAYS.push({ id:'b'+Date.now(), name, birthday:String(mv).padStart(2,'0')+'-'+String(dv).padStart(2,'0'), early });
   bdSaveLocal(); renderBirthday(); bdPush();
-  document.getElementById('bd-name').value=''; document.getElementById('bd-early').checked=false;
+  document.getElementById('bd-name').value=''; document.getElementById('bd-month').value=''; document.getElementById('bd-day').value=''; document.getElementById('bd-early').checked=false;
 }
 function bdSave(i){
   const row = document.getElementById('bdList').children[i];
   if (!row) return;
   const name = row.querySelector('.bd-name').value.trim();
-  const m = row.querySelector('.bd-month').value;
-  const d = row.querySelector('.bd-day').value;
-  const birthday = m+'-'+d;
+  const mv = parseInt(row.querySelector('.bd-month').value, 10);
+  const dv = parseInt(row.querySelector('.bd-day').value, 10);
+  if (!name || !(mv>=1 && mv<=12) || !(dv>=1 && dv<=31)){ toast('姓名和生日不能为空'); return; }
+  const birthday = String(mv).padStart(2,'0')+'-'+String(dv).padStart(2,'0');
   const early = row.querySelector('.bd-early').checked;
-  if (!name || !birthday){ toast('姓名和生日不能为空'); return; }
   BIRTHDAYS[i] = { id:(BIRTHDAYS[i]&&BIRTHDAYS[i].id)||('b'+Date.now()), name, birthday, early };
   bdSaveLocal(); renderBirthday(); bdPush();
 }
@@ -1613,8 +1596,8 @@ window.addEventListener('error', e=>{
 renderHome();
 hbDotUpdate();          /* 启动即按 seen 时刻判定一次（冷启动期间到达的新帖会显示红点） */
 renderMineImg();
-bdLoadLocal(); bdLoadRepo(); initBDSelectors();
-/* 微博采集由 GitHub Actions 每 5 分钟自动跑；首页「立即刷新」会按需触发一次，拉取在 loadLive 里完成 */
+bdLoadLocal(); bdLoadRepo();
+/* 微博采集由 GitHub Actions 每 2 分钟自动跑；首页「立即刷新」会按需触发一次，拉取在 loadLive 里完成 */
 ensureStartupSnap();   /* 内置示例先纳入启动快照（全部标为已读折叠），loadLive 成功后会再次确认 */
 /* 启动即拉取本机采集到的真实动态；之后每分钟检查一次是否有新帖 */
 /* ===== 首页下拉刷新（顶部下拉 → 触发 loadLive + renderHome） ===== */
