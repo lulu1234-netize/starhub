@@ -1,5 +1,5 @@
 {
-  "updatedAt": 1793463520203,
+  "updatedAt": 1793463547711,
   "posts": [
     {
       "id": "5359871107269498",
@@ -7329,23 +7329,6 @@
       "video": false,
       "cover": "data/img/82b78b9fc93f7832.jpg",
       "timeStr": "2026-05-24 22:30:27"
-    },
-    {
-      "id": "5295007168988519",
-      "platform": "weibo",
-      "account": "侯明昊",
-      "tag": "本人",
-      "kind": "own",
-      "star": "hmh",
-      "text": "“期待去证明我们的未来” ​​​",
-      "time": 1777911548000,
-      "timeRaw": "Tue May 05 00:19:08 +0800 2026",
-      "link": "https://weibo.com/1831550987/QDRzmBIk7",
-      "pics": [],
-      "imgs": [],
-      "video": false,
-      "cover": "",
-      "timeStr": "2026-05-05 00:19:08"
     }
   ]
 }
