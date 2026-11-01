@@ -2,9 +2,7 @@ name: 星汇定时采集
 
 on:
   schedule:
-    - cron: '*/2 * * * *'       # 每 2 分钟跑一次（用户要求缩短采集延迟；GitHub Actions 定时任务支持 1 分钟粒度，2 分钟是「低延迟 vs 微博机房 IP 限流风险」的折中）
-                               # 注：若 Cookie 因此又被微博风控快速失效（机房 IP 限流），
-                               # 届时再考虑其它采集方式
+    - cron: '*/5 * * * *'       # 每 5 分钟触发一次。注意：GitHub 共享调度器对高频定时会限速，实际可能数小时才跑一轮（详见项目 MEMORY 教训）
   workflow_dispatch:            # 允许在网页上手动点「Run workflow」立刻采集一次
 
 jobs:
@@ -13,7 +11,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      actions: write          # 允许工作流结束时用 GITHUB_TOKEN 主动再唤起自己（自循环采集）
     # 并发锁：避免定时运行互相踩踏（同时写仓库会互相覆盖）
     concurrency:
       group: starhub-data-write
@@ -58,12 +55,3 @@ jobs:
               git push && break || sleep 8
             done
           fi
-
-      - name: 链式触发下一轮（每 ~2 分钟自循环）
-        # 绕过 GitHub 调度器对高频定时的限速：本轮跑完主动再唤起一次自己，
-        # 形成稳定 ~2 分钟采集循环。原生 schedule 仍保留作兜底（链条偶断时几小时后自动重启）。
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: gh workflow run collect.yml
