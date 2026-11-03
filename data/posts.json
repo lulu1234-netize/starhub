@@ -1,6 +1,48 @@
 {
-  "updatedAt": 1793662783380,
+  "updatedAt": 1793678430016,
   "posts": [
+    {
+      "id": "5361123039118739",
+      "platform": "weibo",
+      "account": "卢昱晓工作室",
+      "tag": "工作室",
+      "kind": "related",
+      "star": "lyx",
+      "text": "卢昱晓超话 🌙 #卢昱晓云厘#\n\n「云中来信」\n\n人们总以为，追逐月亮需要耗尽所有力气。\n\n但引力是相互的，当云厘@卢昱晓_ 坐在云端，\n不再执着于仰望时，月球便主动偏移了轨道。\n\n距离这场心动降落，还有2️⃣天。\n\n11月5日起，@爱奇艺 @江苏卫视 不见不散🎈\n#卢昱晓折月亮# #剧集折月亮# ​​​",
+      "time": 1793674800000,
+      "timeRaw": "Tue Nov 03 11:00:00 +0800 2026",
+      "link": "https://weibo.com/7879051570/RpE5xCgcr",
+      "pics": [
+        "data/img/ebeda5f24077deca.jpg"
+      ],
+      "imgs": [
+        "data/img/ebeda5f24077deca.jpg"
+      ],
+      "video": false,
+      "cover": "data/img/ebeda5f24077deca.jpg",
+      "timeStr": "2026-11-03 11:00:00"
+    },
+    {
+      "id": "5361107943294014",
+      "platform": "weibo",
+      "account": "卢昱晓_",
+      "tag": "本人",
+      "kind": "own",
+      "star": "lyx",
+      "text": "It's you ᐅ II||II||II||II @我是林一同学 #剧集折月亮#\nQQ音乐：It&#39;s you\n酷狗音乐：网页链接\n酷我音乐：网页链接\n咪咕音乐：网页链接 ​​​",
+      "time": 1793671201000,
+      "timeRaw": "Tue Nov 03 10:00:01 +0800 2026",
+      "link": "https://weibo.com/5503575607/RpDHcdOVg",
+      "pics": [
+        "data/img/bbba6c31d1a5f7b6.jpg"
+      ],
+      "imgs": [
+        "data/img/bbba6c31d1a5f7b6.jpg"
+      ],
+      "video": false,
+      "cover": "https://y.gtimg.cn/music/photo_new/T002R300x300M000002E1FVH07WAGv.jpg",
+      "timeStr": "2026-11-03 10:00:01"
+    },
     {
       "id": "5360941979930385",
       "platform": "weibo",
@@ -426,6 +468,25 @@
       "video": true,
       "cover": "data/img/8cf93d1083acd894.jpg",
       "timeStr": "2026-11-02 10:03:33"
+    },
+    {
+      "id": "5360745571158762",
+      "platform": "weibo",
+      "account": "折月亮官微",
+      "tag": "后援会",
+      "kind": "related",
+      "star": "lyx",
+      "text": "【怦然月会】#折月亮定档##卢昱晓林一折月亮定档预告#\n警报警报！玩家体温升高，心率过快！\n这场奔赴不烧心，纯走心~\n#剧集折月亮# 11月5日起，@爱奇艺 全网独播，@江苏卫视 独家电视首播。\n领衔主演（按姓氏笔画排序）：卢昱晓@卢昱晓_ 林一@我是林一同学\n特别出演（按姓氏笔画排序）：卢洋洋 ​​​ ...展开",
+      "time": 1793584805000,
+      "timeRaw": "Mon Nov 02 10:00:05 +0800 2026",
+      "link": "https://weibo.com/8014123707/RpugJ4RrI",
+      "pics": [],
+      "imgs": [
+        "data/img/8cf93d1083acd894.jpg"
+      ],
+      "video": true,
+      "cover": "data/img/8cf93d1083acd894.jpg",
+      "timeStr": "2026-11-02 10:00:05"
     },
     {
       "id": "5360744180482186",
